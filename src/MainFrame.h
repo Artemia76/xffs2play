@@ -47,6 +47,8 @@ private:
 	XPLMWindowID	gWindow = NULL;
 	int				gClicked = 0;
 	UDPServer*		server;
+	string			lastMessage;
+
 	static void DrawWindowCallback(XPLMWindowID inWindowID,void* inRefcon);
 
 	static void HandleKeyCallback(

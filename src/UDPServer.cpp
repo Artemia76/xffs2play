@@ -162,3 +162,61 @@ void UDPServer::run_service()
 		Log::Debug("Server network thread stopped");
 	}
 }
+
+int32_t UDPServer::get_or_create_client_id(udp::endpoint endpoint)
+{
+	for (const auto& client : clients)
+		if (client.second == endpoint)
+			return client.first;
+
+	auto id = ++nextClientID;
+	clients.insert(Client(id, endpoint));
+	return id;
+};
+
+void UDPServer::SendToClient(const std::string& message, uint32_t clientID)
+{
+	try
+	{
+		send(message, clients.at(clientID));
+	}
+	catch (std::out_of_range)
+	{
+		Log::Error("SendToClient : Unknown client ID ", clientID);
+	}
+};
+
+void UDPServer::SendToAllExcept(const std::string& message, uint32_t clientID)
+{
+	for (auto client : clients)
+		if (client.first != clientID)
+			send(message, client.second);
+};
+
+void UDPServer::SendToAll(const std::string& message)
+{
+	for (auto client : clients)
+		send(message, client.second);
+}
+
+size_t UDPServer::GetClientCount()
+{
+	return clients.size();
+}
+
+uint32_t UDPServer::GetClientIdByIndex(size_t index)
+{
+	auto it = clients.begin();
+	for (int i = 0; i < index; i++)
+		++it;
+	return it->first;
+};
+
+ClientMessage UDPServer::PopMessage() {
+	return incomingMessages.pop();
+}
+
+bool UDPServer::HasMessages()
+{
+	return !incomingMessages.empty();
+};

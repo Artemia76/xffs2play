@@ -31,6 +31,8 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="boost_system" />
+					<Add library="pthread" />
 				</Linker>
 			</Target>
 		</Build>

@@ -102,9 +102,9 @@ void MainFrame::DrawWindowCallback(
 	XPLMDrawString(color, left + 5, top - 100, (char*)(string("Speed=") + to_string(speed)).c_str(), NULL, xplmFont_Basic);
 	if (m_ptMainFrame->server->HasMessages())
 	{
-		std::string receivedMessage = m_ptMainFrame->server->PopMessage().first;
-		XPLMDrawString(color, left + 5, top - 120, (char*)(string("UPD=") + receivedMessage).c_str(), NULL, xplmFont_Basic);
+		m_ptMainFrame->lastMessage = m_ptMainFrame->server->PopMessage().first;
 	}
+	XPLMDrawString(color, left + 5, top - 120, (char*)(string("UPD=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
 }
 
 /*
