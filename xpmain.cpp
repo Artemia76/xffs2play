@@ -21,9 +21,13 @@
 ****************************************************************************/
 
 #include <stdio.h>
-#include "MainFrame.h"
+#include "tools/log.h"
+#include "gui/mainframe.h"
+#include "net/udpserver.h"
 #include <string.h>
 #include <string>
+
+using namespace xffs2play;
 
 /*
 * XPluginStart
@@ -40,7 +44,8 @@ PLUGIN_API int XPluginStart(
 	strcpy(outName, "XFFSTracker");
 	strcpy(outSig, "ffsimulateur2.fr");
 	strcpy(outDesc, "Multijoueur FFS2.");
-	MainFrame* window = MainFrame::Create();
+	//MainFrame* window = MainFrame::Create();
+	CLogger::instance()->log("Plugin loaded");
 	return 1;
 }
 
@@ -52,7 +57,7 @@ PLUGIN_API int XPluginStart(
 */
 PLUGIN_API void	XPluginStop(void)
 {
-	MainFrame::Kill();
+
 }
 
 /*
@@ -63,6 +68,16 @@ PLUGIN_API void	XPluginStop(void)
 */
 PLUGIN_API void XPluginDisable(void)
 {
+	#ifdef XFFS_DEBUG
+	CLogger::instance()->log("XPluginDisable, MainFrame Kill",LEVEL_DEBUG);
+	#endif // XFFS_DEBUG
+	MainFrame::Kill();
+	#ifdef XFFS_DEBUG
+	CLogger::instance()->log("UDPServer Kill",LEVEL_DEBUG);
+	#endif // XFFS_DEBUG
+	UDPServer::kill();
+	CLogger::instance()->log("Plugin Disable", LEVEL_INFO);
+	CLogger::kill();
 }
 
 /*
@@ -74,6 +89,15 @@ PLUGIN_API void XPluginDisable(void)
 */
 PLUGIN_API int XPluginEnable(void)
 {
+	#ifdef XFFS_DEBUG
+	CLogger::instance()->log("XPluginEnable, UDP Server create",LEVEL_DEBUG);
+	#endif // XFFS_DEBUG
+	UDPServer::instance()->start();
+	#ifdef XFFS_DEBUG
+	CLogger::instance()->log("MainFrame create",LEVEL_DEBUG);
+	#endif // XFFS_DEBUG
+	MainFrame::Create();
+	CLogger::instance()->log("Plugin Enable");
 	return 1;
 }
 
