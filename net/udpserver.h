@@ -22,7 +22,6 @@
 
 #pragma once
 
-#include "net/lockedqueue.h"
 #include "tools/log.h"
 
 #include <asio.hpp>
@@ -42,8 +41,24 @@ namespace xffs2play
 	typedef ClientList::value_type Client;
 	typedef std::pair<std::string, uint32_t> ClientMessage;
 
+	class UDPServer;
+
+	class UDPServerEventHandler
+	{
+		friend class	UDPServer;
+	protected:
+virtual	void		OnReceiveData(const ClientMessage& pMessage){}
+virtual void		OnAddClient(uint32_t pClient){}
+virtual void		OnRemoveClient(uint32_t pClient){}
+		UDPServer*	Server;
+	public:
+					UDPServerEventHandler();
+					~UDPServerEventHandler();
+	};
+
 	class UDPServer
 	{
+		friend class UDPServerEventHandler;
 		private:
 								UDPServer();
 								~UDPServer();
@@ -58,6 +73,7 @@ namespace xffs2play
 			std::array<char,4096> recv_buffer;
 			std::thread*		service_thread;
 			CLogger*			Log;
+			std::vector<UDPServerEventHandler*> arrSubscribers;
 
 			// Low-level network functions
 			void				start_receive();
@@ -68,17 +84,18 @@ namespace xffs2play
 
 			// Client management
 			int32_t get_or_create_client_id(udp::endpoint endpoint);
-			void on_client_disconnected(int32_t id);
 
 			void send(const std::string& message, udp::endpoint target);
-			// Incoming messages queue
-			LockedQueue<ClientMessage> incomingMessages;
 
+			void send_receive_to_subscribers(const ClientMessage& pMessage);
+			void send_add_client_to_subscribers(const uint32_t pClient);
+			void send_remove_client_to_subscribers(const uint32_t pClient);
 			// Clients of the server
 			ClientList clients;
 			std::atomic<std::uint32_t> nextClientID;
 		protected:
-
+			void		subscribe_events(UDPServerEventHandler* pSubscriber);
+			void		unsubscribe_events(UDPServerEventHandler* pSubscriber);
 		public:
 
 	static	UDPServer*	instance();
@@ -86,15 +103,12 @@ namespace xffs2play
 			void		start(unsigned short local_port=47500);
 			void		stop();
 
-			bool HasMessages();
-			ClientMessage PopMessage();
-			void SendToClient(const std::string& message, uint32_t clientID);
-			void SendToAllExcept(const std::string& message, uint32_t clientID);
-			void SendToAll(const std::string& message);
+			void		SendToClient(const std::string& message, uint32_t clientID);
+			void		SendToAllExcept(const std::string& message, uint32_t clientID);
+			void		SendToAll(const std::string& message);
 
-			size_t GetClientCount();
-			uint32_t GetClientIdByIndex(size_t index);
-
-			std::vector<std::function<void(uint32_t)>> clientDisconnectedHandlers;
+			size_t		GetClientCount();
+			uint32_t	GetClientIdByIndex(size_t index);
+			void		DisconnectClient(int32_t id);
 	};
 }

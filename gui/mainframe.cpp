@@ -27,7 +27,7 @@ namespace xffs2play
 {
 	MainFrame* MainFrame::m_ptMainFrame = nullptr;
 
-	MainFrame* MainFrame::Create()
+	MainFrame* MainFrame::instance()
 	{
 		if (m_ptMainFrame == nullptr)
 		{
@@ -36,7 +36,7 @@ namespace xffs2play
 		return m_ptMainFrame;
 	}
 
-	void MainFrame::Kill()
+	void MainFrame::kill()
 	{
 		if (m_ptMainFrame != nullptr)
 		{
@@ -47,13 +47,12 @@ namespace xffs2play
 
 	MainFrame::MainFrame()
 	{
-		server = UDPServer::instance();
 		XPLMGetScreenBoundsGlobal(&global_desktop_bounds[0], &global_desktop_bounds[3], &global_desktop_bounds[2], &global_desktop_bounds[1]);
 		XPLMCreateWindow_t params;
 		params.structSize = sizeof(params);
 		params.left = global_desktop_bounds[0] + 50;
 		params.bottom = global_desktop_bounds[1] + 150;
-		params.right = params.left + 200;
+		params.right = params.left + 400;
 		params.top = params.bottom + 200;
 		params.visible = 1;
 		params.drawWindowFunc = &MainFrame::DrawWindowCallback;
@@ -70,15 +69,10 @@ namespace xffs2play
 		// Position the window as a "free" floating window, which the user can drag around
 		XPLMSetWindowPositioningMode(gWindow, xplm_WindowPositionFree, -1);
 		// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
-		XPLMSetWindowResizingLimits(gWindow, 200, 200, 300, 300);
+		XPLMSetWindowResizingLimits(gWindow, 400, 200, 600, 300);
 		XPLMSetWindowTitle(gWindow, "XFFSTracker");
 
-
-		/* Prefetch the sim variables we will use. */
-		Lat= XPLMFindDataRef("sim/flightmodel/position/latitude");
-		Lon = XPLMFindDataRef("sim/flightmodel/position/longitude");
-		Altitude = XPLMFindDataRef("sim/flightmodel/position/elevation");
-		Speed = XPLMFindDataRef("sim/flightmodel/position/groundspeed");
+		sc=SimController::instance();
 	}
 
 
@@ -120,24 +114,15 @@ namespace xffs2play
 		* rectangle that is our window's shape. */
 		XPLMDrawTranslucentDarkBox(left, top, right, bottom);
 
+		CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
 		/* Finally we draw the text into the window, also using XPLMGraphics
 		* routines.  The NULL indicates no word wrapping. */
-		XPLMDrawString(color, left + 5, top - 20,
-			(char*)(m_ptMainFrame->gClicked ? "Je suis le futur plugin FFSTracker" : "XFFSTracker"), NULL, xplmFont_Basic);
-		double	lat, lon, alt, speed;
-		lat = XPLMGetDataf(m_ptMainFrame->Lat);
-		lon = XPLMGetDataf(m_ptMainFrame->Lon);
-		alt = XPLMGetDataf(m_ptMainFrame->Altitude);
-		speed = XPLMGetDataf(m_ptMainFrame->Speed);
-		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("Lon=") + std::to_string(lon)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(lat)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Alt=") + std::to_string(alt)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("Speed=") + std::to_string(speed)).c_str(), NULL, xplmFont_Basic);
-		if (m_ptMainFrame->server->HasMessages())
-		{
-			m_ptMainFrame->lastMessage = m_ptMainFrame->server->PopMessage().first;
-		}
-		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("UPD=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Time=") + std::to_string(toTimeStamp(state.TimeStamp))).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("Lon=") + std::to_string(state.Lon)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(state.Lat)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Alt=") + std::to_string(state.Altitude)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("Speed=") + std::to_string(state.Speed)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
 	}
 
 	/*
@@ -185,5 +170,10 @@ namespace xffs2play
 		* out of our window's box as long as the click started in our window's
 		* box. */
 		return 1;
+	}
+
+	void MainFrame::OnLogMessage(const std::string& pMessage)
+	{
+		lastMessage = pMessage;
 	}
 }

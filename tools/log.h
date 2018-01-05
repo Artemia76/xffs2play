@@ -23,6 +23,18 @@ namespace xffs2play
 		LEVEL_ERROR,
 	};
 
+	class CLogger;
+
+	class CLogger_Event_Handler
+	{
+friend	class	CLogger;
+	protected:
+virtual	void	OnLogMessage(const std::string&) {}
+	public:
+				CLogger_Event_Handler();
+				~CLogger_Event_Handler();
+	};
+
 	class CLogger
 	{
 	private:
@@ -30,12 +42,18 @@ namespace xffs2play
 										~CLogger();
 	static	CLogger*					m_ptLogger;
 			std::vector<std::string>	arrMessages;
+			std::vector<CLogger_Event_Handler*> arrSubscribers;
 			std::mutex					arrMutex;
 			std::thread::id				thread_id;
 	static	float						LoopCallback(float,float,int,void*);
+			void						SendToSubscribers(const std::string& Message);
+
 	public:
+
 	static	CLogger*					instance();
 	static	void						kill();
 			void						log(const std::string& Message, CL_DEBUG_LEVEL pLevel=LEVEL_INFO);
+			void						Subscribe (CLogger_Event_Handler* pSubscriber);
+			void						UnSubscribe (CLogger_Event_Handler* pSubscriber);
 	};
 }

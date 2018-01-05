@@ -24,6 +24,7 @@
 #include "tools/log.h"
 #include "gui/mainframe.h"
 #include "net/udpserver.h"
+#include "sim/simcontroller.h"
 #include <string.h>
 #include <string>
 
@@ -68,13 +69,8 @@ PLUGIN_API void	XPluginStop(void)
 */
 PLUGIN_API void XPluginDisable(void)
 {
-	#ifdef XFFS_DEBUG
-	CLogger::instance()->log("XPluginDisable, MainFrame Kill",LEVEL_DEBUG);
-	#endif // XFFS_DEBUG
-	MainFrame::Kill();
-	#ifdef XFFS_DEBUG
-	CLogger::instance()->log("UDPServer Kill",LEVEL_DEBUG);
-	#endif // XFFS_DEBUG
+	SimController::kill();
+	MainFrame::kill();
 	UDPServer::kill();
 	CLogger::instance()->log("Plugin Disable", LEVEL_INFO);
 	CLogger::kill();
@@ -89,14 +85,9 @@ PLUGIN_API void XPluginDisable(void)
 */
 PLUGIN_API int XPluginEnable(void)
 {
-	#ifdef XFFS_DEBUG
-	CLogger::instance()->log("XPluginEnable, UDP Server create",LEVEL_DEBUG);
-	#endif // XFFS_DEBUG
 	UDPServer::instance()->start();
-	#ifdef XFFS_DEBUG
-	CLogger::instance()->log("MainFrame create",LEVEL_DEBUG);
-	#endif // XFFS_DEBUG
-	MainFrame::Create();
+	SimController::instance();
+	MainFrame::instance();
 	CLogger::instance()->log("Plugin Enable");
 	return 1;
 }

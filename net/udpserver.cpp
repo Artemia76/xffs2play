@@ -24,6 +24,18 @@
 
 namespace xffs2play
 {
+	UDPServerEventHandler::UDPServerEventHandler()
+	{
+		Server = UDPServer::instance();
+		Server->subscribe_events(this);
+	}
+
+	UDPServerEventHandler::~UDPServerEventHandler()
+	{
+		Server->unsubscribe_events(this);
+	}
+
+
 	UDPServer* UDPServer::m_ptUDPServer = nullptr;
 
 	UDPServer* UDPServer::instance()
@@ -96,11 +108,10 @@ namespace xffs2play
 									));
 	}
 
-	void UDPServer::on_client_disconnected(int32_t id)
+	void UDPServer::DisconnectClient(int32_t id)
 	{
-		for (auto& handler : clientDisconnectedHandlers)
-			if (handler)
-				handler(id);
+		clients.erase(id);
+		send_remove_client_to_subscribers(id);
 	}
 
 	void UDPServer::handle_remote_error(const boost::system::error_code error, const udp::endpoint remote_endpoint)
@@ -114,11 +125,8 @@ namespace xffs2play
 				id = client.first;
 				break;
 			}
-		if (found == false)
-			return;
-
-		clients.erase(id);
-		on_client_disconnected(id);
+		if (found == false) return;
+		DisconnectClient(id);
 	}
 
 	void UDPServer::handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred)
@@ -126,9 +134,9 @@ namespace xffs2play
 		if (!error)
 		{
 			try {
-				auto message = ClientMessage(std::string(recv_buffer.data(), recv_buffer.data() + bytes_transferred), get_or_create_client_id(remote_endpoint));
+				ClientMessage message = ClientMessage(std::string(recv_buffer.data(), recv_buffer.data() + bytes_transferred), get_or_create_client_id(remote_endpoint));
 				if (!message.first.empty())
-					incomingMessages.push(message);
+					send_receive_to_subscribers(message);
 #ifdef XFFS_DEBUG
 				Log->log(message.first,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -190,8 +198,9 @@ namespace xffs2play
 
 		auto id = ++nextClientID;
 		clients.insert(Client(id, endpoint));
+		send_add_client_to_subscribers(id);
 		return id;
-	};
+	}
 
 	void UDPServer::SendToClient(const std::string& message, uint32_t clientID)
 	{
@@ -203,14 +212,14 @@ namespace xffs2play
 		{
 			Log->log(_("SendToClient : Unknown client ID ") + std::to_string(clientID),LEVEL_ERROR);
 		}
-	};
+	}
 
 	void UDPServer::SendToAllExcept(const std::string& message, uint32_t clientID)
 	{
 		for (auto client : clients)
 			if (client.first != clientID)
 				send(message, client.second);
-	};
+	}
 
 	void UDPServer::SendToAll(const std::string& message)
 	{
@@ -229,14 +238,45 @@ namespace xffs2play
 		for (int i = 0; i < index; i++)
 			++it;
 		return it->first;
-	};
-
-	ClientMessage UDPServer::PopMessage() {
-		return incomingMessages.pop();
 	}
 
-	bool UDPServer::HasMessages()
+	void UDPServer::subscribe_events(UDPServerEventHandler* pSubscriber)
 	{
-		return !incomingMessages.empty();
-	};
+		if (std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber)==arrSubscribers.end())
+		{
+			arrSubscribers.push_back(pSubscriber);
+		}
+	}
+
+	void UDPServer::unsubscribe_events(UDPServerEventHandler* pSubscriber)
+	{
+		auto it = std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber);
+		if (it != arrSubscribers.end())
+		{
+			arrSubscribers.erase(it);
+		}
+	}
+
+	void UDPServer::send_add_client_to_subscribers(const uint32_t pClient)
+	{
+		for (UDPServerEventHandler* it : arrSubscribers)
+		{
+			it->OnAddClient(pClient);
+		}
+	}
+
+	void UDPServer::send_remove_client_to_subscribers(const uint32_t pClient)
+	{
+		for (UDPServerEventHandler* it : arrSubscribers)
+		{
+			it->OnRemoveClient(pClient);
+		}
+	}
+	void UDPServer::send_receive_to_subscribers(const ClientMessage& pMessage)
+	{
+		for (UDPServerEventHandler* it : arrSubscribers)
+		{
+			it->OnReceiveData(pMessage);
+		}
+	}
 }

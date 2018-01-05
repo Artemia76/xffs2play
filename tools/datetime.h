@@ -34,4 +34,5 @@ namespace xffs2play
 	datetime Now();
 
 	datetime fromTimeStamp(uint64_t pTS);
+	uint64_t toTimeStamp(const datetime& pDT);
 }

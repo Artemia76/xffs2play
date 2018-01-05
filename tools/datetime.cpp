@@ -3,7 +3,7 @@
 ** Copyright (C) 2017 FSFranceSimulateur team.
 ** Contact: https://github.com/ffs2/ffs2play
 **
-** FFS2Play is free software; you can redistribute it and/or modify
+** FFS2Play is free software; you can redistribut it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 3 of the License, or
 ** (at your option) any later version.
@@ -34,5 +34,10 @@ namespace xffs2play
 		auto epoch = time_point<system_clock>();
 		auto since_epoch = microseconds(pTS);
 		return time_point_cast<microseconds>(epoch + since_epoch);
+	}
+
+	uint64_t toTimeStamp(const datetime& pDT)
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(pDT.time_since_epoch()).count();
 	}
 }

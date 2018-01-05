@@ -1,7 +1,18 @@
 #include "tools/log.h"
+#include <algorithm>
 
 namespace xffs2play
 {
+	CLogger_Event_Handler::CLogger_Event_Handler()
+	{
+		CLogger::instance()->Subscribe(this);
+	}
+
+	CLogger_Event_Handler::~CLogger_Event_Handler()
+	{
+		CLogger::instance()->UnSubscribe(this);
+	}
+
 	CLogger* CLogger::m_ptLogger=nullptr;
 
 	CLogger::CLogger()
@@ -13,24 +24,6 @@ namespace xffs2play
 	CLogger::~CLogger()
 	{
 
-	}
-
-	float CLogger::LoopCallback(float inElapsedSinceLastCall,
-									float inElapsedTimeSinceLastFlightLoop,
-									int inCounter,
-									void* Ref)
-	{
-		if ((Ref==m_ptLogger) && m_ptLogger)
-		{
-			m_ptLogger->arrMutex.lock();
-			for ( std::string str : m_ptLogger->arrMessages)
-			{
-				XPLMDebugString(str.c_str());
-			}
-			m_ptLogger->arrMessages.clear();
-			m_ptLogger->arrMutex.unlock();
-		}
-		return 1;
 	}
 
 	CLogger* CLogger::instance()
@@ -49,6 +42,25 @@ namespace xffs2play
 			delete m_ptLogger;
 			m_ptLogger=nullptr;
 		}
+	}
+
+	float CLogger::LoopCallback(float inElapsedSinceLastCall,
+									float inElapsedTimeSinceLastFlightLoop,
+									int inCounter,
+									void* Ref)
+	{
+		if ((Ref==m_ptLogger) && m_ptLogger)
+		{
+			m_ptLogger->arrMutex.lock();
+			for ( std::string str : m_ptLogger->arrMessages)
+			{
+				XPLMDebugString(str.c_str());
+				m_ptLogger->SendToSubscribers(str);
+			}
+			m_ptLogger->arrMessages.clear();
+			m_ptLogger->arrMutex.unlock();
+		}
+		return 1;
 	}
 
 	void CLogger::log(const std::string& Message, CL_DEBUG_LEVEL pLevel)
@@ -81,6 +93,7 @@ namespace xffs2play
 		if (thread_id == std::this_thread::get_id())
 		{
 			XPLMDebugString(PostMess.c_str());
+			SendToSubscribers(PostMess);
 		}
 		else
 		{
@@ -91,6 +104,31 @@ namespace xffs2play
 				arrMessages.erase(arrMessages.begin());
 			}
 			arrMutex.unlock();
+		}
+	}
+
+	void CLogger::Subscribe(CLogger_Event_Handler* pSubscriber)
+	{
+		if (std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber)==arrSubscribers.end())
+		{
+			arrSubscribers.push_back(pSubscriber);
+		}
+	}
+
+	void CLogger::UnSubscribe(CLogger_Event_Handler* pSubscriber)
+	{
+		auto it = std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber);
+		if (it != arrSubscribers.end())
+		{
+			arrSubscribers.erase(it);
+		}
+	}
+
+	void CLogger::SendToSubscribers(const std::string& pMessage)
+	{
+		for (CLogger_Event_Handler* it : arrSubscribers)
+		{
+			it->OnLogMessage(pMessage);
 		}
 	}
 }

@@ -28,7 +28,8 @@
 #include "XPLMGraphics.h"
 #include "XPLMDataAccess.h"
 
-#include "net/udpserver.h"
+#include "sim/simcontroller.h"
+#include "tools/log.h"
 
 #if IBM
 	#include <windows.h>
@@ -48,57 +49,58 @@
 namespace xffs2play
 {
 
-	class MainFrame
+	class MainFrame : public CLogger_Event_Handler
 	{
 	public:
-		static MainFrame* Create();
-		static void Kill();
+static	MainFrame*			instance();
+static	void				kill();
+	protected:
+		void				OnLogMessage(const std::string& pMessage);
 	private:
 
-		static MainFrame* m_ptMainFrame;
+static	MainFrame*			m_ptMainFrame;
 
-		MainFrame();
-		~MainFrame();
+							MainFrame();
+							~MainFrame();
 
-		XPLMWindowID	gWindow = NULL;
-		int				global_desktop_bounds[4];
-		int				gClicked = 0;
-		UDPServer*		server;
-		std::string		lastMessage;
+static	void				DrawWindowCallback(
+								XPLMWindowID inWindowID,
+								void* inRefcon);
 
-		static void DrawWindowCallback(XPLMWindowID inWindowID,void* inRefcon);
+static	void				HandleKeyCallback(
+								XPLMWindowID inWindowID,
+								char inKey,
+								XPLMKeyFlags inFlags,
+								char inVirtualKey,
+								void* inRefcon,
+								int losingFocus);
 
-		static void HandleKeyCallback(
-			XPLMWindowID         inWindowID,
-			char                 inKey,
-			XPLMKeyFlags         inFlags,
-			char                 inVirtualKey,
-			void *               inRefcon,
-			int                  losingFocus);
+static	int					HandleMouseClickCallback(
+								XPLMWindowID inWindowID,
+								int x,
+								int	y,
+								XPLMMouseStatus inMouse,
+								void* inRefcon);
 
-		static int HandleMouseClickCallback(
-			XPLMWindowID         inWindowID,
-			int                  x,
-			int                  y,
-			XPLMMouseStatus      inMouse,
-			void *               inRefcon);
-			XPLMDataRef			Lat;
-			XPLMDataRef			Lon;
-			XPLMDataRef			Altitude;
-			XPLMDataRef			Speed;
-		static int HandleMouseWheelCallback(
-			XPLMWindowID         inWindowID,
-			int x,
-			int y,
-			int wheel,
-			int clicks,
-			void * in_refcon)
-			{ return 0; }
-		static XPLMCursorStatus	HandleCursorCallback(
-			XPLMWindowID in_window_id,
-			int x,
-			int y,
-			void * in_refcon)
-			{ return xplm_CursorDefault; }
+static	int					HandleMouseWheelCallback(
+								XPLMWindowID inWindowID,
+								int x,
+								int y,
+								int wheel,
+								int clicks,
+								void * in_refcon)
+							{ return 0; }
+static	XPLMCursorStatus	HandleCursorCallback(
+								XPLMWindowID in_window_id,
+								int x,
+								int y,
+								void* in_refcon)
+							{ return xplm_CursorDefault; }
+
+		XPLMWindowID		gWindow = NULL;
+		int					global_desktop_bounds[4];
+		int					gClicked = 0;
+		SimController*		sc;
+		std::string			lastMessage;
 	};
 }
