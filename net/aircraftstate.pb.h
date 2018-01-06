@@ -26,7 +26,7 @@
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
-namespace xffs2proto {
+namespace xffs2play {
 
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_net_2faircraftstate_2eproto();
@@ -180,12 +180,12 @@ class AirData : public ::google::protobuf::Message {
   inline double latitude() const;
   inline void set_latitude(double value);
 
-  // required double Speed = 11;
-  inline bool has_speed() const;
-  inline void clear_speed();
-  static const int kSpeedFieldNumber = 11;
-  inline double speed() const;
-  inline void set_speed(double value);
+  // required double IASSpeed = 11;
+  inline bool has_iasspeed() const;
+  inline void clear_iasspeed();
+  static const int kIASSpeedFieldNumber = 11;
+  inline double iasspeed() const;
+  inline void set_iasspeed(double value);
 
   // required double Pitch = 12;
   inline bool has_pitch() const;
@@ -383,7 +383,7 @@ class AirData : public ::google::protobuf::Message {
   inline bool smoke() const;
   inline void set_smoke(bool value);
 
-  // @@protoc_insertion_point(class_scope:xffs2proto.AirData)
+  // @@protoc_insertion_point(class_scope:xffs2play.AirData)
  private:
   inline void set_has_timestamp();
   inline void clear_has_timestamp();
@@ -405,8 +405,8 @@ class AirData : public ::google::protobuf::Message {
   inline void clear_has_longitude();
   inline void set_has_latitude();
   inline void clear_has_latitude();
-  inline void set_has_speed();
-  inline void clear_has_speed();
+  inline void set_has_iasspeed();
+  inline void clear_has_iasspeed();
   inline void set_has_pitch();
   inline void clear_has_pitch();
   inline void set_has_bank();
@@ -477,7 +477,7 @@ class AirData : public ::google::protobuf::Message {
   double heading_;
   double longitude_;
   double latitude_;
-  double speed_;
+  double iasspeed_;
   double pitch_;
   double bank_;
   double elevatorpos_;
@@ -536,13 +536,13 @@ inline void AirData::clear_timestamp() {
   clear_has_timestamp();
 }
 inline ::google::protobuf::int64 AirData::timestamp() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Timestamp)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Timestamp)
   return timestamp_;
 }
 inline void AirData::set_timestamp(::google::protobuf::int64 value) {
   set_has_timestamp();
   timestamp_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Timestamp)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Timestamp)
 }
 
 // required string Title = 2;
@@ -562,7 +562,7 @@ inline void AirData::clear_title() {
   clear_has_title();
 }
 inline const ::std::string& AirData::title() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Title)
   return *title_;
 }
 inline void AirData::set_title(const ::std::string& value) {
@@ -571,7 +571,7 @@ inline void AirData::set_title(const ::std::string& value) {
     title_ = new ::std::string;
   }
   title_->assign(value);
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Title)
 }
 inline void AirData::set_title(const char* value) {
   set_has_title();
@@ -579,7 +579,7 @@ inline void AirData::set_title(const char* value) {
     title_ = new ::std::string;
   }
   title_->assign(value);
-  // @@protoc_insertion_point(field_set_char:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_set_char:xffs2play.AirData.Title)
 }
 inline void AirData::set_title(const char* value, size_t size) {
   set_has_title();
@@ -587,14 +587,14 @@ inline void AirData::set_title(const char* value, size_t size) {
     title_ = new ::std::string;
   }
   title_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_set_pointer:xffs2play.AirData.Title)
 }
 inline ::std::string* AirData::mutable_title() {
   set_has_title();
   if (title_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     title_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_mutable:xffs2play.AirData.Title)
   return title_;
 }
 inline ::std::string* AirData::release_title() {
@@ -618,7 +618,7 @@ inline void AirData::set_allocated_title(::std::string* title) {
     clear_has_title();
     title_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:xffs2proto.AirData.Title)
+  // @@protoc_insertion_point(field_set_allocated:xffs2play.AirData.Title)
 }
 
 // required string Model = 3;
@@ -638,7 +638,7 @@ inline void AirData::clear_model() {
   clear_has_model();
 }
 inline const ::std::string& AirData::model() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Model)
   return *model_;
 }
 inline void AirData::set_model(const ::std::string& value) {
@@ -647,7 +647,7 @@ inline void AirData::set_model(const ::std::string& value) {
     model_ = new ::std::string;
   }
   model_->assign(value);
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Model)
 }
 inline void AirData::set_model(const char* value) {
   set_has_model();
@@ -655,7 +655,7 @@ inline void AirData::set_model(const char* value) {
     model_ = new ::std::string;
   }
   model_->assign(value);
-  // @@protoc_insertion_point(field_set_char:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_set_char:xffs2play.AirData.Model)
 }
 inline void AirData::set_model(const char* value, size_t size) {
   set_has_model();
@@ -663,14 +663,14 @@ inline void AirData::set_model(const char* value, size_t size) {
     model_ = new ::std::string;
   }
   model_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_set_pointer:xffs2play.AirData.Model)
 }
 inline ::std::string* AirData::mutable_model() {
   set_has_model();
   if (model_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     model_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_mutable:xffs2play.AirData.Model)
   return model_;
 }
 inline ::std::string* AirData::release_model() {
@@ -694,7 +694,7 @@ inline void AirData::set_allocated_model(::std::string* model) {
     clear_has_model();
     model_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:xffs2proto.AirData.Model)
+  // @@protoc_insertion_point(field_set_allocated:xffs2play.AirData.Model)
 }
 
 // required string Type = 4;
@@ -714,7 +714,7 @@ inline void AirData::clear_type() {
   clear_has_type();
 }
 inline const ::std::string& AirData::type() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Type)
   return *type_;
 }
 inline void AirData::set_type(const ::std::string& value) {
@@ -723,7 +723,7 @@ inline void AirData::set_type(const ::std::string& value) {
     type_ = new ::std::string;
   }
   type_->assign(value);
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Type)
 }
 inline void AirData::set_type(const char* value) {
   set_has_type();
@@ -731,7 +731,7 @@ inline void AirData::set_type(const char* value) {
     type_ = new ::std::string;
   }
   type_->assign(value);
-  // @@protoc_insertion_point(field_set_char:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_set_char:xffs2play.AirData.Type)
 }
 inline void AirData::set_type(const char* value, size_t size) {
   set_has_type();
@@ -739,14 +739,14 @@ inline void AirData::set_type(const char* value, size_t size) {
     type_ = new ::std::string;
   }
   type_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_set_pointer:xffs2play.AirData.Type)
 }
 inline ::std::string* AirData::mutable_type() {
   set_has_type();
   if (type_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     type_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_mutable:xffs2play.AirData.Type)
   return type_;
 }
 inline ::std::string* AirData::release_type() {
@@ -770,7 +770,7 @@ inline void AirData::set_allocated_type(::std::string* type) {
     clear_has_type();
     type_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:xffs2proto.AirData.Type)
+  // @@protoc_insertion_point(field_set_allocated:xffs2play.AirData.Type)
 }
 
 // required string Category = 5;
@@ -790,7 +790,7 @@ inline void AirData::clear_category() {
   clear_has_category();
 }
 inline const ::std::string& AirData::category() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Category)
   return *category_;
 }
 inline void AirData::set_category(const ::std::string& value) {
@@ -799,7 +799,7 @@ inline void AirData::set_category(const ::std::string& value) {
     category_ = new ::std::string;
   }
   category_->assign(value);
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Category)
 }
 inline void AirData::set_category(const char* value) {
   set_has_category();
@@ -807,7 +807,7 @@ inline void AirData::set_category(const char* value) {
     category_ = new ::std::string;
   }
   category_->assign(value);
-  // @@protoc_insertion_point(field_set_char:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_set_char:xffs2play.AirData.Category)
 }
 inline void AirData::set_category(const char* value, size_t size) {
   set_has_category();
@@ -815,14 +815,14 @@ inline void AirData::set_category(const char* value, size_t size) {
     category_ = new ::std::string;
   }
   category_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_set_pointer:xffs2play.AirData.Category)
 }
 inline ::std::string* AirData::mutable_category() {
   set_has_category();
   if (category_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     category_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_mutable:xffs2play.AirData.Category)
   return category_;
 }
 inline ::std::string* AirData::release_category() {
@@ -846,7 +846,7 @@ inline void AirData::set_allocated_category(::std::string* category) {
     clear_has_category();
     category_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:xffs2proto.AirData.Category)
+  // @@protoc_insertion_point(field_set_allocated:xffs2play.AirData.Category)
 }
 
 // required double Altitude = 6;
@@ -864,13 +864,13 @@ inline void AirData::clear_altitude() {
   clear_has_altitude();
 }
 inline double AirData::altitude() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Altitude)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Altitude)
   return altitude_;
 }
 inline void AirData::set_altitude(double value) {
   set_has_altitude();
   altitude_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Altitude)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Altitude)
 }
 
 // required double GroundAltitude = 7;
@@ -888,13 +888,13 @@ inline void AirData::clear_groundaltitude() {
   clear_has_groundaltitude();
 }
 inline double AirData::groundaltitude() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.GroundAltitude)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.GroundAltitude)
   return groundaltitude_;
 }
 inline void AirData::set_groundaltitude(double value) {
   set_has_groundaltitude();
   groundaltitude_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.GroundAltitude)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.GroundAltitude)
 }
 
 // required double Heading = 8;
@@ -912,13 +912,13 @@ inline void AirData::clear_heading() {
   clear_has_heading();
 }
 inline double AirData::heading() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Heading)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Heading)
   return heading_;
 }
 inline void AirData::set_heading(double value) {
   set_has_heading();
   heading_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Heading)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Heading)
 }
 
 // required double Longitude = 9;
@@ -936,13 +936,13 @@ inline void AirData::clear_longitude() {
   clear_has_longitude();
 }
 inline double AirData::longitude() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Longitude)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Longitude)
   return longitude_;
 }
 inline void AirData::set_longitude(double value) {
   set_has_longitude();
   longitude_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Longitude)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Longitude)
 }
 
 // required double Latitude = 10;
@@ -960,37 +960,37 @@ inline void AirData::clear_latitude() {
   clear_has_latitude();
 }
 inline double AirData::latitude() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Latitude)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Latitude)
   return latitude_;
 }
 inline void AirData::set_latitude(double value) {
   set_has_latitude();
   latitude_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Latitude)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Latitude)
 }
 
-// required double Speed = 11;
-inline bool AirData::has_speed() const {
+// required double IASSpeed = 11;
+inline bool AirData::has_iasspeed() const {
   return (_has_bits_[0] & 0x00000400u) != 0;
 }
-inline void AirData::set_has_speed() {
+inline void AirData::set_has_iasspeed() {
   _has_bits_[0] |= 0x00000400u;
 }
-inline void AirData::clear_has_speed() {
+inline void AirData::clear_has_iasspeed() {
   _has_bits_[0] &= ~0x00000400u;
 }
-inline void AirData::clear_speed() {
-  speed_ = 0;
-  clear_has_speed();
+inline void AirData::clear_iasspeed() {
+  iasspeed_ = 0;
+  clear_has_iasspeed();
 }
-inline double AirData::speed() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Speed)
-  return speed_;
+inline double AirData::iasspeed() const {
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.IASSpeed)
+  return iasspeed_;
 }
-inline void AirData::set_speed(double value) {
-  set_has_speed();
-  speed_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Speed)
+inline void AirData::set_iasspeed(double value) {
+  set_has_iasspeed();
+  iasspeed_ = value;
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.IASSpeed)
 }
 
 // required double Pitch = 12;
@@ -1008,13 +1008,13 @@ inline void AirData::clear_pitch() {
   clear_has_pitch();
 }
 inline double AirData::pitch() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Pitch)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Pitch)
   return pitch_;
 }
 inline void AirData::set_pitch(double value) {
   set_has_pitch();
   pitch_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Pitch)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Pitch)
 }
 
 // required double Bank = 13;
@@ -1032,13 +1032,13 @@ inline void AirData::clear_bank() {
   clear_has_bank();
 }
 inline double AirData::bank() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Bank)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Bank)
   return bank_;
 }
 inline void AirData::set_bank(double value) {
   set_has_bank();
   bank_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Bank)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Bank)
 }
 
 // required int32 Squawk = 14;
@@ -1056,13 +1056,13 @@ inline void AirData::clear_squawk() {
   clear_has_squawk();
 }
 inline ::google::protobuf::int32 AirData::squawk() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Squawk)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Squawk)
   return squawk_;
 }
 inline void AirData::set_squawk(::google::protobuf::int32 value) {
   set_has_squawk();
   squawk_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Squawk)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Squawk)
 }
 
 // required double ElevatorPos = 15;
@@ -1080,13 +1080,13 @@ inline void AirData::clear_elevatorpos() {
   clear_has_elevatorpos();
 }
 inline double AirData::elevatorpos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.ElevatorPos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.ElevatorPos)
   return elevatorpos_;
 }
 inline void AirData::set_elevatorpos(double value) {
   set_has_elevatorpos();
   elevatorpos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.ElevatorPos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.ElevatorPos)
 }
 
 // required double AileronPos = 16;
@@ -1104,13 +1104,13 @@ inline void AirData::clear_aileronpos() {
   clear_has_aileronpos();
 }
 inline double AirData::aileronpos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.AileronPos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.AileronPos)
   return aileronpos_;
 }
 inline void AirData::set_aileronpos(double value) {
   set_has_aileronpos();
   aileronpos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.AileronPos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.AileronPos)
 }
 
 // required double RudderPos = 17;
@@ -1128,13 +1128,13 @@ inline void AirData::clear_rudderpos() {
   clear_has_rudderpos();
 }
 inline double AirData::rudderpos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.RudderPos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.RudderPos)
   return rudderpos_;
 }
 inline void AirData::set_rudderpos(double value) {
   set_has_rudderpos();
   rudderpos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.RudderPos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.RudderPos)
 }
 
 // required int32 Door1Pos = 18;
@@ -1152,13 +1152,13 @@ inline void AirData::clear_door1pos() {
   clear_has_door1pos();
 }
 inline ::google::protobuf::int32 AirData::door1pos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Door1Pos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Door1Pos)
   return door1pos_;
 }
 inline void AirData::set_door1pos(::google::protobuf::int32 value) {
   set_has_door1pos();
   door1pos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Door1Pos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Door1Pos)
 }
 
 // required int32 Door2Pos = 19;
@@ -1176,13 +1176,13 @@ inline void AirData::clear_door2pos() {
   clear_has_door2pos();
 }
 inline ::google::protobuf::int32 AirData::door2pos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Door2Pos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Door2Pos)
   return door2pos_;
 }
 inline void AirData::set_door2pos(::google::protobuf::int32 value) {
   set_has_door2pos();
   door2pos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Door2Pos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Door2Pos)
 }
 
 // required int32 Door3Pos = 20;
@@ -1200,13 +1200,13 @@ inline void AirData::clear_door3pos() {
   clear_has_door3pos();
 }
 inline ::google::protobuf::int32 AirData::door3pos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Door3Pos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Door3Pos)
   return door3pos_;
 }
 inline void AirData::set_door3pos(::google::protobuf::int32 value) {
   set_has_door3pos();
   door3pos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Door3Pos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Door3Pos)
 }
 
 // required int32 Door4Pos = 21;
@@ -1224,13 +1224,13 @@ inline void AirData::clear_door4pos() {
   clear_has_door4pos();
 }
 inline ::google::protobuf::int32 AirData::door4pos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Door4Pos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Door4Pos)
   return door4pos_;
 }
 inline void AirData::set_door4pos(::google::protobuf::int32 value) {
   set_has_door4pos();
   door4pos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Door4Pos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Door4Pos)
 }
 
 // required int32 FlapsIndex = 22;
@@ -1248,13 +1248,13 @@ inline void AirData::clear_flapsindex() {
   clear_has_flapsindex();
 }
 inline ::google::protobuf::int32 AirData::flapsindex() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.FlapsIndex)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.FlapsIndex)
   return flapsindex_;
 }
 inline void AirData::set_flapsindex(::google::protobuf::int32 value) {
   set_has_flapsindex();
   flapsindex_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.FlapsIndex)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.FlapsIndex)
 }
 
 // required int32 NumEngine = 23;
@@ -1272,13 +1272,13 @@ inline void AirData::clear_numengine() {
   clear_has_numengine();
 }
 inline ::google::protobuf::int32 AirData::numengine() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.NumEngine)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.NumEngine)
   return numengine_;
 }
 inline void AirData::set_numengine(::google::protobuf::int32 value) {
   set_has_numengine();
   numengine_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.NumEngine)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.NumEngine)
 }
 
 // required int32 ThrottleEng1 = 24;
@@ -1296,13 +1296,13 @@ inline void AirData::clear_throttleeng1() {
   clear_has_throttleeng1();
 }
 inline ::google::protobuf::int32 AirData::throttleeng1() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.ThrottleEng1)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.ThrottleEng1)
   return throttleeng1_;
 }
 inline void AirData::set_throttleeng1(::google::protobuf::int32 value) {
   set_has_throttleeng1();
   throttleeng1_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.ThrottleEng1)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.ThrottleEng1)
 }
 
 // required int32 ThrottleEng2 = 25;
@@ -1320,13 +1320,13 @@ inline void AirData::clear_throttleeng2() {
   clear_has_throttleeng2();
 }
 inline ::google::protobuf::int32 AirData::throttleeng2() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.ThrottleEng2)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.ThrottleEng2)
   return throttleeng2_;
 }
 inline void AirData::set_throttleeng2(::google::protobuf::int32 value) {
   set_has_throttleeng2();
   throttleeng2_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.ThrottleEng2)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.ThrottleEng2)
 }
 
 // required int32 ThrottleEng3 = 26;
@@ -1344,13 +1344,13 @@ inline void AirData::clear_throttleeng3() {
   clear_has_throttleeng3();
 }
 inline ::google::protobuf::int32 AirData::throttleeng3() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.ThrottleEng3)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.ThrottleEng3)
   return throttleeng3_;
 }
 inline void AirData::set_throttleeng3(::google::protobuf::int32 value) {
   set_has_throttleeng3();
   throttleeng3_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.ThrottleEng3)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.ThrottleEng3)
 }
 
 // required int32 ThrottleEng4 = 27;
@@ -1368,13 +1368,13 @@ inline void AirData::clear_throttleeng4() {
   clear_has_throttleeng4();
 }
 inline ::google::protobuf::int32 AirData::throttleeng4() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.ThrottleEng4)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.ThrottleEng4)
   return throttleeng4_;
 }
 inline void AirData::set_throttleeng4(::google::protobuf::int32 value) {
   set_has_throttleeng4();
   throttleeng4_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.ThrottleEng4)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.ThrottleEng4)
 }
 
 // required bool OnGround = 28;
@@ -1392,13 +1392,13 @@ inline void AirData::clear_onground() {
   clear_has_onground();
 }
 inline bool AirData::onground() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.OnGround)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.OnGround)
   return onground_;
 }
 inline void AirData::set_onground(bool value) {
   set_has_onground();
   onground_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.OnGround)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.OnGround)
 }
 
 // required bool GearPos = 29;
@@ -1416,13 +1416,13 @@ inline void AirData::clear_gearpos() {
   clear_has_gearpos();
 }
 inline bool AirData::gearpos() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.GearPos)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.GearPos)
   return gearpos_;
 }
 inline void AirData::set_gearpos(bool value) {
   set_has_gearpos();
   gearpos_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.GearPos)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.GearPos)
 }
 
 // required bool LandingLight = 30;
@@ -1440,13 +1440,13 @@ inline void AirData::clear_landinglight() {
   clear_has_landinglight();
 }
 inline bool AirData::landinglight() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.LandingLight)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.LandingLight)
   return landinglight_;
 }
 inline void AirData::set_landinglight(bool value) {
   set_has_landinglight();
   landinglight_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.LandingLight)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.LandingLight)
 }
 
 // required bool BeaconLight = 31;
@@ -1464,13 +1464,13 @@ inline void AirData::clear_beaconlight() {
   clear_has_beaconlight();
 }
 inline bool AirData::beaconlight() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.BeaconLight)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.BeaconLight)
   return beaconlight_;
 }
 inline void AirData::set_beaconlight(bool value) {
   set_has_beaconlight();
   beaconlight_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.BeaconLight)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.BeaconLight)
 }
 
 // required bool StrobeLight = 32;
@@ -1488,13 +1488,13 @@ inline void AirData::clear_strobelight() {
   clear_has_strobelight();
 }
 inline bool AirData::strobelight() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.StrobeLight)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.StrobeLight)
   return strobelight_;
 }
 inline void AirData::set_strobelight(bool value) {
   set_has_strobelight();
   strobelight_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.StrobeLight)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.StrobeLight)
 }
 
 // required bool NavLight = 33;
@@ -1512,13 +1512,13 @@ inline void AirData::clear_navlight() {
   clear_has_navlight();
 }
 inline bool AirData::navlight() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.NavLight)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.NavLight)
   return navlight_;
 }
 inline void AirData::set_navlight(bool value) {
   set_has_navlight();
   navlight_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.NavLight)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.NavLight)
 }
 
 // required bool RecoLight = 34;
@@ -1536,13 +1536,13 @@ inline void AirData::clear_recolight() {
   clear_has_recolight();
 }
 inline bool AirData::recolight() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.RecoLight)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.RecoLight)
   return recolight_;
 }
 inline void AirData::set_recolight(bool value) {
   set_has_recolight();
   recolight_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.RecoLight)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.RecoLight)
 }
 
 // required bool StateEng1 = 35;
@@ -1560,13 +1560,13 @@ inline void AirData::clear_stateeng1() {
   clear_has_stateeng1();
 }
 inline bool AirData::stateeng1() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.StateEng1)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.StateEng1)
   return stateeng1_;
 }
 inline void AirData::set_stateeng1(bool value) {
   set_has_stateeng1();
   stateeng1_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.StateEng1)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.StateEng1)
 }
 
 // required bool StateEng2 = 36;
@@ -1584,13 +1584,13 @@ inline void AirData::clear_stateeng2() {
   clear_has_stateeng2();
 }
 inline bool AirData::stateeng2() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.StateEng2)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.StateEng2)
   return stateeng2_;
 }
 inline void AirData::set_stateeng2(bool value) {
   set_has_stateeng2();
   stateeng2_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.StateEng2)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.StateEng2)
 }
 
 // required bool StateEng3 = 37;
@@ -1608,13 +1608,13 @@ inline void AirData::clear_stateeng3() {
   clear_has_stateeng3();
 }
 inline bool AirData::stateeng3() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.StateEng3)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.StateEng3)
   return stateeng3_;
 }
 inline void AirData::set_stateeng3(bool value) {
   set_has_stateeng3();
   stateeng3_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.StateEng3)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.StateEng3)
 }
 
 // required bool StateEng4 = 38;
@@ -1632,13 +1632,13 @@ inline void AirData::clear_stateeng4() {
   clear_has_stateeng4();
 }
 inline bool AirData::stateeng4() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.StateEng4)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.StateEng4)
   return stateeng4_;
 }
 inline void AirData::set_stateeng4(bool value) {
   set_has_stateeng4();
   stateeng4_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.StateEng4)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.StateEng4)
 }
 
 // required bool Smoke = 39;
@@ -1656,19 +1656,19 @@ inline void AirData::clear_smoke() {
   clear_has_smoke();
 }
 inline bool AirData::smoke() const {
-  // @@protoc_insertion_point(field_get:xffs2proto.AirData.Smoke)
+  // @@protoc_insertion_point(field_get:xffs2play.AirData.Smoke)
   return smoke_;
 }
 inline void AirData::set_smoke(bool value) {
   set_has_smoke();
   smoke_ = value;
-  // @@protoc_insertion_point(field_set:xffs2proto.AirData.Smoke)
+  // @@protoc_insertion_point(field_set:xffs2play.AirData.Smoke)
 }
 
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace xffs2proto
+}  // namespace xffs2play
 
 #ifndef SWIG
 namespace google {

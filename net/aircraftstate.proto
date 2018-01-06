@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package xffs2proto;
+package xffs2play;
 
 message AirData {
 required	int64		Timestamp = 1;
@@ -13,7 +13,7 @@ required	double		GroundAltitude = 7;
 required	double		Heading = 8;
 required	double		Longitude = 9;
 required	double		Latitude = 10;
-required	double		Speed = 11;
+required	double		IASSpeed = 11;
 required	double		Pitch = 12;
 required	double		Bank = 13;
 required	int32		Squawk = 14;

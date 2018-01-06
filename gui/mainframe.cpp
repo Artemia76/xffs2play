@@ -118,10 +118,10 @@ namespace xffs2play
 		/* Finally we draw the text into the window, also using XPLMGraphics
 		* routines.  The NULL indicates no word wrapping. */
 		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Time=") + std::to_string(toTimeStamp(state.TimeStamp))).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("Lon=") + std::to_string(state.Lon)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(state.Lat)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("Lon=") + std::to_string(state.Longitude)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(state.Latitude)).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Alt=") + std::to_string(state.Altitude)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("Speed=") + std::to_string(state.Speed)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("IAS=") + std::to_string(state.IASSpeed)).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
 	}
 

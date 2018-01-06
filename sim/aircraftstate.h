@@ -27,6 +27,7 @@
 #include "tools/datetime.h"
 #include "net/aircraftstate.pb.h"
 
+#define M_2_FEET 3.28084
 namespace xffs2play
 {
 	class SimController;
@@ -39,30 +40,81 @@ friend	SimController;
 					~CAircraftState();
 const	datetime&		TimeStamp;
 const	std::string&	Title;
-const	double&			Lat;
-const	double&			Lon;
+const	std::string&	Model;
+const	std::string&	Type;
+const	std::string&	Category;
 const	double&			Altitude;
-const	float&			Speed;
+const	float&			GroundAltitude;
+const	float&			Heading;
+const	double&			Latitude;
+const	double&			Longitude;
+const	float&			IASSpeed;
+const	float&			Pitch;
+const	float&			Bank;
+const	bool&			OnGround;
+const	bool&			Smoke;
 
 	protected:
 		void		Update();
-virtual	void		toAirData (xffs2proto::AirData& pAirData);
+virtual	void		toAirData (AirData& pAirData);
 
 
 	private:
 
 		datetime	_TimeStamp;
 		std::string	_Title;
-		double		_Lat;
-		double		_Lon;
+		std::string _Model;
+		std::string	_Type;
+		std::string _Category;
 		double		_Altitude;
-		float		_Speed;
-
-		XPLMDataRef	xpTitle;
-		XPLMDataRef	xpLat;
-		XPLMDataRef	xpLon;
-		XPLMDataRef	xpAltitude;
-		XPLMDataRef	xpSpeed;
+		float		_GroundAltitude;
+		double		_Heading;
+		double		_Latitude;
+		double		_Longitude;
+		float		_IASSpeed;
+		float		_Pitch;
+		float		_Bank;
+		bool		_OnGround;
+		bool		_Smoke;
+		//Xplane Data Reference
+		XPLMDataRef	xpbTitle;
+		XPLMDataRef xpbModel;
+		XPLMDataRef xpbType;
+		XPLMDataRef xpbCategory;
+		XPLMDataRef	xpdAltitude;
+		XPLMDataRef xpfGroundAltitude;
+		XPLMDataRef xpfHeading;
+		XPLMDataRef	xpdLatitude;
+		XPLMDataRef	xpdLongitude;
+		XPLMDataRef xpfIASSpeed;
+		XPLMDataRef xpfPitch;
+		XPLMDataRef xpfBank;
+		XPLMDataRef xpSquawk;
+		XPLMDataRef xpElevatorPos;
+		XPLMDataRef xpAileronPos;
+		XPLMDataRef xpRudderPos;
+		XPLMDataRef xpDoor1Pos;
+		XPLMDataRef xpDoor2Pos;
+		XPLMDataRef xpDoor3Pos;
+		XPLMDataRef xpDoor4Pos;
+		XPLMDataRef xpFlapsIndex;
+		XPLMDataRef xpNumEngine;
+		XPLMDataRef xpThrottleEng1;
+		XPLMDataRef xpThrottleEng2;
+		XPLMDataRef xpThrottleEng3;
+		XPLMDataRef xpThrottleEng4;
+		XPLMDataRef xpiOnGround;
+		XPLMDataRef xpGearPos;
+		XPLMDataRef xpLandingLight;
+		XPLMDataRef xpBeaconLight;
+		XPLMDataRef xpStrobeLight;
+		XPLMDataRef xpNavLight;
+		XPLMDataRef xpRecoLight;
+		XPLMDataRef xpStateEng1;
+		XPLMDataRef xpStateEng2;
+		XPLMDataRef xpStateEng3;
+		XPLMDataRef xpStateEng4;
+		XPLMDataRef xpiSmoke;
 	};
 }
 

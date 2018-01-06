@@ -16,7 +16,7 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
-namespace xffs2proto {
+namespace xffs2play {
 
 namespace {
 
@@ -45,7 +45,7 @@ void protobuf_AssignDesc_net_2faircraftstate_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, heading_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, longitude_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, latitude_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, speed_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, iasspeed_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, pitch_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, bank_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AirData, squawk_),
@@ -116,26 +116,26 @@ void protobuf_AddDesc_net_2faircraftstate_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\027net/aircraftstate.proto\022\nxffs2proto\"\334\005"
-    "\n\007AirData\022\021\n\tTimestamp\030\001 \002(\003\022\r\n\005Title\030\002 "
-    "\002(\t\022\r\n\005Model\030\003 \002(\t\022\014\n\004Type\030\004 \002(\t\022\020\n\010Cate"
-    "gory\030\005 \002(\t\022\020\n\010Altitude\030\006 \002(\001\022\026\n\016GroundAl"
-    "titude\030\007 \002(\001\022\017\n\007Heading\030\010 \002(\001\022\021\n\tLongitu"
-    "de\030\t \002(\001\022\020\n\010Latitude\030\n \002(\001\022\r\n\005Speed\030\013 \002("
-    "\001\022\r\n\005Pitch\030\014 \002(\001\022\014\n\004Bank\030\r \002(\001\022\016\n\006Squawk"
-    "\030\016 \002(\005\022\023\n\013ElevatorPos\030\017 \002(\001\022\022\n\nAileronPo"
-    "s\030\020 \002(\001\022\021\n\tRudderPos\030\021 \002(\001\022\020\n\010Door1Pos\030\022"
-    " \002(\005\022\020\n\010Door2Pos\030\023 \002(\005\022\020\n\010Door3Pos\030\024 \002(\005"
-    "\022\020\n\010Door4Pos\030\025 \002(\005\022\022\n\nFlapsIndex\030\026 \002(\005\022\021"
-    "\n\tNumEngine\030\027 \002(\005\022\024\n\014ThrottleEng1\030\030 \002(\005\022"
-    "\024\n\014ThrottleEng2\030\031 \002(\005\022\024\n\014ThrottleEng3\030\032 "
-    "\002(\005\022\024\n\014ThrottleEng4\030\033 \002(\005\022\020\n\010OnGround\030\034 "
-    "\002(\010\022\017\n\007GearPos\030\035 \002(\010\022\024\n\014LandingLight\030\036 \002"
-    "(\010\022\023\n\013BeaconLight\030\037 \002(\010\022\023\n\013StrobeLight\030 "
-    " \002(\010\022\020\n\010NavLight\030! \002(\010\022\021\n\tRecoLight\030\" \002("
-    "\010\022\021\n\tStateEng1\030# \002(\010\022\021\n\tStateEng2\030$ \002(\010\022"
-    "\021\n\tStateEng3\030% \002(\010\022\021\n\tStateEng4\030& \002(\010\022\r\n"
-    "\005Smoke\030\' \002(\010", 772);
+    "\n\027net/aircraftstate.proto\022\txffs2play\"\337\005\n"
+    "\007AirData\022\021\n\tTimestamp\030\001 \002(\003\022\r\n\005Title\030\002 \002"
+    "(\t\022\r\n\005Model\030\003 \002(\t\022\014\n\004Type\030\004 \002(\t\022\020\n\010Categ"
+    "ory\030\005 \002(\t\022\020\n\010Altitude\030\006 \002(\001\022\026\n\016GroundAlt"
+    "itude\030\007 \002(\001\022\017\n\007Heading\030\010 \002(\001\022\021\n\tLongitud"
+    "e\030\t \002(\001\022\020\n\010Latitude\030\n \002(\001\022\020\n\010IASSpeed\030\013 "
+    "\002(\001\022\r\n\005Pitch\030\014 \002(\001\022\014\n\004Bank\030\r \002(\001\022\016\n\006Squa"
+    "wk\030\016 \002(\005\022\023\n\013ElevatorPos\030\017 \002(\001\022\022\n\nAileron"
+    "Pos\030\020 \002(\001\022\021\n\tRudderPos\030\021 \002(\001\022\020\n\010Door1Pos"
+    "\030\022 \002(\005\022\020\n\010Door2Pos\030\023 \002(\005\022\020\n\010Door3Pos\030\024 \002"
+    "(\005\022\020\n\010Door4Pos\030\025 \002(\005\022\022\n\nFlapsIndex\030\026 \002(\005"
+    "\022\021\n\tNumEngine\030\027 \002(\005\022\024\n\014ThrottleEng1\030\030 \002("
+    "\005\022\024\n\014ThrottleEng2\030\031 \002(\005\022\024\n\014ThrottleEng3\030"
+    "\032 \002(\005\022\024\n\014ThrottleEng4\030\033 \002(\005\022\020\n\010OnGround\030"
+    "\034 \002(\010\022\017\n\007GearPos\030\035 \002(\010\022\024\n\014LandingLight\030\036"
+    " \002(\010\022\023\n\013BeaconLight\030\037 \002(\010\022\023\n\013StrobeLight"
+    "\030  \002(\010\022\020\n\010NavLight\030! \002(\010\022\021\n\tRecoLight\030\" "
+    "\002(\010\022\021\n\tStateEng1\030# \002(\010\022\021\n\tStateEng2\030$ \002("
+    "\010\022\021\n\tStateEng3\030% \002(\010\022\021\n\tStateEng4\030& \002(\010\022"
+    "\r\n\005Smoke\030\' \002(\010", 774);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "net/aircraftstate.proto", &protobuf_RegisterTypes);
   AirData::default_instance_ = new AirData();
@@ -163,7 +163,7 @@ const int AirData::kGroundAltitudeFieldNumber;
 const int AirData::kHeadingFieldNumber;
 const int AirData::kLongitudeFieldNumber;
 const int AirData::kLatitudeFieldNumber;
-const int AirData::kSpeedFieldNumber;
+const int AirData::kIASSpeedFieldNumber;
 const int AirData::kPitchFieldNumber;
 const int AirData::kBankFieldNumber;
 const int AirData::kSquawkFieldNumber;
@@ -197,7 +197,7 @@ const int AirData::kSmokeFieldNumber;
 AirData::AirData()
   : ::google::protobuf::Message() {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:xffs2proto.AirData)
+  // @@protoc_insertion_point(constructor:xffs2play.AirData)
 }
 
 void AirData::InitAsDefaultInstance() {
@@ -207,7 +207,7 @@ AirData::AirData(const AirData& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:xffs2proto.AirData)
+  // @@protoc_insertion_point(copy_constructor:xffs2play.AirData)
 }
 
 void AirData::SharedCtor() {
@@ -223,7 +223,7 @@ void AirData::SharedCtor() {
   heading_ = 0;
   longitude_ = 0;
   latitude_ = 0;
-  speed_ = 0;
+  iasspeed_ = 0;
   pitch_ = 0;
   bank_ = 0;
   squawk_ = 0;
@@ -256,7 +256,7 @@ void AirData::SharedCtor() {
 }
 
 AirData::~AirData() {
-  // @@protoc_insertion_point(destructor:xffs2proto.AirData)
+  // @@protoc_insertion_point(destructor:xffs2play.AirData)
   SharedDtor();
 }
 
@@ -357,7 +357,7 @@ bool AirData::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:xffs2proto.AirData)
+  // @@protoc_insertion_point(parse_start:xffs2play.AirData)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(16383);
     tag = p.first;
@@ -516,18 +516,18 @@ bool AirData::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(89)) goto parse_Speed;
+        if (input->ExpectTag(89)) goto parse_IASSpeed;
         break;
       }
 
-      // required double Speed = 11;
+      // required double IASSpeed = 11;
       case 11: {
         if (tag == 89) {
-         parse_Speed:
+         parse_IASSpeed:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &speed_)));
-          set_has_speed();
+                 input, &iasspeed_)));
+          set_has_iasspeed();
         } else {
           goto handle_unusual;
         }
@@ -969,17 +969,17 @@ bool AirData::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:xffs2proto.AirData)
+  // @@protoc_insertion_point(parse_success:xffs2play.AirData)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:xffs2proto.AirData)
+  // @@protoc_insertion_point(parse_failure:xffs2play.AirData)
   return false;
 #undef DO_
 }
 
 void AirData::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:xffs2proto.AirData)
+  // @@protoc_insertion_point(serialize_start:xffs2play.AirData)
   // required int64 Timestamp = 1;
   if (has_timestamp()) {
     ::google::protobuf::internal::WireFormatLite::WriteInt64(1, this->timestamp(), output);
@@ -1050,9 +1050,9 @@ void AirData::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteDouble(10, this->latitude(), output);
   }
 
-  // required double Speed = 11;
-  if (has_speed()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(11, this->speed(), output);
+  // required double IASSpeed = 11;
+  if (has_iasspeed()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(11, this->iasspeed(), output);
   }
 
   // required double Pitch = 12;
@@ -1199,12 +1199,12 @@ void AirData::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
   }
-  // @@protoc_insertion_point(serialize_end:xffs2proto.AirData)
+  // @@protoc_insertion_point(serialize_end:xffs2play.AirData)
 }
 
 ::google::protobuf::uint8* AirData::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:xffs2proto.AirData)
+  // @@protoc_insertion_point(serialize_to_array_start:xffs2play.AirData)
   // required int64 Timestamp = 1;
   if (has_timestamp()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(1, this->timestamp(), target);
@@ -1279,9 +1279,9 @@ void AirData::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(10, this->latitude(), target);
   }
 
-  // required double Speed = 11;
-  if (has_speed()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(11, this->speed(), target);
+  // required double IASSpeed = 11;
+  if (has_iasspeed()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(11, this->iasspeed(), target);
   }
 
   // required double Pitch = 12;
@@ -1428,7 +1428,7 @@ void AirData::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:xffs2proto.AirData)
+  // @@protoc_insertion_point(serialize_to_array_end:xffs2play.AirData)
   return target;
 }
 
@@ -1498,8 +1498,8 @@ int AirData::ByteSize() const {
       total_size += 1 + 8;
     }
 
-    // required double Speed = 11;
-    if (has_speed()) {
+    // required double IASSpeed = 11;
+    if (has_iasspeed()) {
       total_size += 1 + 8;
     }
 
@@ -1730,8 +1730,8 @@ void AirData::MergeFrom(const AirData& from) {
     if (from.has_latitude()) {
       set_latitude(from.latitude());
     }
-    if (from.has_speed()) {
-      set_speed(from.speed());
+    if (from.has_iasspeed()) {
+      set_iasspeed(from.iasspeed());
     }
     if (from.has_pitch()) {
       set_pitch(from.pitch());
@@ -1858,7 +1858,7 @@ void AirData::Swap(AirData* other) {
     std::swap(heading_, other->heading_);
     std::swap(longitude_, other->longitude_);
     std::swap(latitude_, other->latitude_);
-    std::swap(speed_, other->speed_);
+    std::swap(iasspeed_, other->iasspeed_);
     std::swap(pitch_, other->pitch_);
     std::swap(bank_, other->bank_);
     std::swap(squawk_, other->squawk_);
@@ -1905,6 +1905,6 @@ void AirData::Swap(AirData* other) {
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace xffs2proto
+}  // namespace xffs2play
 
 // @@protoc_insertion_point(global_scope)

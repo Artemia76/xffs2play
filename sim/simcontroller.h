@@ -79,7 +79,7 @@ namespace xffs2play
 			void				UpdateAircraftData();
 			void				IncomingRequest();
 			void				SendAircraftData();
-			xffs2proto::AirData	SendData;
+			AirData				SendData;
 			CAircraftState		AircraftState;
 			CLogger*			Log;
 			FFS2ClientList		arrClients;

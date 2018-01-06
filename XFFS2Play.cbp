@@ -64,7 +64,6 @@
 		<Unit filename="net/aircraftstate.pb.cc" />
 		<Unit filename="net/aircraftstate.pb.h" />
 		<Unit filename="net/aircraftstate.proto" />
-		<Unit filename="net/lockedqueue.h" />
 		<Unit filename="net/udpserver.cpp" />
 		<Unit filename="net/udpserver.h" />
 		<Unit filename="sim/aircraftstate.cpp" />
