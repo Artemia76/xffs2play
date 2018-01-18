@@ -26,18 +26,19 @@ namespace xffs2play
 {
 	datetime Now()
 	{
-		return time_point_cast<microseconds>(system_clock::now());
+		return time_point_cast<milliseconds>(system_clock::now());
 	}
 
 	datetime fromTimeStamp(uint64_t pTS)
 	{
 		auto epoch = time_point<system_clock>();
-		auto since_epoch = microseconds(pTS);
-		return time_point_cast<microseconds>(epoch + since_epoch);
+		auto since_epoch = milliseconds(pTS);
+		return time_point_cast<std::chrono::milliseconds>(epoch + since_epoch);
 	}
 
-	uint64_t toTimeStamp(const datetime& pDT)
+	uint64_t toTimeStamp(datetime pTime)
 	{
-		return std::chrono::duration_cast<std::chrono::milliseconds>(pDT.time_since_epoch()).count();
+		auto epoch = time_point<system_clock>();
+		return duration_cast<milliseconds>(pTime - epoch).count();
 	}
 }

@@ -24,26 +24,21 @@
 
 #include <string>
 #include <XPLMProcessing.h>
-#include "XPLMDisplay.h"
-#include "XPLMGraphics.h"
-#include "XPLMDataAccess.h"
+#include <XPLMDisplay.h>
+#include <XPLMGraphics.h>
+#include <XPLMDataAccess.h>
 
 #include "sim/simcontroller.h"
 #include "tools/log.h"
 
-#if IBM
-	#include <windows.h>
-#endif
-#if LIN
+#ifdef LIN
 	#include <GL/gl.h>
-#elif __GNUC__
-	#include <OpenGL/gl.h>
 #else
-	#include <GL/gl.h>
-#endif
-
-#ifndef XPLM300
-	#error This is made to be compiled against the XPLM300 SDK
+	#ifdef __GNUC__
+		#include <OpenGL/gl.h>
+	#else
+		#include <GL/gl.h>
+	#endif
 #endif
 
 namespace xffs2play
@@ -81,6 +76,7 @@ static	int					HandleMouseClickCallback(
 								int	y,
 								XPLMMouseStatus inMouse,
 								void* inRefcon);
+#ifdef XPL300
 
 static	int					HandleMouseWheelCallback(
 								XPLMWindowID inWindowID,
@@ -96,7 +92,7 @@ static	XPLMCursorStatus	HandleCursorCallback(
 								int y,
 								void* in_refcon)
 							{ return xplm_CursorDefault; }
-
+#endif
 		XPLMWindowID		gWindow = NULL;
 		int					global_desktop_bounds[4];
 		int					gClicked = 0;

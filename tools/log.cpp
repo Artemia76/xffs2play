@@ -1,5 +1,4 @@
 #include "tools/log.h"
-#include <algorithm>
 
 namespace xffs2play
 {

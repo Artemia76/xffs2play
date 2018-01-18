@@ -1,11 +1,13 @@
 #pragma once
 
 #include <string>
+#include <algorithm>
 #include <sstream>
 #include <vector>
 #include <mutex>
 #include <thread>
-#include "XPLMProcessing.h"
+
+#include <XPLMProcessing.h>
 #include <XPLMUtilities.h>
 
 #ifndef _

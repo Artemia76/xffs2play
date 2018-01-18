@@ -47,6 +47,7 @@ namespace xffs2play
 
 	MainFrame::MainFrame()
 	{
+#ifdef XPLM300
 		XPLMGetScreenBoundsGlobal(&global_desktop_bounds[0], &global_desktop_bounds[3], &global_desktop_bounds[2], &global_desktop_bounds[1]);
 		XPLMCreateWindow_t params;
 		params.structSize = sizeof(params);
@@ -65,13 +66,22 @@ namespace xffs2play
 		params.layer = xplm_WindowLayerFloatingWindows;
 		params.decorateAsFloatingWindow = 1;
 		gWindow = XPLMCreateWindowEx(&params);
-
+#else
+		gWindow = XPLMCreateWindow(
+			50, 600, 300, 200,
+			1,
+			&MainFrame::DrawWindowCallback,
+			&MainFrame::HandleKeyCallback,
+			&MainFrame::HandleMouseClickCallback,
+			NULL);
+#endif
+#ifdef XPLM300
 		// Position the window as a "free" floating window, which the user can drag around
 		XPLMSetWindowPositioningMode(gWindow, xplm_WindowPositionFree, -1);
 		// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
 		XPLMSetWindowResizingLimits(gWindow, 400, 200, 600, 300);
 		XPLMSetWindowTitle(gWindow, "XFFSTracker");
-
+#endif
 		sc=SimController::instance();
 	}
 

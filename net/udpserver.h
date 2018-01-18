@@ -21,11 +21,10 @@
 ****************************************************************************/
 
 #pragma once
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
 
 #include "tools/log.h"
-
-#include <asio.hpp>
-#include <bind.hpp>
 #include <array>
 #include <map>
 #include <thread>

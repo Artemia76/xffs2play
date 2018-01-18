@@ -68,7 +68,7 @@ virtual	void		toAirData (AirData& pAirData);
 		std::string _Category;
 		double		_Altitude;
 		float		_GroundAltitude;
-		double		_Heading;
+		float		_Heading;
 		double		_Latitude;
 		double		_Longitude;
 		float		_IASSpeed;

@@ -22,13 +22,14 @@
 
 #pragma once
 
+#include "net/udpserver.h"
+
 #include <vector>
 #include <mutex>
 
 #include "XPLMDataAccess.h"
 #include "XPLMProcessing.h"
 #include "net/aircraftstate.pb.h"
-#include "net/udpserver.h"
 #include "sim/aircraftstate.h"
 #include "tools/log.h"
 
