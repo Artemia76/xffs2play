@@ -76,7 +76,7 @@ static	int					HandleMouseClickCallback(
 								int	y,
 								XPLMMouseStatus inMouse,
 								void* inRefcon);
-#ifdef XPL300
+#ifdef XPLM300
 
 static	int					HandleMouseWheelCallback(
 								XPLMWindowID inWindowID,
