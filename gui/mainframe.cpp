@@ -132,7 +132,8 @@ namespace xffs2play
 		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(state.Latitude)).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Alt=") + std::to_string(state.Altitude)).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("IAS=") + std::to_string(state.IASSpeed)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("OnGround=") + std::to_string(state.OnGround)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 140, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
 	}
 
 	/*
