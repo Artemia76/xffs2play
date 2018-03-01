@@ -77,6 +77,7 @@ namespace xffs2play
 		AircraftState.toAirData(SendData);
 		for (auto it : arrClients)
 		{
+			// Client want data
 			if (it.second.ReceiveData)
 			{
 				try
@@ -91,6 +92,12 @@ namespace xffs2play
 					Log->log(_("Error during send data") + _(e.what()), LEVEL_DEBUG);
 					it.second.ReceiveData=false;
 				}
+			}
+			//Check Ping Timeout
+			if (timespan(Now() - it.second.LastPing).count() > 10000)
+			{
+				Log->log(_("Client Timeout"), LEVEL_INFO);
+				Server->DisconnectClient(it.first);
 			}
 
 		}
@@ -126,7 +133,7 @@ namespace xffs2play
 	{
 		Mutex.lock();
         //Select good client
-        auto it = arrClients.find(pMessage.second);
+        std::map<uint32_t, FFS2ClientData>::iterator it = arrClients.find(pMessage.second);
 		Mutex.unlock();
         if (it != arrClients.end())
 		{
@@ -139,6 +146,7 @@ namespace xffs2play
 					case PING:
 					{
 						Log->log("Receive Ping", LEVEL_DEBUG);
+						it->second.LastPing = Now();
 						std::ostringstream  ssoutput;
 						ssoutput << (byte)PONG << (byte)XFF2_PROTOCOL;
 						Server->SendToClient(ssoutput.str(), pMessage.second);

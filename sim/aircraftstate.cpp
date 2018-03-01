@@ -123,7 +123,7 @@ namespace xffs2play
 		_Longitude = XPLMGetDatad(xpdLongitude);
 		_Latitude = XPLMGetDatad(xpdLatitude);
 		_IASSpeed = XPLMGetDataf(xpfIASSpeed);
-		_Pitch = XPLMGetDataf(xpfPitch);
+		_Pitch = -XPLMGetDataf(xpfPitch);
 		_Bank = -XPLMGetDataf(xpfBank);
 		_OnGround = (bool)XPLMGetDatai(xpiOnGround);
 		_Smoke =(bool)XPLMGetDatai(xpiSmoke);
