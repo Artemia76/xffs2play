@@ -53,8 +53,8 @@ namespace xffs2play
 		xpfIASSpeed = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed2");
 		xpfPitch = XPLMFindDataRef("sim/flightmodel/position/true_theta");
 		xpfBank = XPLMFindDataRef("sim/flightmodel/position/true_phi");
-		xpiOnGround = XPLMFindDataRef("sim/flightmodel/failure/onground_any");
-		xpiSmoke = XPLMFindDataRef("sim/flightmodel/failure/smoking");
+		xpiOnGround = XPLMFindDataRef("sim/flightmodel/failures/onground_any");
+		xpiSmoke = XPLMFindDataRef("sim/flightmodel/failures/smoking");
 	}
 
 	CAircraftState::~CAircraftState()
@@ -124,7 +124,7 @@ namespace xffs2play
 		_Latitude = XPLMGetDatad(xpdLatitude);
 		_IASSpeed = XPLMGetDataf(xpfIASSpeed);
 		_Pitch = XPLMGetDataf(xpfPitch);
-		_Bank = XPLMGetDataf(xpfBank);
+		_Bank = -XPLMGetDataf(xpfBank);
 		_OnGround = (bool)XPLMGetDatai(xpiOnGround);
 		_Smoke =(bool)XPLMGetDatai(xpiSmoke);
 	}
