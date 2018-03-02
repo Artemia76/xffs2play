@@ -89,7 +89,7 @@ namespace xffs2play
 				}
 				catch (const std::exception& e)
 				{
-					Log->log(_("Error during send data") + _(e.what()), LEVEL_DEBUG);
+					Log->log(_("Error during send data") + _(e.what()), LEVEL_ERROR);
 					it.second.ReceiveData=false;
 				}
 			}
@@ -114,6 +114,7 @@ namespace xffs2play
 			new_client.LastPing = Now();
 			new_client.ReceiveData = true;
 			arrClients.insert(FFS2Client(pClient, new_client));
+			Log->log(_("Add client"), LEVEL_INFO);
 		}
 		Mutex.unlock();
 	}
@@ -124,7 +125,7 @@ namespace xffs2play
 		if (arrClients.find(pClient)!=arrClients.end())
 		{
 			arrClients.erase(pClient);
-			Log->log("Remove client", LEVEL_DEBUG);
+			Log->log(_("Remove client"), LEVEL_INFO);
 		}
 		Mutex.unlock();
 	}
@@ -145,7 +146,9 @@ namespace xffs2play
 				{
 					case PING:
 					{
-						Log->log("Receive Ping", LEVEL_DEBUG);
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Ping"), LEVEL_DEBUG);
+#endif
 						it->second.LastPing = Now();
 						std::ostringstream  ssoutput;
 						ssoutput << (byte)PONG << (byte)XFF2_PROTOCOL;
@@ -154,24 +157,32 @@ namespace xffs2play
 					}
 					case PONG:
 					{
-						Log->log("Receive Pong", LEVEL_DEBUG);
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Pong"), LEVEL_DEBUG);
+#endif
 
 						break;
 					}
 					case DATA:
 					{
-						Log->log("Receive Data", LEVEL_DEBUG);
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Data"), LEVEL_DEBUG);
+#endif
 						break;
 					}
 					case DISC:
 					{
-						Log->log("Receive Diconnect", LEVEL_DEBUG);
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Diconnect"), LEVEL_DEBUG);
+#endif
 						Server->DisconnectClient(pMessage.second);
 						break;
 					}
 					default:
 					{
-						Log->log("Receive Unknown code", LEVEL_DEBUG);
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Unknown code"), LEVEL_DEBUG);
+#endif
 						break;
 					}
 				}
@@ -181,7 +192,7 @@ namespace xffs2play
 			}
 			else
 			{
-				Log->log("Protocol error from client", LEVEL_ERROR);
+				Log->log(_("Protocol error from client"), LEVEL_ERROR);
 			}
 		}
 	}

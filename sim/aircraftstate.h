@@ -23,6 +23,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 #include "XPLMDataAccess.h"
 #include "tools/datetime.h"
 #include "net/aircraftstate.pb.h"
@@ -75,7 +76,21 @@ virtual	void		toAirData (AirData& pAirData);
 		float		_Pitch;
 		float		_Bank;
 		bool		_OnGround;
+		bool		_LandingLight;
+		bool		_BeaconLight;
+		bool		_StrobeLight;
+		bool		_NavLight;
+		bool		_RecoLight;
 		bool		_Smoke;
+		uint32_t	_ThrottleEng1;
+		uint32_t	_ThrottleEng2;
+		uint32_t	_ThrottleEng3;
+		uint32_t	_ThrottleEng4;
+		bool		_StateEng1;
+		bool		_StateEng2;
+		bool		_StateEng3;
+		bool		_StateEng4;
+
 		//Xplane Data Reference
 		XPLMDataRef	xpbTitle;
 		XPLMDataRef xpbModel;
@@ -99,10 +114,7 @@ virtual	void		toAirData (AirData& pAirData);
 		XPLMDataRef xpDoor4Pos;
 		XPLMDataRef xpFlapsIndex;
 		XPLMDataRef xpNumEngine;
-		XPLMDataRef xpThrottleEng1;
-		XPLMDataRef xpThrottleEng2;
-		XPLMDataRef xpThrottleEng3;
-		XPLMDataRef xpThrottleEng4;
+		XPLMDataRef xpThrottleEng;
 		XPLMDataRef xpiOnGround;
 		XPLMDataRef xpGearPos;
 		XPLMDataRef xpLandingLight;
@@ -110,10 +122,7 @@ virtual	void		toAirData (AirData& pAirData);
 		XPLMDataRef xpStrobeLight;
 		XPLMDataRef xpNavLight;
 		XPLMDataRef xpRecoLight;
-		XPLMDataRef xpStateEng1;
-		XPLMDataRef xpStateEng2;
-		XPLMDataRef xpStateEng3;
-		XPLMDataRef xpStateEng4;
+		XPLMDataRef xpStateEng;
 		XPLMDataRef xpiSmoke;
 	};
 }

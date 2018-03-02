@@ -45,7 +45,6 @@ PLUGIN_API int XPluginStart(
 	strcpy(outName, "XFFSTracker");
 	strcpy(outSig, "ffsimulateur2.fr");
 	strcpy(outDesc, "Multijoueur FFS2.");
-	//MainFrame* window = MainFrame::Create();
 	CLogger::instance()->log("Plugin loaded");
 	return 1;
 }

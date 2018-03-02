@@ -55,6 +55,13 @@ namespace xffs2play
 		xpfBank = XPLMFindDataRef("sim/flightmodel/position/true_phi");
 		xpiOnGround = XPLMFindDataRef("sim/flightmodel/failures/onground_any");
 		xpiSmoke = XPLMFindDataRef("sim/flightmodel/failures/smoking");
+		xpThrottleEng = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro");
+		xpStateEng = XPLMFindDataRef("sim/flightmodel/engine/ENGN_running");
+		xpLandingLight = XPLMFindDataRef("sim/cockpit/electrical/landing_lights_on");
+		xpBeaconLight = XPLMFindDataRef("sim/cockpit/electrical/beacon_lights_on");
+		xpStrobeLight = XPLMFindDataRef("sim/cockpit/electrical/strobe_lights_on");
+		xpNavLight = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
+		xpRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
 	}
 
 	CAircraftState::~CAircraftState()
@@ -87,21 +94,21 @@ namespace xffs2play
 		data.set_door4pos(0);
 		data.set_flapsindex(0);
 		data.set_numengine(1);
-		data.set_throttleeng1(0);
-		data.set_throttleeng2(0);
-		data.set_throttleeng3(0);
-		data.set_throttleeng4(0);
+		data.set_throttleeng1(_ThrottleEng1);
+		data.set_throttleeng2(_ThrottleEng2);
+		data.set_throttleeng3(_ThrottleEng3);
+		data.set_throttleeng4(_ThrottleEng4);
 		data.set_onground(_OnGround);
 		data.set_gearpos(true);
-		data.set_landinglight(false);
-		data.set_beaconlight(false);
-		data.set_strobelight(false);
-		data.set_navlight(false);
-		data.set_recolight(false);
-		data.set_stateeng1(false);
-		data.set_stateeng2(false);
-		data.set_stateeng3(false);
-		data.set_stateeng4(false);
+		data.set_landinglight(_LandingLight);
+		data.set_beaconlight(_BeaconLight);
+		data.set_strobelight(_StrobeLight);
+		data.set_navlight(_NavLight);
+		data.set_recolight(_RecoLight);
+		data.set_stateeng1(_StateEng1);
+		data.set_stateeng2(_StateEng2);
+		data.set_stateeng3(_StateEng3);
+		data.set_stateeng4(_StateEng4);
 		data.set_smoke(_Smoke);
 	}
 
@@ -127,5 +134,22 @@ namespace xffs2play
 		_Bank = -XPLMGetDataf(xpfBank);
 		_OnGround = (bool)XPLMGetDatai(xpiOnGround);
 		_Smoke =(bool)XPLMGetDatai(xpiSmoke);
+		float _throttle[4];
+		XPLMGetDatavf(xpThrottleEng, _throttle, 0, 4);
+		_ThrottleEng1=(uint32_t)(_throttle[0]*100);
+		_ThrottleEng2 = (uint32_t)(_throttle[1] * 100);
+		_ThrottleEng3 = (uint32_t)(_throttle[2] * 100);
+		_ThrottleEng4 = (uint32_t)(_throttle[3] * 100);
+		int _stateEngine[4];
+		XPLMGetDatavi(xpStateEng, _stateEngine, 0, 4);
+		_StateEng1 = (bool)_stateEngine[0];
+		_StateEng2 = (bool)_stateEngine[1];
+		_StateEng3 = (bool)_stateEngine[2];
+		_StateEng4 = (bool)_stateEngine[3];
+		_LandingLight = (bool)XPLMGetDatai(xpLandingLight);
+		_BeaconLight = (bool)XPLMGetDatai(xpBeaconLight);
+		_StrobeLight = (bool)XPLMGetDatai(xpStrobeLight);
+		_NavLight = (bool)XPLMGetDatai(xpNavLight);
+		_RecoLight = (bool)XPLMGetDatai(xpRecoLight);
 	}
 }

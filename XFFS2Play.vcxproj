@@ -223,7 +223,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>E:\devel\boost_1_66_0;./;D:\Program Files\protobuf\include;E:\devel\XPSDK300\CHeaders\Widgets;E:\devel\XPSDK300\CHeaders\XPLM;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;XPLM300;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;XFFS_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;XPLM300;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
