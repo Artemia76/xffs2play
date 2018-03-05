@@ -61,11 +61,17 @@ namespace xffs2play
 		initialized=false;
 		socket = nullptr;
 		Log = CLogger::instance();
+#ifdef XFFS_DEBUG
+		Log->log(_("Call UDPServer Constructor"), LEVEL_DEBUG);
+#endif
 	}
 
 	UDPServer::~UDPServer()
 	{
 		stop();
+#ifdef XFFS_DEBUG
+			Log->log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
+#endif // XFFS_DEBUG
 	}
 
 	void UDPServer::start(unsigned short local_port)
@@ -137,9 +143,6 @@ namespace xffs2play
 				ClientMessage message = ClientMessage(std::string(recv_buffer.data(), recv_buffer.data() + bytes_transferred), get_or_create_client_id(remote_endpoint));
 				if (!message.first.empty())
 					send_receive_to_subscribers(message);
-#ifdef XFFS_DEBUG
-				Log->log(message.first,LEVEL_DEBUG);
-#endif // XFFS_DEBUG
 			}
 			catch (std::exception ex) {
 				Log->log(_("handle_receive: Error parsing incoming message:") + ex.what(), LEVEL_ERROR);

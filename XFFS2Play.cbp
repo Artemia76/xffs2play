@@ -6,9 +6,9 @@
 		<Option pch_mode="2" />
 		<Option compiler="clang" />
 		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
-				<Option object_output="obj/Debug/" />
+			<Target title="XP11_Debug">
+				<Option output="bin/XP11/Debug/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/XP11/Debug/" />
 				<Option type="3" />
 				<Option compiler="clang" />
 				<Option createDefFile="1" />
@@ -16,22 +16,59 @@
 				<Compiler>
 					<Add option="-g" />
 					<Add option="-DXFFS_DEBUG" />
+					<Add option="-DXPLM300" />
+					<Add directory="sim" />
 				</Compiler>
 			</Target>
-			<Target title="Release">
-				<Option output="bin/Release/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
-				<Option object_output="obj/Release/" />
+			<Target title="XP11_Release">
+				<Option output="bin/XP11/Release/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/XP11/Release/" />
 				<Option type="3" />
 				<Option compiler="clang" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-DXPLM300" />
+					<Add directory="sim" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="XP10_Debug">
+				<Option output="bin/XP10/Debug/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/XP10/Debug/" />
+				<Option type="3" />
+				<Option compiler="clang" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DXFFS_DEBUG" />
+					<Add directory="sim" />
+				</Compiler>
+			</Target>
+			<Target title="XP10_Release">
+				<Option output="bin/XP10/Release/lin.xpl" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="0" extension_auto="0" />
+				<Option object_output="obj/XP10/Release/" />
+				<Option type="3" />
+				<Option compiler="clang" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add directory="sim" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Environment>
+				<Variable name="APP_BUILD" value="2" />
+				<Variable name="APP_MAJOR" value="1" />
+				<Variable name="APP_MINOR" value="0" />
+			</Environment>
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
@@ -41,8 +78,11 @@
 			<Add option="-shared -rdynamic -nodefaultlibs -undefined_warning" />
 			<Add option="`pkg-config --cflags protobuf`" />
 			<Add option="-DXPLM200" />
-			<Add option="-DXPLM300" />
+			<Add option="-DXPLM210" />
 			<Add option="-DLIN=1" />
+			<Add option="-DAPP_MAJOR=$$(APP_MAJOR)" />
+			<Add option="-DAPP_MINOR=$$(APP_MINOR)" />
+			<Add option="-DAPP_BUILD=$$(APP_BUILD)" />
 			<Add directory="./" />
 			<Add directory="/home/gianni/projet/XPSDK300/CHeaders/XPLM" />
 			<Add directory="/home/gianni/projet/XPSDK300/CHeaders/Wrappers" />
@@ -52,10 +92,6 @@
 			<Add option="`pkg-config --libs protobuf`" />
 			<Add library="boost_system" />
 		</Linker>
-		<ExtraCommands>
-			<Add before="protoc --cpp_out ./ ./net/aircraftstate.proto" />
-			<Mode after="always" />
-		</ExtraCommands>
 		<Unit filename="gui/mainframe.cpp" />
 		<Unit filename="gui/mainframe.h" />
 		<Unit filename="net/aircraftstate.pb.cc" />
@@ -63,6 +99,8 @@
 		<Unit filename="net/aircraftstate.proto" />
 		<Unit filename="net/udpserver.cpp" />
 		<Unit filename="net/udpserver.h" />
+		<Unit filename="sim/aircraft.cpp" />
+		<Unit filename="sim/aircraft.h" />
 		<Unit filename="sim/aircraftstate.cpp" />
 		<Unit filename="sim/aircraftstate.h" />
 		<Unit filename="sim/simcontroller.cpp" />
@@ -72,6 +110,7 @@
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />
+		<Unit filename="tools/version.h" />
 		<Unit filename="xpmain.cpp" />
 		<Extensions>
 			<envvars />

@@ -22,6 +22,7 @@
 
 #include "tools/log.h"
 #include "gui/mainframe.h"
+#include "tools/version.h"
 
 namespace xffs2play
 {
@@ -47,6 +48,10 @@ namespace xffs2play
 
 	MainFrame::MainFrame()
 	{
+		m_log = CLogger::instance();
+#ifdef XFFS_DEBUG
+		m_log->log(_("Call MainFrame Constructor"), LEVEL_DEBUG);
+#endif
 #ifdef XPLM300
 		XPLMGetScreenBoundsGlobal(&global_desktop_bounds[0], &global_desktop_bounds[3], &global_desktop_bounds[2], &global_desktop_bounds[1]);
 		XPLMCreateWindow_t params;
@@ -80,15 +85,23 @@ namespace xffs2play
 		XPLMSetWindowPositioningMode(gWindow, xplm_WindowPositionFree, -1);
 		// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
 		XPLMSetWindowResizingLimits(gWindow, 400, 200, 600, 300);
-		XPLMSetWindowTitle(gWindow, "XFFSTracker");
+		XPLMSetWindowTitle(gWindow, VER_PRODUCTNAME_STR);
 #endif
 		sc=SimController::instance();
+		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
+		gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
+		gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
+
 	}
 
 
 	MainFrame::~MainFrame()
 	{
 		XPLMDestroyWindow(gWindow);
+		gWindow = NULL;
+#ifdef XFFS_DEBUG
+		m_log->log(_("Call MainFrame Destructor"), LEVEL_DEBUG);
+#endif
 	}
 
 	/*
@@ -127,13 +140,11 @@ namespace xffs2play
 		CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
 		/* Finally we draw the text into the window, also using XPLMGraphics
 		* routines.  The NULL indicates no word wrapping. */
-		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Time=") + std::to_string(toTimeStamp(state.TimeStamp))).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("Lon=") + std::to_string(state.Longitude)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Lat=") + std::to_string(state.Latitude)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Alt=") + std::to_string(state.Altitude)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("IAS=") + std::to_string(state.IASSpeed)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("OnGround=") + std::to_string(state.OnGround)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 140, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Version=") + std::string(VER_PRODUCTNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("X=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneX))).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Y=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneY))).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Z=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneZ))).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
 	}
 
 	/*

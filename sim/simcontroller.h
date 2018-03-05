@@ -32,6 +32,7 @@
 #include "net/aircraftstate.pb.h"
 #include "sim/aircraftstate.h"
 #include "tools/log.h"
+#include "aircraft.h"
 
 #define XFF2_PROTOCOL 1
 
@@ -51,12 +52,17 @@ namespace xffs2play
 		PONG = 0x01, // Pong With protocol Version
 		DATA = 0x02, // Ask start or stop receive data
 		DATA_SEND = 0x03, // Contain data of user plane
-		DISC = 0x04 // Disconnect client
+		DISC = 0x04, // Disconnect client
+		ADD_PEER = 0x05, // Add Peer
+		DEL_PEER = 0x06 // Remove Peer
 	};
 
 	typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
+	typedef std::map<uint32_t, CAircraft*> AITab_t;
+	typedef std::pair<uint32_t, CAircraft*> PeerElement;
 	typedef FFS2ClientList::value_type FFS2Client;
 	typedef unsigned char byte;
+
     class SimController : public UDPServerEventHandler
     {
 	public:
@@ -75,15 +81,23 @@ namespace xffs2play
 								SimController ();
 								~SimController ();
 	static	SimController*		m_ptSimController;
-	static	float				LoopCallback(float,float,int,void*);
-			float				Loop (float,float,int);
+	static	float				LoopNetworkCallback(float,float,int,void*);
+			float				LoopNetwork (float,float,int);
+	static	float				LoopUpdateCallback(float,float,int,void*);
+			float				LoopUpdate (float,float,int);
 			void				UpdateAircraftData();
 			void				IncomingRequest();
-			void				SendAircraftData();
+			void				SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
+			void				SendDelObjectID(uint32_t pObjectID);
+			void				ClearObjectAI();
+			uint32_t			m_ObjectID;
+			bool				m_FirstScan;
 			AirData				SendData;
+			AirData				ReceivedData;
 			CAircraftState		AircraftState;
 			CLogger*			Log;
 			FFS2ClientList		arrClients;
+			AITab_t				arrAI;
 			std::mutex			Mutex;
     };
 }

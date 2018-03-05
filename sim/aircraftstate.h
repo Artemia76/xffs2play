@@ -57,8 +57,8 @@ const	bool&			Smoke;
 
 	protected:
 		void		Update();
-virtual	void		toAirData (AirData& pAirData);
-
+		void		toAirData (AirData& pAirData);
+		void		fromAirData (const AirData& pAirData);
 
 	private:
 

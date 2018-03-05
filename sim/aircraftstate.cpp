@@ -112,6 +112,45 @@ namespace xffs2play
 		data.set_smoke(_Smoke);
 	}
 
+	void CAircraftState::fromAirData(const AirData &data)
+	{
+		_TimeStamp = fromTimeStamp(data.timestamp());
+		_Title = data.title();
+		_Model = data.model();
+		_Type = data.type();
+		_Category = data.category();
+		_Latitude = data.latitude();
+		_Longitude= data.longitude();
+		_Altitude = data.altitude();
+		_Pitch = data.pitch();
+		_Bank = data.bank();
+		_Heading = data.heading();
+		//_ElevatorPos = data.elevatorpos();
+		//_AileronPos = data.aileronpos();
+		//_RudderPos = data.rudderpos();
+		//_Door1Pos = data.door1pos();
+		//_Door2Pos = data.door2pos();
+		//_Door3Pos = data.door3pos();
+		//_Door4Pos = data.door4pos();
+		_StateEng1 = data.stateeng1();
+		_StateEng2 = data.stateeng2();
+		_StateEng3 = data.stateeng3();
+		_StateEng4 = data.stateeng4();
+		_ThrottleEng1 = data.throttleeng1();
+		_ThrottleEng2 = data.throttleeng2();
+		_ThrottleEng3 = data.throttleeng3();
+		_ThrottleEng4 = data.throttleeng4();
+		//_GearPos = data.gearpos();
+		//_FlapsIndex = data.flapsindex();
+		_LandingLight = data.landinglight();
+		_StrobeLight = data.strobelight();
+		_BeaconLight = data.beaconlight();
+		_NavLight = data.navlight();
+		_RecoLight = data.recolight();
+		_Smoke = data.smoke();
+		_OnGround = data.onground();
+	}
+
 	void CAircraftState::Update()
 	{
 		_TimeStamp = Now();

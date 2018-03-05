@@ -94,9 +94,13 @@ static	XPLMCursorStatus	HandleCursorCallback(
 							{ return xplm_CursorDefault; }
 #endif
 		XPLMWindowID		gWindow = NULL;
+		XPLMDataRef			gPlaneX = NULL;
+		XPLMDataRef			gPlaneY = NULL;
+		XPLMDataRef			gPlaneZ = NULL;
 		int					global_desktop_bounds[4];
 		int					gClicked = 0;
 		SimController*		sc;
 		std::string			lastMessage;
+		CLogger*			m_log;
 	};
 }

@@ -8,6 +8,8 @@
 *.exe
 *.zip
 *.7z
+*.layout
+*.depend
 
 # Build results
 

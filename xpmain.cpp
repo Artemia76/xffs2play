@@ -21,7 +21,9 @@
 ****************************************************************************/
 
 #include <stdio.h>
+#include <XPLMMenus.h>
 #include "tools/log.h"
+#include "tools/version.h"
 #include "gui/mainframe.h"
 #include "net/udpserver.h"
 #include "sim/simcontroller.h"
@@ -29,6 +31,61 @@
 #include <string>
 
 using namespace xffs2play;
+
+int g_menu_container_idx; // The index of our menu item in the Plugins menu
+XPLMMenuID g_menu_id;
+void menu_handler(void *, void *);
+MainFrame* mainWindow=nullptr;
+
+/*
+* XPluginDisable
+*
+* We do not need to do anything when we are disabled, but we must provide the handler.
+*
+*/
+PLUGIN_API void XPluginDisable(void)
+{
+	XPLMDestroyMenu(g_menu_id);
+	XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
+	SimController::kill();
+	if (mainWindow!=nullptr)
+	{
+		MainFrame::kill();
+		mainWindow=nullptr;
+	}
+	UDPServer::kill();
+	CLogger::instance()->log(_("Plugin Disable"), LEVEL_INFO);
+}
+
+/*
+* XPluginStop
+*
+* Our cleanup routine deallocates our window.
+*
+*/
+PLUGIN_API void	XPluginStop(void)
+{
+	CLogger::instance()->log(_("Plugin Stopped"), LEVEL_INFO);
+	CLogger::kill();
+}
+
+/*
+* XPluginEnable.
+*
+* We don't do any enable-specific initialization, but we must return 1 to indicate
+* that we may be enabled at this time.
+*
+*/
+PLUGIN_API int XPluginEnable(void)
+{
+	g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODUCTNAME_STR, 0, 0);
+	g_menu_id = XPLMCreateMenu(VER_PRODUCTNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, menu_handler, NULL);
+	XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
+	UDPServer::instance()->start();
+	SimController::instance();
+	CLogger::instance()->log(_("Plugin Enable"));
+	return 1;
+}
 
 /*
 * XPluginStart
@@ -42,52 +99,10 @@ PLUGIN_API int XPluginStart(
 	char *		outSig,
 	char *		outDesc)
 {
-	strcpy(outName, "XFFSTracker");
-	strcpy(outSig, "ffsimulateur2.fr");
-	strcpy(outDesc, "Multijoueur FFS2.");
-	CLogger::instance()->log("Plugin loaded");
-	return 1;
-}
-
-/*
-* XPluginStop
-*
-* Our cleanup routine deallocates our window.
-*
-*/
-PLUGIN_API void	XPluginStop(void)
-{
-
-}
-
-/*
-* XPluginDisable
-*
-* We do not need to do anything when we are disabled, but we must provide the handler.
-*
-*/
-PLUGIN_API void XPluginDisable(void)
-{
-	SimController::kill();
-	MainFrame::kill();
-	UDPServer::kill();
-	CLogger::instance()->log("Plugin Disable", LEVEL_INFO);
-	CLogger::kill();
-}
-
-/*
-* XPluginEnable.
-*
-* We don't do any enable-specific initialization, but we must return 1 to indicate
-* that we may be enabled at this time.
-*
-*/
-PLUGIN_API int XPluginEnable(void)
-{
-	UDPServer::instance()->start();
-	SimController::instance();
-	MainFrame::instance();
-	CLogger::instance()->log("Plugin Enable");
+	strcpy(outName, VER_PRODUCTNAME_STR);
+	strcpy(outSig, VER_COMPANYDOMAIN_STR);
+	strcpy(outDesc, VER_FILEDESCRIPTION_STR);
+	CLogger::instance()->log(_("Plugin loaded"));
 	return 1;
 }
 
@@ -102,4 +117,22 @@ PLUGIN_API void XPluginReceiveMessage(
 	long			inMessage,
 	void *			inParam)
 {
+}
+
+void menu_handler(void * in_menu_ref, void * in_item_ref)
+{
+	if(!strcmp((const char *)in_item_ref, "Menu Item 1"))
+	{
+		if (mainWindow==nullptr)
+		{
+			mainWindow=MainFrame::instance();
+			XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Hide Debug Window",1);
+		}
+		else
+		{
+			MainFrame::kill();
+			mainWindow=nullptr;
+			XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
+		}
+	}
 }
