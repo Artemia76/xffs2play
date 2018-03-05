@@ -205,7 +205,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>E:\devel\boost_1_66_0;./;D:\Program Files\protobuf\include;E:\devel\XPSDK213\SDK\CHeaders\Widgets;E:\devel\XPSDK213\SDK\CHeaders\XPLM;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;XPLM210;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -223,7 +223,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>E:\devel\boost_1_66_0;./;D:\Program Files\protobuf\include;E:\devel\XPSDK300\CHeaders\Widgets;E:\devel\XPSDK300\CHeaders\XPLM;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;XPLM300;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>IBM;WIN32_LEAN_AND_MEAN;WIN32;XPLM200;XPLM210;XPLM300;NDEBUG;_WINDOWS;_USRDLL;SIMDATA_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -238,6 +238,7 @@
     <ClCompile Include="MainDLL.cpp" />
     <ClCompile Include="net\aircraftstate.pb.cc" />
     <ClCompile Include="net\udpserver.cpp" />
+    <ClCompile Include="sim\aircraft.cpp" />
     <ClCompile Include="sim\aircraftstate.cpp" />
     <ClCompile Include="sim\simcontroller.cpp" />
     <ClCompile Include="tools\datetime.cpp" />
@@ -248,11 +249,13 @@
     <ClInclude Include="gui\mainframe.h" />
     <ClInclude Include="net\aircraftstate.pb.h" />
     <ClInclude Include="net\udpserver.h" />
+    <ClInclude Include="sim\aircraft.h" />
     <ClInclude Include="sim\aircraftstate.h" />
     <ClInclude Include="sim\simcontroller.h" />
     <ClInclude Include="tools\datetime.h" />
     <ClInclude Include="tools\hexa.h" />
     <ClInclude Include="tools\log.h" />
+    <ClInclude Include="tools\version.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="net\aircraftstate.proto" />

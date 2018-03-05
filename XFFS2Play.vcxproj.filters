@@ -24,6 +24,9 @@
     <ClCompile Include="sim\simcontroller.cpp">
       <Filter>sim</Filter>
     </ClCompile>
+    <ClCompile Include="sim\aircraft.cpp">
+      <Filter>sim</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gui">
@@ -63,6 +66,12 @@
     </ClInclude>
     <ClInclude Include="sim\simcontroller.h">
       <Filter>sim</Filter>
+    </ClInclude>
+    <ClInclude Include="sim\aircraft.h">
+      <Filter>sim</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\version.h">
+      <Filter>tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

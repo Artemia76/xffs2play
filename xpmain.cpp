@@ -78,8 +78,8 @@ PLUGIN_API void	XPluginStop(void)
 */
 PLUGIN_API int XPluginEnable(void)
 {
-	g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODUCTNAME_STR, 0, 0);
-	g_menu_id = XPLMCreateMenu(VER_PRODUCTNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, menu_handler, NULL);
+	g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
+	g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, menu_handler, NULL);
 	XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
 	UDPServer::instance()->start();
 	SimController::instance();
@@ -99,7 +99,7 @@ PLUGIN_API int XPluginStart(
 	char *		outSig,
 	char *		outDesc)
 {
-	strcpy(outName, VER_PRODUCTNAME_STR);
+	strcpy(outName, VER_PRODNAME_STR);
 	strcpy(outSig, VER_COMPANYDOMAIN_STR);
 	strcpy(outDesc, VER_FILEDESCRIPTION_STR);
 	CLogger::instance()->log(_("Plugin loaded"));

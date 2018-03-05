@@ -140,7 +140,7 @@ namespace xffs2play
 		CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
 		/* Finally we draw the text into the window, also using XPLMGraphics
 		* routines.  The NULL indicates no word wrapping. */
-		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Version=") + std::string(VER_PRODUCTNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Version=") + std::string(VER_PRODNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("X=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneX))).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Y=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneY))).c_str(), NULL, xplmFont_Basic);
 		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Z=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneZ))).c_str(), NULL, xplmFont_Basic);

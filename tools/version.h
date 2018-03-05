@@ -26,19 +26,23 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
+#define APP_MAJOR					1
+#define APP_MINOR					0
+#define APP_BUILD					2
+
 #define VER_FILEVERSION             APP_MAJOR,APP_MINOR,APP_BUILD,0
 #define VER_FILEVERSION_STR         STR(APP_MAJOR) "." STR(APP_MINOR) "." STR(APP_BUILD) ".0\0"
 
-#define VER_PRODUCTVERSION          APP_MAJOR,APP_MINOR,APP_BUILD,0
-#define VER_PRODUCTVERSION_STR      STR(APP_MAJOR) "." STR(APP_MINOR) "\\" STR(APP_BUILD)
+#define VER_PRODVERSION				APP_MAJOR,APP_MINOR,APP_BUILD,0
+#define VER_PRODVERSION_STR			STR(APP_MAJOR) "." STR(APP_MINOR) "\\" STR(APP_BUILD)
 
-#define VER_COMPANYNAME_STR         "FFS2"
+#define VER_COMPANY_STR				"FFS2"
 #define VER_FILEDESCRIPTION_STR     "Multiplayer Plugin"
 #define VER_INTERNALNAME_STR        "XFFS2Play"
 #define VER_LEGALCOPYRIGHT_STR      "Copyright © 2017 FFSimulateur2.fr"
 #define VER_LEGALTRADEMARKS1_STR    "All Rights Reserved"
 #define VER_LEGALTRADEMARKS2_STR    VER_LEGALTRADEMARKS1_STR
-#define VER_PRODUCTNAME_STR         "XFFS2Play"
+#define VER_PRODNAME_STR			"XFFS2Play"
 
 #define VER_COMPANYDOMAIN_STR       "ffsimulateur2.fr"
 #endif
