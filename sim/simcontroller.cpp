@@ -132,35 +132,9 @@ namespace xffs2play
 								float inElapsedTimeSinceLastFlightLoop,
 								int inCounter)
 	{
-		if (m_FirstScan)
-		{
-			m_FirstScan=false;
-			int planeCount;
-			long index;
-			char *pAircraft[10];
-			char FileName[256], AircraftPath[9][256];
-			memset(pAircraft, 0, sizeof(pAircraft));
-			XPLMCountAircraft(&planeCount, 0, 0);
-			if (planeCount > 1)
-			{
-				for (index = 0; index < planeCount-1; index++)
-				{
-					XPLMGetNthAircraftModel(index+1, FileName, AircraftPath[index]);
-					pAircraft[index] = (char *)AircraftPath[index];
-				}
-
-				if (XPLMAcquirePlanes((char **)&pAircraft, NULL, NULL))
-					for (index = 0; index < planeCount-1; index++)
-					{
-						XPLMSetAircraftModel(index+1, pAircraft[index]);
-						XPLMDisableAIForPlane(index+1);
-					}
-			}
-
-		}
         for (auto it : arrAI)
 		{
-			it.second->setAircraftData();
+			if (it.second!=nullptr) it.second->setAircraftData();
 		}
 		return 0.2;
 	}

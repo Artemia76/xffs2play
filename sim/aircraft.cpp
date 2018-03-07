@@ -46,7 +46,8 @@ namespace xffs2play
 		dr_plane_phi = XPLMFindDataRef(phi_str.c_str());
 		dr_plane_psi = XPLMFindDataRef(psi_str.c_str());
 		dr_plane_gear_deploy = XPLMFindDataRef(gear_deploy_str.c_str());
-		dr_plane_throttle = XPLMFindDataRef(throttle_str.c_str());
+		dr_plane_throttle = XPLMFindDataRef(tdihrottle_str.c_str());
+		XPLMDisableAIForPlane(m_NumberID);
 		m_log = CLogger::instance();
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::creation ref base = ")+x_str ,LEVEL_DEBUG);

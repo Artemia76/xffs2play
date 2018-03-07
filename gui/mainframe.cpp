@@ -85,7 +85,7 @@ namespace xffs2play
 		XPLMSetWindowPositioningMode(gWindow, xplm_WindowPositionFree, -1);
 		// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
 		XPLMSetWindowResizingLimits(gWindow, 400, 200, 600, 300);
-		XPLMSetWindowTitle(gWindow, VER_PRODUCTNAME_STR);
+		XPLMSetWindowTitle(gWindow, VER_PRODNAME_STR);
 #endif
 		sc=SimController::instance();
 		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
