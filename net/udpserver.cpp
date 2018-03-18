@@ -70,7 +70,7 @@ namespace xffs2play
 	{
 		stop();
 #ifdef XFFS_DEBUG
-			Log->log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
+		Log->log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
 	}
 

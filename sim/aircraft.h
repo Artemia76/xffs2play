@@ -25,41 +25,65 @@
 #include <string>
 #include <XPLMPlanes.h>
 #include <XPLMDataAccess.h>
+#include <XPLMScenery.h>
+#include "sim/aircraftstate.h"
 #include "net/aircraftstate.pb.h"
 #include "tools/log.h"
+#include "tools/datetime.h"
 
 namespace xffs2play
 {
 	class CAircraft
 	{
 		public:
-						CAircraft(int pNumberId, std::string pCallSign);
-						~CAircraft();
-			double		plane_x;
-			double		plane_y;
-			double		plane_z;
-			float		plane_the;
-			float		plane_phi;
-			float		plane_psi;
-			float		plane_gear_deploy[5];
-			float		plane_throttle[8];
-			void		getAircraftData(void);
-			void		setAircraftData(void);
-			void		fromAirData (const AirData& pAirData);
-			bool		isCallSign(std::string& pCallSign);
+							CAircraft(int pNumberId, std::string pCallSign);
+virtual						~CAircraft();
+			double			plane_x;
+			double			plane_y;
+			double			plane_z;
+			float			plane_the;
+			float			plane_phi;
+			float			plane_psi;
+			float			plane_gear_deploy[5];
+			float			plane_throttle[8];
+			void			getAircraftData(void);
+			void			setAircraftData(void);
+			void			fromAirData (const AirData& pAirData);
+			bool			isCallSign(std::string& pCallSign);
 
 		private:
-			int	m_NumberID;
-			CLogger*	m_log;
-			std::string	m_CallSign;
-			XPLMDataRef	dr_plane_x;
-			XPLMDataRef	dr_plane_y;
-			XPLMDataRef	dr_plane_z;
-			XPLMDataRef	dr_plane_the;
-			XPLMDataRef	dr_plane_phi;
-			XPLMDataRef	dr_plane_psi;
-			XPLMDataRef	dr_plane_gear_deploy;
-			XPLMDataRef	dr_plane_throttle;
+			int				m_NumberID;
+			CLogger*		m_log;
+			std::string		m_CallSign;
+			bool			m_onGround;
+			XPLMDataRef		dr_plane_x;
+			XPLMDataRef		dr_plane_y;
+			XPLMDataRef		dr_plane_z;
+			XPLMDataRef		dr_plane_the;
+			XPLMDataRef		dr_plane_phi;
+			XPLMDataRef		dr_plane_psi;
+			XPLMDataRef		dr_plane_gear_deploy;
+			XPLMDataRef		dr_plane_throttle;
+			XPLMProbeRef	m_terrRef;
+			XPLMProbeInfo_t	m_terrData;
+			CAircraftState	m_actualPos;
+			CAircraftState	m_futurData;
+			CAircraftState	m_oldData;
+			CAircraftState	m_data;
+			CAircraftState	m_AIData;
+			int				m_spawned;
+			timespan		m_predictiveTime;
+			timespan		m_remoteRefreshRate;
+			timespan		m_refreshRate;
+			datetime		m_lastData;
+			datetime		m_lastRender;
+			double			m_deltaAltitude;
+			double			m_deltaLongitude;
+			double			m_deltaLatitude;
+			double			m_deltaHeading;
+			double			m_deltaPitch;
+			double			m_deltaBank;
+			double			m_old_fps;
 	};
 }
 

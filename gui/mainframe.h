@@ -27,6 +27,7 @@
 #include <XPLMDisplay.h>
 #include <XPLMGraphics.h>
 #include <XPLMDataAccess.h>
+#include <XPLMScenery.h>
 
 #include "sim/simcontroller.h"
 #include "tools/log.h"
@@ -56,13 +57,13 @@ static	void				kill();
 static	MainFrame*			m_ptMainFrame;
 
 							MainFrame();
-							~MainFrame();
+virtual							~MainFrame();
 
-static	void				DrawWindowCallback(
+static	void				stDrawWindowCallback(
 								XPLMWindowID inWindowID,
 								void* inRefcon);
-
-static	void				HandleKeyCallback(
+		void				DrawWindowCallback();
+static	void				stHandleKeyCallback(
 								XPLMWindowID inWindowID,
 								char inKey,
 								XPLMKeyFlags inFlags,
@@ -70,7 +71,7 @@ static	void				HandleKeyCallback(
 								void* inRefcon,
 								int losingFocus);
 
-static	int					HandleMouseClickCallback(
+static	int					stHandleMouseClickCallback(
 								XPLMWindowID inWindowID,
 								int x,
 								int	y,
@@ -78,7 +79,7 @@ static	int					HandleMouseClickCallback(
 								void* inRefcon);
 #ifdef XPLM300
 
-static	int					HandleMouseWheelCallback(
+static	int					stHandleMouseWheelCallback(
 								XPLMWindowID inWindowID,
 								int x,
 								int y,
@@ -86,19 +87,24 @@ static	int					HandleMouseWheelCallback(
 								int clicks,
 								void * in_refcon)
 							{ return 0; }
-static	XPLMCursorStatus	HandleCursorCallback(
+static	XPLMCursorStatus	stHandleCursorCallback(
 								XPLMWindowID in_window_id,
 								int x,
 								int y,
 								void* in_refcon)
 							{ return xplm_CursorDefault; }
 #endif
+		int					left;
+		int					top;
+		int					right;
+		int					bottom;
 		XPLMWindowID		gWindow = NULL;
 		XPLMDataRef			gPlaneX = NULL;
 		XPLMDataRef			gPlaneY = NULL;
 		XPLMDataRef			gPlaneZ = NULL;
+		XPLMProbeRef		gTerrain = NULL;
+		XPLMProbeInfo_t		gTerrData;
 		int					global_desktop_bounds[4];
-		int					gClicked = 0;
 		SimController*		sc;
 		std::string			lastMessage;
 		CLogger*			m_log;

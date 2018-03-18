@@ -61,12 +61,12 @@ namespace xffs2play
 		params.right = params.left + 400;
 		params.top = params.bottom + 200;
 		params.visible = 1;
-		params.drawWindowFunc = &MainFrame::DrawWindowCallback;
-		params.handleMouseClickFunc = &MainFrame::HandleMouseClickCallback;
-		params.handleRightClickFunc = &MainFrame::HandleMouseClickCallback;
-		params.handleMouseWheelFunc = &MainFrame::HandleMouseWheelCallback;
-		params.handleKeyFunc = &MainFrame::HandleKeyCallback;
-		params.handleCursorFunc = &MainFrame::HandleCursorCallback;
+		params.drawWindowFunc = &MainFrame::stDrawWindowCallback;
+		params.handleMouseClickFunc = &MainFrame::stHandleMouseClickCallback;
+		params.handleRightClickFunc = &MainFrame::stHandleMouseClickCallback;
+		params.handleMouseWheelFunc = &MainFrame::stHandleMouseWheelCallback;
+		params.handleKeyFunc = &MainFrame::stHandleKeyCallback;
+		params.handleCursorFunc = &MainFrame::stHandleCursorCallback;
 		params.refcon = NULL;
 		params.layer = xplm_WindowLayerFloatingWindows;
 		params.decorateAsFloatingWindow = 1;
@@ -75,9 +75,9 @@ namespace xffs2play
 		gWindow = XPLMCreateWindow(
 			50, 600, 300, 200,
 			1,
-			&MainFrame::DrawWindowCallback,
-			&MainFrame::HandleKeyCallback,
-			&MainFrame::HandleMouseClickCallback,
+			&MainFrame::stDrawWindowCallback,
+			&MainFrame::stHandleKeyCallback,
+			&MainFrame::stHandleMouseClickCallback,
 			NULL);
 #endif
 #ifdef XPLM300
@@ -91,17 +91,31 @@ namespace xffs2play
 		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
 		gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
 		gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
+		gTerrain = XPLMCreateProbe(xplm_ProbeY);
+		gTerrData.structSize=sizeof(XPLMProbeInfo_t);
 
 	}
 
 
 	MainFrame::~MainFrame()
 	{
+		XPLMDestroyProbe(gTerrain);
 		XPLMDestroyWindow(gWindow);
 		gWindow = NULL;
 #ifdef XFFS_DEBUG
 		m_log->log(_("Call MainFrame Destructor"), LEVEL_DEBUG);
 #endif
+	}
+
+
+	void MainFrame::stDrawWindowCallback(
+		XPLMWindowID         inWindowID,
+		void *               inRefcon)
+	{
+		if (m_ptMainFrame!=nullptr)
+		{
+			if (inWindowID == m_ptMainFrame->gWindow) m_ptMainFrame->DrawWindowCallback();
+		}
 	}
 
 	/*
@@ -113,9 +127,7 @@ namespace xffs2play
 	* changes; we are redrawn by the sim continuously.
 	*
 	*/
-	void MainFrame::DrawWindowCallback(
-		XPLMWindowID         inWindowID,
-		void *               inRefcon)
+	void MainFrame::DrawWindowCallback()
 	{
 		XPLMSetGraphicsState(
 						 0 /* no fog */,
@@ -127,24 +139,30 @@ namespace xffs2play
 						 0 /* no depth writing */
 						 );
 
-		int		left, top, right, bottom;
 		float	color[] = { 1.0, 1.0, 1.0 }; 	/* RGB White */
-		if (inWindowID != m_ptMainFrame->gWindow) return;
-												/* First we get the location of the window passed in to us. */
-		XPLMGetWindowGeometry(inWindowID, &left, &top, &right, &bottom);
+		float X=XPLMGetDataf(gPlaneX);
+		float Y=XPLMGetDataf(gPlaneY);
+		float Z=XPLMGetDataf(gPlaneZ);
+		XPLMProbeResult result = XPLMProbeTerrainXYZ(gTerrain,X,0,Z,&gTerrData);
+		if (result != xplm_ProbeHitTerrain)
+		{
+			m_log->log(_("Terrain Probe fail = ")+std::to_string(result), LEVEL_DEBUG);
+		}
+		XPLMGetWindowGeometry(gWindow, &left, &top, &right, &bottom);
 
 		/* We now use an XPLMGraphics routine to draw a translucent dark
 		* rectangle that is our window's shape. */
 		XPLMDrawTranslucentDarkBox(left, top, right, bottom);
 
-		CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
+		//CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
 		/* Finally we draw the text into the window, also using XPLMGraphics
 		* routines.  The NULL indicates no word wrapping. */
 		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Version=") + std::string(VER_PRODNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("X=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneX))).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Y=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneY))).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Z=") + std::to_string(XPLMGetDataf(m_ptMainFrame->gPlaneZ))).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("Log=") + m_ptMainFrame->lastMessage).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("X=") + std::to_string(X)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Y=") + std::to_string(Y)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Z=") + std::to_string(Z)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("MeshY=") + std::to_string(gTerrData.locationY)).c_str(), NULL, xplmFont_Basic);
+		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("Log=") + lastMessage).c_str(), NULL, xplmFont_Basic);
 	}
 
 	/*
@@ -154,7 +172,7 @@ namespace xffs2play
 	* we simply don't use keyboard input.
 	*
 	*/
-	void MainFrame::HandleKeyCallback(
+	void MainFrame::stHandleKeyCallback(
 		XPLMWindowID         inWindowID,
 		char                 inKey,
 		XPLMKeyFlags         inFlags,
@@ -172,25 +190,13 @@ namespace xffs2play
 	* cycle.
 	*
 	*/
-	int MainFrame::HandleMouseClickCallback(
+	int MainFrame::stHandleMouseClickCallback(
 		XPLMWindowID         inWindowID,
 		int                  x,
 		int                  y,
 		XPLMMouseStatus      inMouse,
 		void *               inRefcon)
 	{
-		/* If we get a down or up, toggle our status click.  We will
-		* never get a down without an up if we accept the down. */
-		if ((inMouse == xplm_MouseDown) || (inMouse == xplm_MouseUp))
-			m_ptMainFrame->gClicked = 1 - m_ptMainFrame->gClicked;
-
-		/* Returning 1 tells X-Plane that we 'accepted' the click; otherwise
-		* it would be passed to the next window behind us.  If we accept
-		* the click we get mouse moved and mouse up callbacks, if we don't
-		* we do not get any more callbacks.  It is worth noting that we
-		* will receive mouse moved and mouse up even if the mouse is dragged
-		* out of our window's box as long as the click started in our window's
-		* box. */
 		return 1;
 	}
 

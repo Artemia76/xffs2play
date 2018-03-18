@@ -29,9 +29,10 @@ namespace xffs2play
 
 	class CLogger_Event_Handler
 	{
-friend	class	CLogger;
+	friend	class	CLogger;
+
 	protected:
-virtual	void	OnLogMessage(const std::string&) {}
+	virtual	void	OnLogMessage(const std::string&) {}
 	public:
 				CLogger_Event_Handler();
 				~CLogger_Event_Handler();
@@ -41,7 +42,7 @@ virtual	void	OnLogMessage(const std::string&) {}
 	{
 	private:
 										CLogger();
-										~CLogger();
+	virtual								~CLogger();
 	static	CLogger*					m_ptLogger;
 			std::vector<std::string>	arrMessages;
 			std::vector<CLogger_Event_Handler*> arrSubscribers;

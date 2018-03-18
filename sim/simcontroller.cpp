@@ -31,7 +31,7 @@ namespace xffs2play
 	SimController::SimController()
 	{
 		XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2, this);
-		XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, 1.0, this);
+		XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
 		Log = CLogger::instance();
 		m_ObjectID=0;
 		m_FirstScan=true;
@@ -85,8 +85,8 @@ namespace xffs2play
 								float inElapsedTimeSinceLastFlightLoop,
 								int inCounter)
 	{
-		AircraftState.Update();
-		AircraftState.toAirData(SendData);
+		UserAircraft.Update();
+		UserAircraft.toAirData(SendData);
 		for (auto it : arrClients)
 		{
 			// Client want data
@@ -125,18 +125,44 @@ namespace xffs2play
 		{
 			return m_ptSimController->LoopUpdate(inElapsedSinceLastCall,inElapsedTimeSinceLastFlightLoop, inCounter);
 		}
-		return 0;
+		return 0.02;
 	}
 
 	float SimController::LoopUpdate(float inElapsedSinceLastCall,
 								float inElapsedTimeSinceLastFlightLoop,
 								int inCounter)
 	{
+		if (m_FirstScan)
+		{
+			m_FirstScan=false;
+			int planeCount;
+			long index;
+			char *pAircraft[20];
+			char FileName[256], AircraftPath[19][256];
+			memset(pAircraft, 0, sizeof(pAircraft));
+			XPLMCountAircraft(&planeCount, 0, 0);
+			if (planeCount > 1)
+			{
+				for (index = 0; index < planeCount-1; index++)
+				{
+					XPLMGetNthAircraftModel(index+1, FileName, AircraftPath[index]);
+					pAircraft[index] = (char *)AircraftPath[index];
+				}
+
+				if (XPLMAcquirePlanes((char **)&pAircraft, NULL, NULL))
+					for (index = 0; index < planeCount-1; index++)
+					{
+						XPLMSetAircraftModel(index+1, pAircraft[index]);
+						XPLMDisableAIForPlane(index+1);
+					}
+			}
+
+		}
         for (auto it : arrAI)
 		{
-			if (it.second!=nullptr) it.second->setAircraftData();
+			it.second->setAircraftData();
 		}
-		return 0.2;
+		return 0.02;
 	}
 
 	void SimController::OnAddClient(const uint32_t pClient)
@@ -243,7 +269,7 @@ namespace xffs2play
                         data.read(Buff, Len);
                         Buff[Len]='\0';
                         CallSign = Buff;
-                        delete Buff;
+                        delete[] Buff;
 #ifdef XFFS_DEBUG
 						Log->log(_("Receive Add Peer = ") + CallSign, LEVEL_DEBUG);
 #endif

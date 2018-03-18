@@ -30,7 +30,7 @@
 #include "XPLMDataAccess.h"
 #include "XPLMProcessing.h"
 #include "net/aircraftstate.pb.h"
-#include "sim/aircraftstate.h"
+#include "sim/useraircraft.h"
 #include "tools/log.h"
 #include "aircraft.h"
 
@@ -66,12 +66,12 @@ namespace xffs2play
     class SimController : public UDPServerEventHandler
     {
 	public:
-	static	SimController*		instance();
-	static	void				kill();
+static		SimController*		instance();
+static		void				kill();
 
 			CAircraftState&		GetAircraftState()
 								{
-									return AircraftState;
+									return UserAircraft;
 								}
 	protected:
 			void				OnReceiveData(const ClientMessage& pMessage);
@@ -79,11 +79,11 @@ namespace xffs2play
 			void				OnRemoveClient(uint32_t pClient);
 	private:
 								SimController ();
-								~SimController ();
-	static	SimController*		m_ptSimController;
-	static	float				LoopNetworkCallback(float,float,int,void*);
+virtual							~SimController ();
+static		SimController*		m_ptSimController;
+static		float				LoopNetworkCallback(float,float,int,void*);
 			float				LoopNetwork (float,float,int);
-	static	float				LoopUpdateCallback(float,float,int,void*);
+static		float				LoopUpdateCallback(float,float,int,void*);
 			float				LoopUpdate (float,float,int);
 			void				UpdateAircraftData();
 			void				IncomingRequest();
@@ -94,10 +94,11 @@ namespace xffs2play
 			bool				m_FirstScan;
 			AirData				SendData;
 			AirData				ReceivedData;
-			CAircraftState		AircraftState;
+			CUserAircraft		UserAircraft;
 			CLogger*			Log;
 			FFS2ClientList		arrClients;
 			AITab_t				arrAI;
 			std::mutex			Mutex;
+			std::vector<char*>	m_arrAircraftModel;
     };
 }

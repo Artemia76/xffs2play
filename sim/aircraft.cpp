@@ -22,13 +22,19 @@
 
 #include "aircraft.h"
 #include "XPLMGraphics.h"
+#include "XPLMScenery.h"
 
 namespace xffs2play
 {
 	CAircraft::CAircraft(int pNumberID, std::string pCallSign)
 	{
+		m_spawned = 0;
+		m_old_fps = 0;
 		m_NumberID=pNumberID;
 		m_CallSign = pCallSign;
+
+		m_lastRender = Now();
+
 		std::string ref_base = _("sim/multiplayer/position/plane") + std::to_string(m_NumberID);
 		std::string x_str = ref_base + _("_x");
 		std::string y_str = ref_base + _("_y");
@@ -46,8 +52,13 @@ namespace xffs2play
 		dr_plane_phi = XPLMFindDataRef(phi_str.c_str());
 		dr_plane_psi = XPLMFindDataRef(psi_str.c_str());
 		dr_plane_gear_deploy = XPLMFindDataRef(gear_deploy_str.c_str());
-		dr_plane_throttle = XPLMFindDataRef(tdihrottle_str.c_str());
-		XPLMDisableAIForPlane(m_NumberID);
+		dr_plane_throttle = XPLMFindDataRef(throttle_str.c_str());
+
+		//Creat Terrain Probe to retrieve terrain altitude just below the AI
+
+		m_terrRef = XPLMCreateProbe(xplm_ProbeY);
+		m_terrData.structSize=sizeof(XPLMProbeInfo_t);
+
 		m_log = CLogger::instance();
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::creation ref base = ")+x_str ,LEVEL_DEBUG);
@@ -56,6 +67,7 @@ namespace xffs2play
 
 	CAircraft::~CAircraft()
 	{
+		XPLMDestroyProbe(m_terrRef);
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::destruction of plane ") + std::to_string(m_NumberID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -75,30 +87,155 @@ namespace xffs2play
 
 	void CAircraft::setAircraftData(void)
 	{
-		XPLMSetDataf(dr_plane_x, plane_x);
-		XPLMSetDataf(dr_plane_y, plane_y);
-		XPLMSetDataf(dr_plane_z, plane_z);
-		XPLMSetDataf(dr_plane_the, plane_the);
-		XPLMSetDataf(dr_plane_phi, plane_phi);
-		XPLMSetDataf(dr_plane_psi, plane_psi);
-		XPLMSetDatavf(dr_plane_gear_deploy, plane_gear_deploy, 0, 5);
-		XPLMSetDatavf(dr_plane_throttle, plane_throttle, 0, 8);
+		datetime curr_time = Now();
+		double interFPS = (curr_time - m_lastRender).count();
+		double FPS = 0;
+		if (interFPS>0) FPS = 1000.0 / interFPS;
+		double FPSAvg = FPS;
+		if ((m_old_fps != 0) && (FPS!=0))
+		{
+			FPSAvg = (double)(((double)FPS + m_old_fps)/2);
+		}
+		m_old_fps = FPS;
+		if (m_spawned>=1)
+		{
+			m_AIData.AileronPos = m_data.AileronPos;
+			m_AIData.ElevatorPos = m_data.ElevatorPos;
+			m_AIData.RudderPos = m_data.RudderPos;
+			m_AIData.SpoilerPos = m_data.SpoilerPos;
+			m_AIData.ParkingBrakePos = m_data.ParkingBrakePos;
+			m_AIData.Door1Pos = m_data.Door1Pos;
+			m_AIData.Door2Pos = m_data.Door2Pos;
+			m_AIData.Door3Pos = m_data.Door3Pos;
+			m_AIData.Door4Pos = m_data.Door4Pos;
+			m_AIData.StateEng1 = m_data.StateEng1;
+			m_AIData.StateEng2 = m_data.StateEng2;
+			m_AIData.StateEng3 = m_data.StateEng3;
+			m_AIData.StateEng4 = m_data.StateEng4;
+			m_AIData.ThrottleEng1 = m_data.ThrottleEng1;
+			m_AIData.ThrottleEng2 = m_data.ThrottleEng2;
+			m_AIData.ThrottleEng3 = m_data.ThrottleEng3;
+			m_AIData.ThrottleEng4 = m_data.ThrottleEng4;
+			m_AIData.Squawk = m_data.Squawk;
+			m_AIData.GearPos =m_data.GearPos;
+			m_AIData.FlapsIndex = m_data.FlapsIndex;
+			m_AIData.LandingLight = m_data.LandingLight;
+			m_AIData.StrobeLight =m_data.StrobeLight;
+			m_AIData.BeaconLight = m_data.BeaconLight;
+			m_AIData.NavLight = m_data.NavLight;
+			m_AIData.RecoLight = m_data.RecoLight;
+			m_AIData.Smoke = m_data.Smoke;
+			if ((m_spawned>=2) && (FPSAvg!=0))
+			{
+				timespan Temps = duration_cast<milliseconds>(milliseconds(1000) / FPSAvg);
+				double CoefInterpol = (double)Temps.count() / (double)duration_cast<milliseconds>(m_futurData.TimeStamp - m_actualPos.TimeStamp).count();
+				m_lastRender = curr_time;
+				m_AIData.Altitude += m_deltaAltitude * CoefInterpol;
+				m_AIData.Latitude += m_deltaLatitude * CoefInterpol;
+				m_AIData.Longitude += m_deltaLongitude * CoefInterpol;
+				m_AIData.Heading += m_deltaHeading * CoefInterpol;
+				if (m_AIData.Heading < 0) m_AIData.Heading += 360;
+				if (m_AIData.Heading >= 360) m_AIData.Heading -= 360;
+				m_AIData.Pitch += m_deltaPitch * CoefInterpol;
+				if (m_AIData.Pitch < -180) m_AIData.Pitch += 360;
+				if (m_AIData.Pitch >= 180) m_AIData.Pitch -= 360;
+				m_AIData.Bank += m_deltaBank * CoefInterpol;
+				if (m_AIData.Bank < -180) m_AIData.Bank += 360;
+				if (m_AIData.Bank >= 180) m_AIData.Bank -= 360;
+			}
+			XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);
+			XPLMProbeTerrainXYZ(m_terrRef,plane_x,0,plane_z,&m_terrData);
+			if (m_AIData.OnGround &&(plane_y < m_terrData.locationY))
+			{
+				plane_y = m_terrData.locationY;
+			}
+			for (int i=0; i<5 ; i++)
+			{
+				plane_gear_deploy[i]=(float)m_AIData.GearPos;
+			}
+			plane_throttle[0] = (float)m_AIData.ThrottleEng1/100;
+			plane_throttle[1] = (float)m_AIData.ThrottleEng2/100;
+			plane_throttle[2] = (float)m_AIData.ThrottleEng3/100;
+			plane_throttle[3] = (float)m_AIData.ThrottleEng4/100;
+			XPLMSetDataf(dr_plane_x, plane_x);
+			XPLMSetDataf(dr_plane_y, plane_y);
+			XPLMSetDataf(dr_plane_z, plane_z);
+			XPLMSetDataf(dr_plane_the, -m_AIData.Pitch);
+			XPLMSetDataf(dr_plane_phi, -m_AIData.Bank);
+			XPLMSetDataf(dr_plane_psi, m_AIData.Heading);
+			XPLMSetDatavf(dr_plane_gear_deploy, plane_gear_deploy, 0, 5);
+			XPLMSetDatavf(dr_plane_throttle, plane_throttle, 0, 8);
+		}
 	}
 
 	void CAircraft::fromAirData (const AirData& pAirData)
 	{
-		XPLMWorldToLocal(pAirData.latitude(),pAirData.longitude(),pAirData.altitude()*0.3048,&plane_x,&plane_y,&plane_z);
-		plane_the = -pAirData.pitch();
-		plane_phi = -pAirData.bank();
-		plane_psi = pAirData.heading();
-		for (int i=0; i<5 ; i++)
+		datetime curr_time = Now();
+		m_oldData=m_data;
+		m_data.fromAirData(pAirData);
+		m_refreshRate = Now() - m_lastData;
+		m_lastData = curr_time;
+		m_remoteRefreshRate = m_data.TimeStamp - m_oldData.TimeStamp;
+		//First postionning
+		if (m_spawned == 0)
 		{
-			plane_gear_deploy[i]=(float)pAirData.gearpos();
+			m_AIData=m_data;
+			m_lastRender = curr_time;
+			m_spawned++;
 		}
-		plane_throttle[0] = (float)pAirData.throttleeng1()/100;
-		plane_throttle[1] = (float)pAirData.throttleeng2()/100;
-		plane_throttle[2] = (float)pAirData.throttleeng3()/100;
-		plane_throttle[3] = (float)pAirData.throttleeng4()/100;
+		// Else we have enough previous data to interpolate
+		else
+		{
+			double CoefHoriz = 0;
+			m_predictiveTime = m_remoteRefreshRate*3;
+			// Extrapolation compute
+			timespan Retard = m_lastData - m_data.TimeStamp; //Calcul du retard absolu de la donnée
+			if (Retard.count() < 0) Retard = milliseconds(0);
+			if (m_remoteRefreshRate.count() > 0)
+			{
+				// On mémorise la position actuelle de l'extrapolation
+				m_actualPos = m_AIData;
+				m_actualPos.TimeStamp = m_lastRender;
+				m_futurData.TimeStamp = m_lastRender + m_predictiveTime;
+				CoefHoriz = (m_futurData.TimeStamp - m_data.TimeStamp) / m_remoteRefreshRate;
+				m_futurData.Altitude = m_data.Altitude + ((m_data.Altitude - m_oldData.Altitude) * CoefHoriz);
+				m_futurData.Longitude = m_data.Longitude + ((m_data.Longitude - m_oldData.Longitude) * CoefHoriz);
+				m_futurData.Latitude = m_data.Latitude + ((m_data.Latitude - m_oldData.Latitude) * CoefHoriz);
+				double Gam_Heading = m_data.Heading - m_oldData.Heading;
+				if (Gam_Heading < -180) Gam_Heading += 360;
+				if (Gam_Heading > 180) Gam_Heading -= 360;
+				m_futurData.Heading = m_data.Heading + (Gam_Heading * CoefHoriz);
+				if (m_futurData.Heading < 0) m_futurData.Heading = m_futurData.Heading + 360;
+				if (m_futurData.Heading >= 360) m_futurData.Heading = m_futurData.Heading - 360;
+				double Gam_Pitch = m_data.Pitch - m_oldData.Pitch;
+				if (Gam_Pitch < -180) Gam_Pitch += 360;
+				if (Gam_Pitch > 180) Gam_Pitch -= 360;
+				m_futurData.Pitch = m_data.Pitch + (Gam_Pitch * CoefHoriz);
+				if (m_futurData.Pitch < -180) m_futurData.Pitch = m_futurData.Pitch + 360;
+				if (m_futurData.Pitch >= 180) m_futurData.Pitch = m_futurData.Pitch - 360;
+				double Gam_Bank = m_data.Bank - m_oldData.Bank;
+				if (Gam_Bank < -180) Gam_Bank += 360;
+				if (Gam_Bank > 180) Gam_Bank -= 360;
+				m_futurData.Bank = m_data.Bank + (Gam_Bank * CoefHoriz);
+				if (m_futurData.Bank < -180) m_futurData.Bank = m_futurData.Bank + 360;
+				if (m_futurData.Bank >= 180) m_futurData.Bank = m_futurData.Bank - 360;
+				//Calcul des deltas de correction
+				m_deltaAltitude = m_futurData.Altitude - m_actualPos.Altitude;
+				m_deltaLatitude = m_futurData.Latitude - m_actualPos.Latitude;
+				m_deltaLongitude = m_futurData.Longitude - m_actualPos.Longitude;
+				m_deltaHeading = m_futurData.Heading - m_actualPos.Heading;
+				if (m_deltaHeading < -180) m_deltaHeading += 360;
+				if (m_deltaHeading >= 180) m_deltaHeading -= 360;
+				m_deltaPitch = m_futurData.Pitch - m_actualPos.Pitch;
+				if (m_deltaPitch < -180) m_deltaPitch += 360;
+				if (m_deltaPitch >= 180) m_deltaPitch -= 360;
+				m_deltaBank = m_futurData.Bank - m_actualPos.Bank;
+				if (m_deltaBank < -180) m_deltaBank += 360;
+				if (m_deltaBank >= 180) m_deltaBank -= 360;
+			}
+			m_spawned = 2;
+			m_actualPos.Pitch = m_AIData.Pitch;
+		}
 	}
 
 	bool CAircraft::isCallSign(std::string& pCallSign)

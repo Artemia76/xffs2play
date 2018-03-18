@@ -60,9 +60,9 @@ virtual void		OnRemoveClient(uint32_t pClient){}
 		friend class UDPServerEventHandler;
 		private:
 								UDPServer();
-								~UDPServer();
+virtual							~UDPServer();
 
-	static	UDPServer*			m_ptUDPServer;
+static		UDPServer*			m_ptUDPServer;
 			bool				initialized;
 
 			boost::asio::io_service 	io_service;

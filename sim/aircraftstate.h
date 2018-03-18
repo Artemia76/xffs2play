@@ -24,106 +24,88 @@
 
 #include <string>
 #include <cstdint>
-#include "XPLMDataAccess.h"
 #include "tools/datetime.h"
 #include "net/aircraftstate.pb.h"
 
-#define M_2_FEET 3.28084
 namespace xffs2play
 {
-	class SimController;
 
 	class CAircraftState
 	{
-friend	SimController;
 	public:
 					CAircraftState();
-					~CAircraftState();
-const	datetime&		TimeStamp;
-const	std::string&	Title;
-const	std::string&	Model;
-const	std::string&	Type;
-const	std::string&	Category;
-const	double&			Altitude;
-const	float&			GroundAltitude;
-const	float&			Heading;
-const	double&			Latitude;
-const	double&			Longitude;
-const	float&			IASSpeed;
-const	float&			Pitch;
-const	float&			Bank;
-const	bool&			OnGround;
-const	bool&			Smoke;
-
-	protected:
-		void		Update();
-		void		toAirData (AirData& pAirData);
+virtual				~CAircraftState();
+		void		toAirData (AirData& pAirData) const;
 		void		fromAirData (const AirData& pAirData);
-
-	private:
-
-		datetime	_TimeStamp;
-		std::string	_Title;
-		std::string _Model;
-		std::string	_Type;
-		std::string _Category;
-		double		_Altitude;
-		float		_GroundAltitude;
-		float		_Heading;
-		double		_Latitude;
-		double		_Longitude;
-		float		_IASSpeed;
-		float		_Pitch;
-		float		_Bank;
-		bool		_OnGround;
-		bool		_LandingLight;
-		bool		_BeaconLight;
-		bool		_StrobeLight;
-		bool		_NavLight;
-		bool		_RecoLight;
-		bool		_Smoke;
-		uint32_t	_ThrottleEng1;
-		uint32_t	_ThrottleEng2;
-		uint32_t	_ThrottleEng3;
-		uint32_t	_ThrottleEng4;
-		bool		_StateEng1;
-		bool		_StateEng2;
-		bool		_StateEng3;
-		bool		_StateEng4;
-
-		//Xplane Data Reference
-		XPLMDataRef	xpbTitle;
-		XPLMDataRef xpbModel;
-		XPLMDataRef xpbType;
-		XPLMDataRef xpbCategory;
-		XPLMDataRef	xpdAltitude;
-		XPLMDataRef xpfGroundAltitude;
-		XPLMDataRef xpfHeading;
-		XPLMDataRef	xpdLatitude;
-		XPLMDataRef	xpdLongitude;
-		XPLMDataRef xpfIASSpeed;
-		XPLMDataRef xpfPitch;
-		XPLMDataRef xpfBank;
-		XPLMDataRef xpSquawk;
-		XPLMDataRef xpElevatorPos;
-		XPLMDataRef xpAileronPos;
-		XPLMDataRef xpRudderPos;
-		XPLMDataRef xpDoor1Pos;
-		XPLMDataRef xpDoor2Pos;
-		XPLMDataRef xpDoor3Pos;
-		XPLMDataRef xpDoor4Pos;
-		XPLMDataRef xpFlapsIndex;
-		XPLMDataRef xpNumEngine;
-		XPLMDataRef xpThrottleEng;
-		XPLMDataRef xpiOnGround;
-		XPLMDataRef xpGearPos;
-		XPLMDataRef xpLandingLight;
-		XPLMDataRef xpBeaconLight;
-		XPLMDataRef xpStrobeLight;
-		XPLMDataRef xpNavLight;
-		XPLMDataRef xpRecoLight;
-		XPLMDataRef xpStateEng;
-		XPLMDataRef xpiSmoke;
+		datetime	TimeStamp;
+		std::string	Title;
+		std::string Model;
+		std::string Type;
+		std::string Category;
+		double		Latitude;
+		double		Longitude;
+		double		Altitude;
+		double		Pitch;
+		double		Bank;
+		double		Heading;
+		double		ElevatorPos;
+		double		AileronPos;
+		double		RudderPos;
+		double		SpoilerPos;
+		double		ParkingBrakePos;
+		double      GroundAltitude;
+		double      Weight;
+		double      TotalFuelCapacity;
+		double      Vario;
+		double      GroundSpeed;
+		double      TASSpeed;
+		double      IASSpeed;
+		double      Fuel;
+		double      GForce;
+		double      AmbiantWindVelocity;
+		double      AmbiantWindDirection;
+		double      SeaLevelPressure;
+		int32_t     TimeFactor;
+		int32_t     XAxis;
+		int32_t     YAxis;
+		int32_t     Slider;
+		int32_t     RZAxis;
+		int32_t     HatAxis;
+		int32_t     Squawk;
+		int32_t     Realism;
+		uint32_t    AmbiantPrecipState;
+		int32_t     AltimeterSetting;
+		int32_t     NumEngine;
+		int			Door1Pos;
+		int			Door2Pos;
+		int			Door3Pos;
+		int			Door4Pos;
+		int			StateEng1;
+		int			StateEng2;
+		int			StateEng3;
+		int			StateEng4;
+		int			ThrottleEng1;
+		int			ThrottleEng2;
+		int			ThrottleEng3;
+		int			ThrottleEng4;
+		int			GearPos;
+		int			FlapsIndex;
+		int			LandingLight;
+		int			StrobeLight;
+		int			BeaconLight;
+		int			NavLight;
+		int			RecoLight;
+		int			Smoke;
+		//Etat
+		bool        OnGround;
+		bool        ParkingBrake;
+		bool        Pause;
+		bool        Crash;
+		bool        RunState;
+		bool        Pushback;
+		bool        OverSpeed;
+		bool        Slew;
+		bool        Stalling;
 	};
 }
 

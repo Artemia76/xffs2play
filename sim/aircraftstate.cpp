@@ -24,44 +24,77 @@
 
 namespace xffs2play
 {
-	CAircraftState::CAircraftState () :
-		TimeStamp(_TimeStamp),
-		Title(_Title),
-		Model(_Model),
-		Type(_Type),
-		Category(_Category),
-		Altitude(_Altitude),
-		GroundAltitude(_GroundAltitude),
-		Heading(_Heading),
-		Longitude(_Longitude),
-		Latitude(_Latitude),
-		IASSpeed(_IASSpeed),
-		Pitch(_Pitch),
-		Bank(_Bank),
-		OnGround(_OnGround),
-		Smoke(_Smoke)
+	CAircraftState::CAircraftState ()
 	{
-		_TimeStamp = Now();
-		xpbTitle = XPLMFindDataRef("sim/aircraft/view/acf_descrip");
-		xpbModel = XPLMFindDataRef("sim/aircraft/view/acf_ICAO");
-		xpbType = XPLMFindDataRef("sim/aircraft/view/acf_author");
-		xpdAltitude = XPLMFindDataRef("sim/flightmodel/position/elevation");
-		xpfGroundAltitude = XPLMFindDataRef("sim/flightmodel/position/y_agl");
-		xpfHeading = XPLMFindDataRef("sim/flightmodel/position/mag_psi");
-		xpdLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
-		xpdLatitude= XPLMFindDataRef("sim/flightmodel/position/latitude");
-		xpfIASSpeed = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed2");
-		xpfPitch = XPLMFindDataRef("sim/flightmodel/position/true_theta");
-		xpfBank = XPLMFindDataRef("sim/flightmodel/position/true_phi");
-		xpiOnGround = XPLMFindDataRef("sim/flightmodel/failures/onground_any");
-		xpiSmoke = XPLMFindDataRef("sim/flightmodel/failures/smoking");
-		xpThrottleEng = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro");
-		xpStateEng = XPLMFindDataRef("sim/flightmodel/engine/ENGN_running");
-		xpLandingLight = XPLMFindDataRef("sim/cockpit/electrical/landing_lights_on");
-		xpBeaconLight = XPLMFindDataRef("sim/cockpit/electrical/beacon_lights_on");
-		xpStrobeLight = XPLMFindDataRef("sim/cockpit/electrical/strobe_lights_on");
-		xpNavLight = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
-		xpRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
+		TimeStamp = Now();
+		Title = "";
+		Model = "";
+		Type = "";
+		Category = "";
+		Latitude=0;
+		Longitude=0;
+		Altitude=0;
+		Pitch=0;
+		Bank=0;
+		Heading=0;
+		ElevatorPos=0;
+		AileronPos=0;
+		RudderPos=0;
+		SpoilerPos=0;
+		ParkingBrakePos=0;
+		GroundAltitude = 0;
+		Weight = 0;
+		TotalFuelCapacity = 0;
+		Vario = 0;
+		GroundSpeed = 0;
+		TASSpeed = 0;
+		IASSpeed = 0;
+		Fuel = 0;
+		GForce = 0;
+		AmbiantWindVelocity = 0;
+		AmbiantWindDirection = 0;
+		SeaLevelPressure = 0;
+		TimeFactor = 1;
+		XAxis = 0;
+		YAxis = 0;
+		Slider = 0;
+		RZAxis = 0;
+		HatAxis = 0;
+		Squawk=0;
+		Realism = 0;
+		AmbiantPrecipState = 0;
+		AltimeterSetting = 0;
+		NumEngine = 0;
+		Door1Pos=0;
+		Door2Pos=0;
+		Door3Pos=0;
+		Door4Pos=0;
+		StateEng1=0;
+		StateEng2=0;
+		StateEng3=0;
+		StateEng4=0;
+		ThrottleEng1=0;
+		ThrottleEng2=0;
+		ThrottleEng3=0;
+		ThrottleEng4=0;
+		GearPos=0;
+		FlapsIndex=0;
+		LandingLight=0;
+		StrobeLight=0;
+		BeaconLight=0;
+		NavLight=0;
+		RecoLight=0;
+		Smoke=0;
+		//Etat
+		OnGround = false;
+		ParkingBrake = false;
+		Pause = false;
+		Crash = false;
+		RunState = true;
+		Pushback = false;
+		OverSpeed = false;
+		Slew = false;
+		Stalling = false;
 	}
 
 	CAircraftState::~CAircraftState()
@@ -69,126 +102,89 @@ namespace xffs2play
 
 	}
 
-	void CAircraftState::toAirData(AirData &data)
+	void CAircraftState::toAirData(AirData &data) const
 	{
-		data.set_timestamp(toTimeStamp(_TimeStamp));
-		data.set_title(_Title.c_str());
-		data.set_model(_Model.c_str());
-		data.set_type(_Type.c_str());
-		data.set_category(_Category.c_str());
-		data.set_altitude(_Altitude);
-		data.set_groundaltitude(_GroundAltitude);
-		data.set_heading(_Heading);
-		data.set_longitude(_Longitude);
-		data.set_latitude(_Latitude);
-		data.set_iasspeed(_IASSpeed);
-		data.set_pitch(_Pitch);
-		data.set_bank(_Bank);
-		data.set_squawk(2000);
-		data.set_elevatorpos(0);
-		data.set_aileronpos(0);
-		data.set_rudderpos(0);
-		data.set_door1pos(0);
-		data.set_door2pos(0);
-		data.set_door3pos(0);
-		data.set_door4pos(0);
-		data.set_flapsindex(0);
-		data.set_numengine(1);
-		data.set_throttleeng1(_ThrottleEng1);
-		data.set_throttleeng2(_ThrottleEng2);
-		data.set_throttleeng3(_ThrottleEng3);
-		data.set_throttleeng4(_ThrottleEng4);
-		data.set_onground(_OnGround);
-		data.set_gearpos(true);
-		data.set_landinglight(_LandingLight);
-		data.set_beaconlight(_BeaconLight);
-		data.set_strobelight(_StrobeLight);
-		data.set_navlight(_NavLight);
-		data.set_recolight(_RecoLight);
-		data.set_stateeng1(_StateEng1);
-		data.set_stateeng2(_StateEng2);
-		data.set_stateeng3(_StateEng3);
-		data.set_stateeng4(_StateEng4);
-		data.set_smoke(_Smoke);
+		data.set_timestamp(TimeStamp.time_since_epoch().count());
+		data.set_title(Title.c_str());
+		data.set_model(Model.c_str());
+		data.set_type(Type.c_str());
+		data.set_category(Category.c_str());
+		data.set_latitude(Latitude);
+		data.set_longitude(Longitude);
+		data.set_altitude(Altitude);
+		data.set_pitch(Pitch);
+		data.set_bank(Bank);
+		data.set_heading(Heading);
+		data.set_elevatorpos(ElevatorPos);
+		data.set_aileronpos(AileronPos);
+		data.set_rudderpos(RudderPos);
+		data.set_groundaltitude(GroundAltitude);
+		data.set_iasspeed(IASSpeed);
+		data.set_squawk(Squawk);
+		data.set_numengine(NumEngine);
+		data.set_door1pos(Door1Pos);
+		data.set_door2pos(Door2Pos);
+		data.set_door3pos(Door3Pos);
+		data.set_door4pos(Door4Pos);
+		data.set_stateeng1(StateEng1);
+		data.set_stateeng2(StateEng2);
+		data.set_stateeng3(StateEng3);
+		data.set_stateeng4(StateEng4);
+		data.set_throttleeng1(ThrottleEng1);
+		data.set_throttleeng2(ThrottleEng2);
+		data.set_throttleeng3(ThrottleEng3);
+		data.set_throttleeng4(ThrottleEng4);
+		data.set_gearpos(GearPos);
+		data.set_flapsindex(FlapsIndex);
+		data.set_landinglight(LandingLight);
+		data.set_strobelight(StrobeLight);
+		data.set_beaconlight(BeaconLight);
+		data.set_navlight(NavLight);
+		data.set_recolight(RecoLight);
+		data.set_smoke(Smoke);
+		data.set_onground(OnGround);
 	}
 
 	void CAircraftState::fromAirData(const AirData &data)
 	{
-		_TimeStamp = fromTimeStamp(data.timestamp());
-		_Title = data.title();
-		_Model = data.model();
-		_Type = data.type();
-		_Category = data.category();
-		_Latitude = data.latitude();
-		_Longitude= data.longitude();
-		_Altitude = data.altitude();
-		_Pitch = data.pitch();
-		_Bank = data.bank();
-		_Heading = data.heading();
-		//_ElevatorPos = data.elevatorpos();
-		//_AileronPos = data.aileronpos();
-		//_RudderPos = data.rudderpos();
-		//_Door1Pos = data.door1pos();
-		//_Door2Pos = data.door2pos();
-		//_Door3Pos = data.door3pos();
-		//_Door4Pos = data.door4pos();
-		_StateEng1 = data.stateeng1();
-		_StateEng2 = data.stateeng2();
-		_StateEng3 = data.stateeng3();
-		_StateEng4 = data.stateeng4();
-		_ThrottleEng1 = data.throttleeng1();
-		_ThrottleEng2 = data.throttleeng2();
-		_ThrottleEng3 = data.throttleeng3();
-		_ThrottleEng4 = data.throttleeng4();
-		//_GearPos = data.gearpos();
-		//_FlapsIndex = data.flapsindex();
-		_LandingLight = data.landinglight();
-		_StrobeLight = data.strobelight();
-		_BeaconLight = data.beaconlight();
-		_NavLight = data.navlight();
-		_RecoLight = data.recolight();
-		_Smoke = data.smoke();
-		_OnGround = data.onground();
-	}
-
-	void CAircraftState::Update()
-	{
-		_TimeStamp = Now();
-		char title[261] ;
-		XPLMGetDatab(xpbTitle, title,0,260);
-		_Title=title;
-		char model[41];
-		XPLMGetDatab(xpbModel, model,0,40);
-		_Model=model;
-		char type[501];
-		XPLMGetDatab(xpbType, type,0,500);
-		_Type=type;
-		_Altitude = XPLMGetDatad(xpdAltitude) * M_2_FEET;//Convert to feet
-		_GroundAltitude = _Altitude - (XPLMGetDataf(xpfGroundAltitude) * M_2_FEET);
-		_Heading = XPLMGetDataf(xpfHeading);
-		_Longitude = XPLMGetDatad(xpdLongitude);
-		_Latitude = XPLMGetDatad(xpdLatitude);
-		_IASSpeed = XPLMGetDataf(xpfIASSpeed);
-		_Pitch = -XPLMGetDataf(xpfPitch);
-		_Bank = -XPLMGetDataf(xpfBank);
-		_OnGround = (bool)XPLMGetDatai(xpiOnGround);
-		_Smoke =(bool)XPLMGetDatai(xpiSmoke);
-		float _throttle[4];
-		XPLMGetDatavf(xpThrottleEng, _throttle, 0, 4);
-		_ThrottleEng1=(uint32_t)(_throttle[0]*100);
-		_ThrottleEng2 = (uint32_t)(_throttle[1] * 100);
-		_ThrottleEng3 = (uint32_t)(_throttle[2] * 100);
-		_ThrottleEng4 = (uint32_t)(_throttle[3] * 100);
-		int _stateEngine[4];
-		XPLMGetDatavi(xpStateEng, _stateEngine, 0, 4);
-		_StateEng1 = (bool)_stateEngine[0];
-		_StateEng2 = (bool)_stateEngine[1];
-		_StateEng3 = (bool)_stateEngine[2];
-		_StateEng4 = (bool)_stateEngine[3];
-		_LandingLight = (bool)XPLMGetDatai(xpLandingLight);
-		_BeaconLight = (bool)XPLMGetDatai(xpBeaconLight);
-		_StrobeLight = (bool)XPLMGetDatai(xpStrobeLight);
-		_NavLight = (bool)XPLMGetDatai(xpNavLight);
-		_RecoLight = (bool)XPLMGetDatai(xpRecoLight);
+		TimeStamp = fromTimeStamp(data.timestamp());
+		Title = data.title();
+		Model = data.model();
+		Type =  data.type();
+		Category = data.category();
+		Latitude = data.latitude();
+		Longitude= data.longitude();
+		Altitude = data.altitude();
+		Pitch = data.pitch();
+		Bank = data.bank();
+		Heading = data.heading();
+		ElevatorPos = data.elevatorpos();
+		AileronPos = data.aileronpos();
+		RudderPos = data.rudderpos();
+		GroundAltitude = data.groundaltitude();
+		IASSpeed = data.iasspeed();
+		Squawk = data.squawk();
+		NumEngine = data.numengine();
+		Door1Pos = data.door1pos();
+		Door2Pos = data.door2pos();
+		Door3Pos = data.door3pos();
+		Door4Pos = data.door4pos();
+		StateEng1 = data.stateeng1();
+		StateEng2 = data.stateeng2();
+		StateEng3 = data.stateeng3();
+		StateEng4 = data.stateeng4();
+		ThrottleEng1 = data.throttleeng1();
+		ThrottleEng2 = data.throttleeng2();
+		ThrottleEng3 = data.throttleeng3();
+		ThrottleEng4 = data.throttleeng4();
+		GearPos = data.gearpos();
+		FlapsIndex = data.flapsindex();
+		LandingLight = data.landinglight();
+		StrobeLight = data.strobelight();
+		BeaconLight = data.beaconlight();
+		NavLight = data.navlight();
+		RecoLight = data.recolight();
+		Smoke = data.smoke();
+		OnGround = data.onground();
 	}
 }

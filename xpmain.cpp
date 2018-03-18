@@ -20,22 +20,7 @@
 ** be met: https://www.gnu.org/licenses/gpl-3.0.html.
 ****************************************************************************/
 
-#include <stdio.h>
-#include <XPLMMenus.h>
-#include "tools/log.h"
-#include "tools/version.h"
-#include "gui/mainframe.h"
-#include "net/udpserver.h"
-#include "sim/simcontroller.h"
-#include <string.h>
-#include <string>
-
-using namespace xffs2play;
-
-int g_menu_container_idx; // The index of our menu item in the Plugins menu
-XPLMMenuID g_menu_id;
-void menu_handler(void *, void *);
-MainFrame* mainWindow=nullptr;
+#include "xpmain.h"
 
 /*
 * XPluginDisable
@@ -81,6 +66,7 @@ PLUGIN_API int XPluginEnable(void)
 	g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
 	g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, menu_handler, NULL);
 	XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
+	XPLMSetErrorCallback(error_handler);
 	UDPServer::instance()->start();
 	SimController::instance();
 	CLogger::instance()->log(_("Plugin Enable"));
@@ -119,6 +105,8 @@ PLUGIN_API void XPluginReceiveMessage(
 {
 }
 
+/*
+*/
 void menu_handler(void * in_menu_ref, void * in_item_ref)
 {
 	if(!strcmp((const char *)in_item_ref, "Menu Item 1"))
@@ -135,4 +123,9 @@ void menu_handler(void * in_menu_ref, void * in_item_ref)
 			XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
 		}
 	}
+}
+
+void error_handler(const char* inMessage)
+{
+	CLogger::instance()->log(_(inMessage),LEVEL_ERROR);
 }
