@@ -132,7 +132,7 @@ namespace xffs2play
 								float inElapsedTimeSinceLastFlightLoop,
 								int inCounter)
 	{
-		if (m_FirstScan)
+		/*if (m_FirstScan)
 		{
 			m_FirstScan=false;
 			int planeCount;
@@ -157,7 +157,7 @@ namespace xffs2play
 					}
 			}
 
-		}
+		}*/
         for (auto it : arrAI)
 		{
 			it.second->setAircraftData();

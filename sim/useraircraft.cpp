@@ -24,6 +24,8 @@ namespace xffs2play
 		xpStrobeLight = XPLMFindDataRef("sim/cockpit/electrical/strobe_lights_on");
 		xpNavLight = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
 		xpRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
+		xpGearPos = XPLMFindDataRef("sim/aircraft/parts/acf_gear_deploy");
+		//xpFlapsIndex = sim/flightmodel/controls/flaprqst
 	}
 
 	CUserAircraft::~CUserAircraft()
@@ -70,5 +72,8 @@ namespace xffs2play
 		StrobeLight = (bool)XPLMGetDatai(xpStrobeLight);
 		NavLight = (bool)XPLMGetDatai(xpNavLight);
 		RecoLight = (bool)XPLMGetDatai(xpRecoLight);
+		float plane_gear_deploy[5];
+		XPLMGetDatavf(xpGearPos, plane_gear_deploy, 0, 5);
+		GearPos = (bool)plane_gear_deploy[0];
 	}
 }

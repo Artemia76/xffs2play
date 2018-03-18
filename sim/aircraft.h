@@ -64,6 +64,16 @@ virtual						~CAircraft();
 			XPLMDataRef		dr_plane_psi;
 			XPLMDataRef		dr_plane_gear_deploy;
 			XPLMDataRef		dr_plane_throttle;
+			XPLMDataRef		dr_plane_flaps_ratio;
+			XPLMDataRef		dr_plane_beacon_lights;
+			XPLMDataRef		dr_plane_landing_lights;
+			XPLMDataRef		dr_plane_nav_lights;
+			XPLMDataRef		dr_plane_strobe_lights;
+			XPLMDataRef		dr_plane_taxi_lights;
+			XPLMDataRef		dr_plane_yolk_pitch;
+			XPLMDataRef		dr_plane_yolk_roll;
+			XPLMDataRef		dr_plane_yolk_yaw;
+
 			XPLMProbeRef	m_terrRef;
 			XPLMProbeInfo_t	m_terrData;
 			CAircraftState	m_actualPos;

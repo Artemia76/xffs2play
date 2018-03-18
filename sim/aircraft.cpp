@@ -44,6 +44,15 @@ namespace xffs2play
 		std::string psi_str = ref_base + _("_psi");
 		std::string gear_deploy_str = ref_base + _("_gear_deploy");
 		std::string throttle_str = ref_base + _("_throttle");
+		std::string flaps_ratio_str = ref_base + _("_flap_ratio");
+		std::string beacon_lights_str = ref_base + _("beacon_lights_on");
+		std::string landing_lights_str = ref_base + _("_landing_lights_on");
+		std::string nav_lights_str = ref_base + _("_nav_lights_on");
+		std::string strobe_lights_str = ref_base + _("_strobe_lights_on");
+		std::string taxi_lights_str = ref_base + _("_taxi_light_on");
+		std::string yolk_pitch_str = ref_base + _("_yolk_pitch");
+		std::string yolk_roll_str = ref_base + _("_yolk_roll");
+		std::string yolk_yaw_str = ref_base + _("_yolk_yaw");
 
 		dr_plane_x = XPLMFindDataRef(x_str.c_str());
 		dr_plane_y = XPLMFindDataRef(y_str.c_str());
@@ -53,12 +62,21 @@ namespace xffs2play
 		dr_plane_psi = XPLMFindDataRef(psi_str.c_str());
 		dr_plane_gear_deploy = XPLMFindDataRef(gear_deploy_str.c_str());
 		dr_plane_throttle = XPLMFindDataRef(throttle_str.c_str());
+		dr_plane_flaps_ratio = XPLMFindDataRef(flaps_ratio_str.c_str());
+		dr_plane_beacon_lights = XPLMFindDataRef(beacon_lights_str.c_str());
+		dr_plane_landing_lights = XPLMFindDataRef(landing_lights_str.c_str());
+		dr_plane_nav_lights = XPLMFindDataRef(nav_lights_str.c_str());
+		dr_plane_strobe_lights = XPLMFindDataRef(strobe_lights_str.c_str());
+		dr_plane_taxi_lights = XPLMFindDataRef(taxi_lights_str.c_str());
+		dr_plane_yolk_pitch = XPLMFindDataRef(yolk_pitch_str.c_str());
+		dr_plane_yolk_roll =XPLMFindDataRef(yolk_roll_str.c_str());
+		dr_plane_yolk_yaw =XPLMFindDataRef(yolk_yaw_str.c_str());
 
 		//Creat Terrain Probe to retrieve terrain altitude just below the AI
 
 		m_terrRef = XPLMCreateProbe(xplm_ProbeY);
 		m_terrData.structSize=sizeof(XPLMProbeInfo_t);
-
+		XPLMDisableAIForPlane(m_NumberID);
 		m_log = CLogger::instance();
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::creation ref base = ")+x_str ,LEVEL_DEBUG);
@@ -165,6 +183,15 @@ namespace xffs2play
 			XPLMSetDataf(dr_plane_psi, m_AIData.Heading);
 			XPLMSetDatavf(dr_plane_gear_deploy, plane_gear_deploy, 0, 5);
 			XPLMSetDatavf(dr_plane_throttle, plane_throttle, 0, 8);
+			XPLMSetDataf(dr_plane_flaps_ratio, (float)(m_AIData.FlapsIndex*100.0/3.0));
+			XPLMSetDatai(dr_plane_beacon_lights, m_AIData.BeaconLight);
+			XPLMSetDatai(dr_plane_landing_lights, m_AIData.LandingLight);
+			XPLMSetDatai(dr_plane_nav_lights, m_AIData.NavLight);
+			XPLMSetDatai(dr_plane_strobe_lights, m_AIData.StrobeLight);
+			XPLMSetDatai(dr_plane_taxi_lights, m_AIData.RecoLight);
+			XPLMSetDataf(dr_plane_yolk_pitch, (float)m_AIData.ElevatorPos);
+			XPLMSetDataf(dr_plane_yolk_roll, (float)m_AIData.AileronPos);
+			XPLMSetDataf(dr_plane_yolk_yaw, (float)m_AIData.RudderPos);
 		}
 	}
 
