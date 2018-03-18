@@ -15,6 +15,7 @@
 					<Add option="-g" />
 					<Add option="-DXFFS_DEBUG" />
 					<Add option="-DXPLM300" />
+					<Add option="-DXPLM301" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/XPLM" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Wrappers" />
@@ -29,6 +30,7 @@
 				<Compiler>
 					<Add option="-O2" />
 					<Add option="-DXPLM300" />
+					<Add option="-DXPLM301" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/XPLM" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Wrappers" />
@@ -70,10 +72,9 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-fPIC" />
 			<Add option="-Wall" />
 			<Add option="-std=c++11" />
-			<Add option="-std=c11" />
+			<Add option="-fPIC" />
 			<Add option="-shared -rdynamic -nodefaultlibs -undefined_warning -Qunused-arguments" />
 			<Add option="`pkg-config --cflags protobuf`" />
 			<Add option="-DXPLM200" />
