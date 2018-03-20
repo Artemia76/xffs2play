@@ -85,6 +85,9 @@ namespace xffs2play
 
 	CAircraft::~CAircraft()
 	{
+		XPLMSetDataf(dr_plane_x, 0);
+		XPLMSetDataf(dr_plane_y, -1000);
+		XPLMSetDataf(dr_plane_z, 0);
 		XPLMDestroyProbe(m_terrRef);
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::destruction of plane ") + std::to_string(m_NumberID) ,LEVEL_DEBUG);

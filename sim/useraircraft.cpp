@@ -9,7 +9,7 @@ namespace xffs2play
 		xpbType = XPLMFindDataRef("sim/aircraft/view/acf_author");
 		xpdAltitude = XPLMFindDataRef("sim/flightmodel/position/elevation");
 		xpfGroundAltitude = XPLMFindDataRef("sim/flightmodel/position/y_agl");
-		xpfHeading = XPLMFindDataRef("sim/flightmodel/position/mag_psi");
+		xpfHeading = XPLMFindDataRef("sim/flightmodel/position/psi");
 		xpdLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
 		xpdLatitude= XPLMFindDataRef("sim/flightmodel/position/latitude");
 		xpfIASSpeed = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed2");
@@ -26,6 +26,9 @@ namespace xffs2play
 		xpRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
 		xpGearPos = XPLMFindDataRef("sim/aircraft/parts/acf_gear_deploy");
 		//xpFlapsIndex = sim/flightmodel/controls/flaprqst
+		xpElevatorPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_pitch_ratio");
+		xpAileronPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
+		xpRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
 	}
 
 	CUserAircraft::~CUserAircraft()
@@ -75,5 +78,8 @@ namespace xffs2play
 		float plane_gear_deploy[5];
 		XPLMGetDatavf(xpGearPos, plane_gear_deploy, 0, 5);
 		GearPos = (bool)plane_gear_deploy[0];
+		ElevatorPos = XPLMGetDataf(xpElevatorPos);
+		AileronPos = XPLMGetDataf(xpAileronPos);
+		RudderPos = XPLMGetDataf(xpRudderPos);
 	}
 }
