@@ -241,6 +241,7 @@
     <ClCompile Include="sim\aircraft.cpp" />
     <ClCompile Include="sim\aircraftstate.cpp" />
     <ClCompile Include="sim\simcontroller.cpp" />
+    <ClCompile Include="sim\useraircraft.cpp" />
     <ClCompile Include="tools\datetime.cpp" />
     <ClCompile Include="tools\log.cpp" />
     <ClCompile Include="XPMain.cpp" />
@@ -252,10 +253,12 @@
     <ClInclude Include="sim\aircraft.h" />
     <ClInclude Include="sim\aircraftstate.h" />
     <ClInclude Include="sim\simcontroller.h" />
+    <ClInclude Include="sim\useraircraft.h" />
     <ClInclude Include="tools\datetime.h" />
     <ClInclude Include="tools\hexa.h" />
     <ClInclude Include="tools\log.h" />
     <ClInclude Include="tools\version.h" />
+    <ClInclude Include="xpmain.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="net\aircraftstate.proto" />

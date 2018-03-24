@@ -29,6 +29,7 @@ namespace xffs2play
 		xpElevatorPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_pitch_ratio");
 		xpAileronPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
 		xpRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
+		xpSquawk = XPLMFindDataRef("sim/cockpit/radios/transponder_code");
 	}
 
 	CUserAircraft::~CUserAircraft()
@@ -81,5 +82,6 @@ namespace xffs2play
 		ElevatorPos = XPLMGetDataf(xpElevatorPos);
 		AileronPos = XPLMGetDataf(xpAileronPos);
 		RudderPos = XPLMGetDataf(xpRudderPos);
+		Squawk = XPLMGetDataf(xpSquawk);
 	}
 }

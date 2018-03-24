@@ -27,6 +27,9 @@
     <ClCompile Include="sim\aircraft.cpp">
       <Filter>sim</Filter>
     </ClCompile>
+    <ClCompile Include="sim\useraircraft.cpp">
+      <Filter>sim</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="gui">
@@ -73,6 +76,10 @@
     <ClInclude Include="tools\version.h">
       <Filter>tools</Filter>
     </ClInclude>
+    <ClInclude Include="sim\useraircraft.h">
+      <Filter>sim</Filter>
+    </ClInclude>
+    <ClInclude Include="xpmain.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="net\aircraftstate.proto">
