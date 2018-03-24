@@ -82,6 +82,6 @@ namespace xffs2play
 		ElevatorPos = XPLMGetDataf(xpElevatorPos);
 		AileronPos = XPLMGetDataf(xpAileronPos);
 		RudderPos = XPLMGetDataf(xpRudderPos);
-		Squawk = XPLMGetDataf(xpSquawk);
+		Squawk = XPLMGetDatai(xpSquawk);
 	}
 }
