@@ -132,16 +132,20 @@ namespace xffs2play
 								float inElapsedTimeSinceLastFlightLoop,
 								int inCounter)
 	{
-		/*if (m_FirstScan)
+		if (m_FirstScan)
 		{
 			m_FirstScan=false;
-			int planeCount;
-			long index;
-			char *pAircraft[20];
-			char FileName[256], AircraftPath[19][256];
-			memset(pAircraft, 0, sizeof(pAircraft));
-			XPLMCountAircraft(&planeCount, 0, 0);
-			if (planeCount > 1)
+			//long index;
+			//char *pAircraft[20];
+			//char FileName[256], AircraftPath[19][256];
+			//memset(pAircraft, 0, sizeof(pAircraft));
+			XPLMCountAircraft(&m_PlaneCount, 0, 0);
+			m_PlaneCount--;
+			for (int i=0 ; i<20 ; i++)
+			{
+				ptrAI[i]=nullptr;
+			}
+			/*if (planeCount > 1)
 			{
 				for (index = 0; index < planeCount-1; index++)
 				{
@@ -155,9 +159,9 @@ namespace xffs2play
 						XPLMSetAircraftModel(index+1, pAircraft[index]);
 						XPLMDisableAIForPlane(index+1);
 					}
-			}
+			}*/
 
-		}*/
+		}
         for (auto it : arrAI)
 		{
 			it.second->setAircraftData();
@@ -277,6 +281,7 @@ namespace xffs2play
                         m_ObjectID++;
                         //Check if callsign already exist
                         bool Exist = false;
+                        int Number = 0;
                         Mutex.lock();
                         for (auto it : arrAI)
 						{
@@ -286,10 +291,12 @@ namespace xffs2play
 								break;
 							}
 						}
+						Number = GetFirstFreeAI();
 						Mutex.unlock();
-						if (!Exist)
+						if ((!Exist) && (Number > 0))
 						{
-							CAircraft* PeerData = new CAircraft(arrAI.size()+1,CallSign);
+							CAircraft* PeerData = new CAircraft(Number,CallSign);
+							ptrAI[Number-1]=PeerData;
 							PeerData->fromAirData(ReceivedData);
 							Mutex.lock();
 							arrAI.insert(PeerElement(m_ObjectID,PeerData));
@@ -311,6 +318,7 @@ namespace xffs2play
 						{
 							if (it.first==Object_ID)
 							{
+								RemoveAI(it.second);
 								delete it.second;
 								arrAI.erase(Object_ID);
 								Deleted_Object_ID=Object_ID;
@@ -385,8 +393,31 @@ namespace xffs2play
 	{
 		for (auto it : arrAI)
 		{
+			RemoveAI(it.second);
 			delete it.second;
 		}
 		arrAI.clear();
+	}
+
+	int SimController::GetFirstFreeAI()
+	{
+		int result = 0;
+		for (int i=0; (i<m_PlaneCount)&&(i<20) ; i++)
+		{
+			if (ptrAI[i]==nullptr) return i+1;
+		}
+		return result;
+	}
+
+	void SimController::RemoveAI(CAircraft* pPtr)
+	{
+		for (int i=0; i<20 ; i++)
+		{
+			if (ptrAI[i]==pPtr)
+			{
+				ptrAI[i]=nullptr;
+				break;
+			}
+		}
 	}
 }
