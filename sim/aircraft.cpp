@@ -167,7 +167,7 @@ namespace xffs2play
 			XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);
 			XPLMProbeTerrainXYZ(m_terrRef,plane_x,0,plane_z,&m_terrData);
 			double DeltaY = plane_y - m_terrData.locationY;
-			if (m_AIData.OnGround && ((DeltaY < 1.3)||(DeltaY > 2.6)))
+			if (m_data.OnGround && ((DeltaY < 1.3)||(DeltaY > 2.6)))
 			{
 				plane_y = m_terrData.locationY+1.3;
 			}
