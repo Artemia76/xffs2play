@@ -9,6 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		XP10 Release|x64 = XP10 Release|x64
 		XP10 Release|x86 = XP10 Release|x86
+		XP11 Debug|x64 = XP11 Debug|x64
+		XP11 Debug|x86 = XP11 Debug|x86
 		XP11 Release|x64 = XP11 Release|x64
 		XP11 Release|x86 = XP11 Release|x86
 	EndGlobalSection
@@ -17,6 +19,10 @@ Global
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP10 Release|x64.Build.0 = XP10 Release|x64
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP10 Release|x86.ActiveCfg = XP10 Release|Win32
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP10 Release|x86.Build.0 = XP10 Release|Win32
+		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Debug|x64.ActiveCfg = XP11 Debug|x64
+		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Debug|x64.Build.0 = XP11 Debug|x64
+		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Debug|x86.ActiveCfg = XP11 Debug|Win32
+		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Debug|x86.Build.0 = XP11 Debug|Win32
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Release|x64.ActiveCfg = XP11 Release|x64
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Release|x64.Build.0 = XP11 Release|x64
 		{85442432-58D2-4877-A20C-9F8391FB9529}.XP11 Release|x86.ActiveCfg = XP11 Release|Win32

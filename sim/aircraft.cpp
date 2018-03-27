@@ -109,17 +109,18 @@ namespace xffs2play
 	void CAircraft::setAircraftData(void)
 	{
 		datetime curr_time = Now();
-		double interFPS = (curr_time - m_lastRender).count();
-		double FPS = 0;
-		if (interFPS>0) FPS = 1000.0 / interFPS;
-		double FPSAvg = FPS;
-		if ((m_old_fps != 0) && (FPS!=0))
+		std::chrono::duration<double, std::milli> diff = curr_time - m_lastRender;
+		double interFPS = diff.count();
+		if (interFPS>0.0)
 		{
-			FPSAvg = (double)(((double)FPS + m_old_fps)/2);
+			interFPS = (interFPS + m_old_fps)/2.0;
+			m_old_fps = diff.count();
+
 		}
-		m_old_fps = FPS;
+		m_lastRender = curr_time;
 		if (m_spawned>=1)
 		{
+			m_AIData.TimeStamp = curr_time;
 			m_AIData.AileronPos = m_data.AileronPos;
 			m_AIData.ElevatorPos = m_data.ElevatorPos;
 			m_AIData.RudderPos = m_data.RudderPos;
@@ -146,11 +147,9 @@ namespace xffs2play
 			m_AIData.NavLight = m_data.NavLight;
 			m_AIData.RecoLight = m_data.RecoLight;
 			m_AIData.Smoke = m_data.Smoke;
-			if ((m_spawned>=2) && (FPSAvg!=0))
+			if ((m_spawned>=2) && (interFPS > 0))
 			{
-				timespan Temps = duration_cast<milliseconds>(milliseconds(1000) / FPSAvg);
-				double CoefInterpol = (double)Temps.count() / (double)duration_cast<milliseconds>(m_futurData.TimeStamp - m_actualPos.TimeStamp).count();
-				m_lastRender = curr_time;
+				double CoefInterpol = interFPS / (double)duration_cast<milliseconds>(m_futurData.TimeStamp - m_actualPos.TimeStamp).count();
 				m_AIData.Altitude += m_deltaAltitude * CoefInterpol;
 				m_AIData.Latitude += m_deltaLatitude * CoefInterpol;
 				m_AIData.Longitude += m_deltaLongitude * CoefInterpol;
@@ -167,9 +166,9 @@ namespace xffs2play
 			XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);
 			XPLMProbeTerrainXYZ(m_terrRef,plane_x,0,plane_z,&m_terrData);
 			double DeltaY = plane_y - m_terrData.locationY;
-			if (m_data.OnGround && ((DeltaY < 1.3)||(DeltaY > 2.6)))
+			if (m_data.OnGround && ((DeltaY < 0)||(DeltaY > 3)))
 			{
-				plane_y = m_terrData.locationY+1.3;
+				plane_y = m_terrData.locationY+1;
 			}
 			for (int i=0; i<5 ; i++)
 			{
@@ -211,7 +210,7 @@ namespace xffs2play
 		if (m_spawned == 0)
 		{
 			m_AIData=m_data;
-			m_lastRender = curr_time;
+			m_lastRender = Now();
 			m_spawned++;
 		}
 		// Else we have enough previous data to interpolate
@@ -226,8 +225,7 @@ namespace xffs2play
 			{
 				// On mémorise la position actuelle de l'extrapolation
 				m_actualPos = m_AIData;
-				m_actualPos.TimeStamp = m_lastRender;
-				m_futurData.TimeStamp = m_lastRender + m_predictiveTime;
+				m_futurData.TimeStamp = m_actualPos.TimeStamp + m_predictiveTime;
 				CoefHoriz = (m_futurData.TimeStamp - m_data.TimeStamp) / m_remoteRefreshRate;
 				m_futurData.Altitude = m_data.Altitude + ((m_data.Altitude - m_oldData.Altitude) * CoefHoriz);
 				m_futurData.Longitude = m_data.Longitude + ((m_data.Longitude - m_oldData.Longitude) * CoefHoriz);

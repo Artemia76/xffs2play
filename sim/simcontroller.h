@@ -27,8 +27,9 @@
 #include <vector>
 #include <mutex>
 
-#include "XPLMDataAccess.h"
-#include "XPLMProcessing.h"
+#include <XPLMDataAccess.h>
+#include <XPLMProcessing.h>
+#include <XPLMDisplay.h>
 #include "net/aircraftstate.pb.h"
 #include "sim/useraircraft.h"
 #include "tools/log.h"
@@ -83,8 +84,8 @@ virtual							~SimController ();
 static		SimController*		m_ptSimController;
 static		float				LoopNetworkCallback(float,float,int,void*);
 			float				LoopNetwork (float,float,int);
-static		float				LoopUpdateCallback(float,float,int,void*);
-			float				LoopUpdate (float,float,int);
+static		float				LoopUpdateCallback(float, float, int, void*);
+			float				LoopUpdate (float, float, int);
 			void				UpdateAircraftData();
 			void				IncomingRequest();
 			void				SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);

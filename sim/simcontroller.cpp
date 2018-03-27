@@ -31,6 +31,7 @@ namespace xffs2play
 	SimController::SimController()
 	{
 		XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2, this);
+		//XPLMRegisterDrawCallback(&SimController::LoopUpdateCallback, xplm_Phase_Airplanes, 0, this);
 		XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
 		Log = CLogger::instance();
 		m_ObjectID=0;
@@ -44,6 +45,7 @@ namespace xffs2play
 	{
 		XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
 		XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
+		//XPLMUnregisterDrawCallback(&SimController::LoopUpdateCallback, xplm_Phase_Airplanes, 0, this);
 		google::protobuf::ShutdownProtobufLibrary();
 		ClearObjectAI();
 #ifdef XFFS_DEBUG
@@ -117,20 +119,20 @@ namespace xffs2play
 	}
 
 	float SimController::LoopUpdateCallback(float inElapsedSinceLastCall,
-										float inElapsedTimeSinceLastFlightLoop,
-										int inCounter,
-										void* Ref)
+											float inElapsedTimeSinceLastFlightLoop,
+											int inCounter,
+											void* Ref)
 	{
 		if ((Ref==m_ptSimController) && m_ptSimController)
 		{
-			return m_ptSimController->LoopUpdate(inElapsedSinceLastCall,inElapsedTimeSinceLastFlightLoop, inCounter);
+			return m_ptSimController->LoopUpdate(inElapsedSinceLastCall, inElapsedTimeSinceLastFlightLoop,inCounter);
 		}
-		return 0.02;
+		return -1;
 	}
 
 	float SimController::LoopUpdate(float inElapsedSinceLastCall,
-								float inElapsedTimeSinceLastFlightLoop,
-								int inCounter)
+									float inElapsedTimeSinceLastFlightLoop,
+									int inCounter)
 	{
 		if (m_FirstScan)
 		{
@@ -166,7 +168,7 @@ namespace xffs2play
 		{
 			it.second->setAircraftData();
 		}
-		return 0.02;
+		return -1;
 	}
 
 	void SimController::OnAddClient(const uint32_t pClient)
