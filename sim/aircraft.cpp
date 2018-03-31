@@ -106,17 +106,18 @@ namespace xffs2play
 		XPLMGetDatavf(dr_plane_throttle, plane_throttle, 0, 8);
 	}
 
-	void CAircraft::setAircraftData(void)
+	void CAircraft::setAircraftData(float inElapsedSinceLastCall)
 	{
 		datetime curr_time = Now();
-		std::chrono::duration<double, std::milli> diff = curr_time - m_lastRender;
-		double interFPS = diff.count();
-		if (interFPS>0.0)
+		//std::chrono::duration<double, std::milli> diff = curr_time - m_lastRender;
+		//double interFPS = diff.count();
+		double interFPS = inElapsedSinceLastCall*1000.0;
+		/*if (interFPS>0.0)
 		{
 			interFPS = (interFPS + m_old_fps)/2.0;
 			m_old_fps = diff.count();
 
-		}
+		}*/
 		m_lastRender = curr_time;
 		if (m_spawned>=1)
 		{
@@ -224,8 +225,15 @@ namespace xffs2play
 			if (m_remoteRefreshRate.count() > 0)
 			{
 				// On mémorise la position actuelle de l'extrapolation
-				m_actualPos = m_AIData;
-				m_futurData.TimeStamp = m_actualPos.TimeStamp + m_predictiveTime;
+				m_actualPos.TimeStamp = m_lastRender;
+				m_actualPos.Altitude = m_AIData.Altitude;
+				m_actualPos.Latitude = m_AIData.Latitude;
+                m_actualPos.Longitude = m_AIData.Longitude;
+				m_actualPos.Heading = m_AIData.Heading;
+				m_actualPos.Bank = m_AIData.Bank;
+				m_actualPos.Pitch = m_AIData.Pitch;
+
+				m_futurData.TimeStamp = m_lastRender + m_predictiveTime;
 				CoefHoriz = (m_futurData.TimeStamp - m_data.TimeStamp) / m_remoteRefreshRate;
 				m_futurData.Altitude = m_data.Altitude + ((m_data.Altitude - m_oldData.Altitude) * CoefHoriz);
 				m_futurData.Longitude = m_data.Longitude + ((m_data.Longitude - m_oldData.Longitude) * CoefHoriz);

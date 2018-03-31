@@ -47,7 +47,7 @@ virtual						~CAircraft();
 			float			plane_gear_deploy[5];
 			float			plane_throttle[8];
 			void			getAircraftData(void);
-			void			setAircraftData(void);
+			void			setAircraftData(float inElapsedSinceLastCall);
 			void			fromAirData (const AirData& pAirData);
 			bool			isCallSign(std::string& pCallSign);
 

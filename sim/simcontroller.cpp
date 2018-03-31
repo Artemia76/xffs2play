@@ -166,7 +166,7 @@ namespace xffs2play
 		}
         for (auto it : arrAI)
 		{
-			it.second->setAircraftData();
+			it.second->setAircraftData(inElapsedSinceLastCall);
 		}
 		return -1;
 	}
