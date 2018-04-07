@@ -24,11 +24,11 @@
 #pragma once
 
 #include <stdio.h>
+#include "net/udpserver.h"
 #include <XPLMMenus.h>
 #include "tools/log.h"
 #include "tools/version.h"
 #include "gui/mainframe.h"
-#include "net/udpserver.h"
 #include "sim/simcontroller.h"
 #include <string.h>
 #include <string>

@@ -46,8 +46,6 @@ namespace xffs2play
 		Weight = 0;
 		TotalFuelCapacity = 0;
 		Vario = 0;
-		GroundSpeed = 0;
-		TASSpeed = 0;
 		IASSpeed = 0;
 		Fuel = 0;
 		GForce = 0;
@@ -102,7 +100,7 @@ namespace xffs2play
 
 	}
 
-	void CAircraftState::toAirData(AirData &data) const
+	void CAircraftState::toAirData(AirData& data) const
 	{
 		data.set_timestamp(TimeStamp.time_since_epoch().count());
 		data.set_title(Title.c_str());
@@ -145,7 +143,7 @@ namespace xffs2play
 		data.set_onground(OnGround);
 	}
 
-	void CAircraftState::fromAirData(const AirData &data)
+	void CAircraftState::fromAirData(const AirData& data)
 	{
 		TimeStamp = fromTimeStamp(data.timestamp());
 		Title = data.title();

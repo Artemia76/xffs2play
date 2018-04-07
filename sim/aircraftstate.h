@@ -35,8 +35,8 @@ namespace xffs2play
 	public:
 					CAircraftState();
 virtual				~CAircraftState();
-		void		toAirData (AirData& pAirData) const;
-		void		fromAirData (const AirData& pAirData);
+virtual	void		toAirData (AirData& pAirData) const;
+virtual void		fromAirData (const AirData& pAirData);
 		datetime	TimeStamp;
 		std::string	Title;
 		std::string Model;
@@ -57,8 +57,6 @@ virtual				~CAircraftState();
 		double      Weight;
 		double      TotalFuelCapacity;
 		double      Vario;
-		double      GroundSpeed;
-		double      TASSpeed;
 		double      IASSpeed;
 		double      Fuel;
 		double      GForce;

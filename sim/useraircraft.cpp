@@ -4,6 +4,8 @@ namespace xffs2play
 {
 	CUserAircraft::CUserAircraft()
 	{
+		GroundSpeed = 0;
+		TASSpeed = 0;
 		xpbTitle = XPLMFindDataRef("sim/aircraft/view/acf_descrip");
 		xpbModel = XPLMFindDataRef("sim/aircraft/view/acf_ICAO");
 		xpbType = XPLMFindDataRef("sim/aircraft/view/acf_author");
@@ -13,6 +15,8 @@ namespace xffs2play
 		xpdLongitude = XPLMFindDataRef("sim/flightmodel/position/longitude");
 		xpdLatitude= XPLMFindDataRef("sim/flightmodel/position/latitude");
 		xpfIASSpeed = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed2");
+		xpfGNDSpeed = XPLMFindDataRef("sim/flightmodel/position/groundspeed");
+		xpfTASSpeed = XPLMFindDataRef("sim/flightmodel/position/true_airspeed");
 		xpfPitch = XPLMFindDataRef("sim/flightmodel/position/true_theta");
 		xpfBank = XPLMFindDataRef("sim/flightmodel/position/true_phi");
 		xpiOnGround = XPLMFindDataRef("sim/flightmodel/failures/onground_any");
@@ -37,6 +41,20 @@ namespace xffs2play
 		//dtor
 	}
 
+	void CUserAircraft::toAirData(AirData& data) const
+	{
+		CAircraftState::toAirData(data);
+		data.set_tasspeed(TASSpeed);
+		data.set_gndspeed(GroundSpeed);
+	}
+
+	void CUserAircraft::fromAirData(const AirData& data)
+	{
+		CAircraftState::fromAirData(data);
+		TASSpeed = data.tasspeed();
+		GroundSpeed = data.gndspeed();
+	}
+
 	void CUserAircraft::Update()
 	{
 		TimeStamp = Now();
@@ -55,6 +73,8 @@ namespace xffs2play
 		Longitude = XPLMGetDatad(xpdLongitude);
 		Latitude = XPLMGetDatad(xpdLatitude);
 		IASSpeed = XPLMGetDataf(xpfIASSpeed);
+		TASSpeed = XPLMGetDataf(xpfTASSpeed)*1.94384;
+		GroundSpeed = XPLMGetDataf(xpfGNDSpeed)*1.94384;
 		Pitch = -XPLMGetDataf(xpfPitch);
 		Bank = -XPLMGetDataf(xpfBank);
 		OnGround = (bool)XPLMGetDatai(xpiOnGround);

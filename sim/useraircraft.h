@@ -37,6 +37,12 @@ namespace xffs2play
 					CUserAircraft();
 virtual				~CUserAircraft();
 
+	void			toAirData(AirData& pAirData) const;
+	void			fromAirData(const AirData& pAirData);
+
+	double			GroundSpeed;
+	double			TASSpeed;
+
 	protected:
 		void		Update();
 
@@ -53,6 +59,8 @@ virtual				~CUserAircraft();
 		XPLMDataRef	xpdLatitude;
 		XPLMDataRef	xpdLongitude;
 		XPLMDataRef xpfIASSpeed;
+		XPLMDataRef xpfGNDSpeed;
+		XPLMDataRef xpfTASSpeed;
 		XPLMDataRef xpfPitch;
 		XPLMDataRef xpfBank;
 		XPLMDataRef xpSquawk;
