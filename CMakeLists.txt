@@ -9,15 +9,19 @@ file(GLOB TOOLS tools/*.c*)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #Boost dependency
 
 set(Boost_NO_SYSTEM_PATHS        ON)
-set(Boost_USE_STATIC_LIBS        ON) # only find static libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
 if (MSVC)
-  find_package(Boost 1.58.0 REQUIRED COMPONENTS system datetime regex)
+  set(Boost_USE_STATIC_LIBS        ON) # only find static libs
+  find_package(Boost 1.58.0 REQUIRED COMPONENTS system date_time regex)
 else ()
   find_package(Boost 1.58.0 REQUIRED COMPONENTS system)
 endif()

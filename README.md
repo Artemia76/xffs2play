@@ -19,3 +19,11 @@ Foundation and appearing in the file LICENSE.GPL3
 included in the packaging of this software. Please review the following
 information to ensure the GNU General Public License requirements will
 be met: https://www.gnu.org/licenses/gpl-3.0.html.
+
+This repository use a submodule git.
+
+You can init it by taping :
+
+git submodule init
+git submodule update --recursive
+
