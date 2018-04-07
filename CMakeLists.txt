@@ -15,7 +15,13 @@ set(Boost_NO_SYSTEM_PATHS        ON)
 set(Boost_USE_STATIC_LIBS        ON) # only find static libs
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package(Boost 1.58.0 REQUIRED COMPONENTS system datetime regex)
+
+if (MSVC)
+  find_package(Boost 1.58.0 REQUIRED COMPONENTS system datetime regex)
+else ()
+  find_package(Boost 1.58.0 REQUIRED COMPONENTS system)
+endif()
+
 include_directories( ${Boost_INCLUDE_DIR} )
 
 find_package(Protobuf REQUIRED)
@@ -24,11 +30,11 @@ include_directories(${PROTOBUF_INCLUDE_DIRS})
 if( MSVC )
   message(STATUS "Compiler is Microsoft Visual Studio:")
   message(STATUS "  _MSVC_VER is ${MSVC_VERSION} (${ARCH_COMPILER})")
-  
+
   # globally diable the idiotic min and max macros that cause havoc everywhere
   message(STATUS "  Adding NOMINMAX to compiler defines")
   add_definitions( -DNOMINMAX )
-  
+
   message(STATUS "  Adding WIN32_LEAN_AND_MEAN to compiler defines")
   add_definitions( -DWIN32_LEAN_AND_MEAN )
 endif( MSVC )
