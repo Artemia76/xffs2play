@@ -48,11 +48,11 @@ add_subdirectory(xplane_sdk/ bin/)
 
 add_xplane_plugin(XFFS2Play
                   3
-				  xpmain.cpp
-				  ${GUI}
-				  ${NET}
-				  ${SIM}
-				  ${TOOLS})
+                  xpmain.cpp
+                  ${GUI}
+                  ${NET}
+                  ${SIM}
+                  ${TOOLS})
 
 target_link_libraries( XFFS2Play LINK_PUBLIC ${Boost_LIBRARIES} ${PROTOBUF_LIBRARIES})
 
