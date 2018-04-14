@@ -8,13 +8,8 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-add_subdirectory(proto)
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 file(GLOB GUI gui/*.c*)
 file(GLOB NET net/*.c*)
@@ -37,8 +32,15 @@ endif()
 
 include_directories( ${Boost_INCLUDE_DIR} )
 
+#protobuf
+
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
+
+add_subdirectory(proto)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
 
 if( MSVC )
   message(STATUS "Compiler is Microsoft Visual Studio:")
@@ -63,6 +65,6 @@ add_xplane_plugin(XFFS2Play
                   ${SIM}
                   ${TOOLS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC ${Boost_LIBRARIES} proto)
+target_link_libraries( XFFS2Play LINK_PUBLIC proto ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
