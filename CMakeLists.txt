@@ -31,9 +31,9 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 
 if (MSVC)
   set(Boost_USE_STATIC_LIBS        ON) # only find static libs
-  find_package(Boost 1.58.0 REQUIRED COMPONENTS system date_time regex)
+  find_package(Boost REQUIRED COMPONENTS system date_time regex)
 else ()
-  find_package(Boost 1.58.0 REQUIRED COMPONENTS system)
+  find_package(Boost REQUIRED COMPONENTS system)
 endif()
 
 include_directories( ${Boost_INCLUDE_DIR} )
