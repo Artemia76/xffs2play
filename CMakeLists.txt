@@ -25,7 +25,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #Boost dependency
 
-set(Boost_NO_SYSTEM_PATHS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
