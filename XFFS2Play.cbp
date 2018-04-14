@@ -89,11 +89,9 @@
 		</Linker>
 		<Unit filename="gui/mainframe.cpp" />
 		<Unit filename="gui/mainframe.h" />
-		<Unit filename="net/aircraftstate.pb.cc" />
-		<Unit filename="net/aircraftstate.pb.h" />
-		<Unit filename="net/aircraftstate.proto" />
 		<Unit filename="net/udpserver.cpp" />
 		<Unit filename="net/udpserver.h" />
+		<Unit filename="protobuf/aircraftstate.proto" />
 		<Unit filename="sim/aircraft.cpp" />
 		<Unit filename="sim/aircraft.h" />
 		<Unit filename="sim/aircraftstate.cpp" />

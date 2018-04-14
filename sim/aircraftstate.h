@@ -25,7 +25,7 @@
 #include <string>
 #include <cstdint>
 #include "tools/datetime.h"
-#include "net/aircraftstate.pb.h"
+#include "proto/aircraftstate.pb.h"
 
 namespace xffs2play
 {

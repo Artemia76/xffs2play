@@ -30,7 +30,7 @@
 #include <XPLMDataAccess.h>
 #include <XPLMProcessing.h>
 #include <XPLMDisplay.h>
-#include "net/aircraftstate.pb.h"
+#include "proto/aircraftstate.pb.h"
 #include "sim/useraircraft.h"
 #include "tools/log.h"
 #include "aircraft.h"

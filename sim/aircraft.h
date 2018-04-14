@@ -27,7 +27,7 @@
 #include <XPLMDataAccess.h>
 #include <XPLMScenery.h>
 #include "sim/aircraftstate.h"
-#include "net/aircraftstate.pb.h"
+#include "proto/aircraftstate.pb.h"
 #include "tools/log.h"
 #include "tools/datetime.h"
 

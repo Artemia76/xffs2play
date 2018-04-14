@@ -2,16 +2,26 @@
 project(XFFS2Play CXX)
 cmake_minimum_required(VERSION 2.8)
 
+if(NOT CMAKE_VERSION VERSION_LESS 3.1)
+    set(CMAKE_CXX_STANDARD 11)
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+add_subdirectory(proto)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
 file(GLOB GUI gui/*.c*)
 file(GLOB NET net/*.c*)
 file(GLOB SIM sim/*.c*)
 file(GLOB TOOLS tools/*.c*)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 #Boost dependency
 
@@ -54,6 +64,6 @@ add_xplane_plugin(XFFS2Play
                   ${SIM}
                   ${TOOLS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC ${Boost_LIBRARIES} ${PROTOBUF_LIBRARIES})
+target_link_libraries( XFFS2Play LINK_PUBLIC ${Boost_LIBRARIES} proto)
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
