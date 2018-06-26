@@ -20,6 +20,7 @@
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Wrappers" />
 					<Add directory="sim" />
+					<Add directory="build" />
 				</Compiler>
 			</Target>
 			<Target title="XP11_Release">
@@ -91,7 +92,7 @@
 		<Unit filename="gui/mainframe.h" />
 		<Unit filename="net/udpserver.cpp" />
 		<Unit filename="net/udpserver.h" />
-		<Unit filename="protobuf/aircraftstate.proto" />
+		<Unit filename="proto/aircraftstate.proto" />
 		<Unit filename="sim/aircraft.cpp" />
 		<Unit filename="sim/aircraft.h" />
 		<Unit filename="sim/aircraftstate.cpp" />

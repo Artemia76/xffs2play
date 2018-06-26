@@ -36,7 +36,7 @@ namespace xffs2play
 	class CAircraft
 	{
 		public:
-							CAircraft(int pNumberId, std::string pCallSign);
+							CAircraft(int pNumberId, std::string pCallSign, AIResol& pAircraft);
 virtual						~CAircraft();
 			double			plane_x;
 			double			plane_y;
@@ -55,6 +55,7 @@ virtual						~CAircraft();
 			int				m_NumberID;
 			CLogger*		m_log;
 			std::string		m_CallSign;
+			std::string		m_AircraftPath;
 			bool			m_onGround;
 			XPLMDataRef		dr_plane_x;
 			XPLMDataRef		dr_plane_y;
@@ -94,6 +95,9 @@ virtual						~CAircraft();
 			double			m_deltaPitch;
 			double			m_deltaBank;
 			double			m_old_fps;
+			double			m_CGHeight;
+			double			m_Pitch;
+			std::string 	m_current_AircraftPath;
 	};
 }
 

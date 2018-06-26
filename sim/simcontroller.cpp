@@ -23,6 +23,8 @@
 #include "sim/simcontroller.h"
 #include "tools/hexa.h"
 #include <istream>
+#include <iostream>
+#include <string>
 
 namespace xffs2play
 {
@@ -137,32 +139,34 @@ namespace xffs2play
 		if (m_FirstScan)
 		{
 			m_FirstScan=false;
-			//long index;
-			//char *pAircraft[20];
-			//char FileName[256], AircraftPath[19][256];
-			//memset(pAircraft, 0, sizeof(pAircraft));
+			int Index;
+			char FileName[256], AircraftPath[256];
+
 			XPLMCountAircraft(&m_PlaneCount, 0, 0);
+			if (m_PlaneCount > 1)
+			{
+				for (Index = 1; Index < m_PlaneCount; Index++)
+				{
+					XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
+					strcpy(m_aircraftPath[Index-1], AircraftPath);
+					m_aircraft[Index-1] = (char *)m_aircraftPath[Index-1];
+				}
+				m_aircraft[Index-1] = nullptr;
+				if (XPLMAcquirePlanes((char **)&m_aircraft, NULL, NULL))
+				{
+					Log->log(std::to_string(Index)+_(" Aircraft Acquired successfully"));
+				}
+				else
+				{
+					Log->log(_("Aircraft not Acquired"));
+				}
+			}
+
 			m_PlaneCount--;
 			for (int i=0 ; i<20 ; i++)
 			{
 				ptrAI[i]=nullptr;
 			}
-			/*if (planeCount > 1)
-			{
-				for (index = 0; index < planeCount-1; index++)
-				{
-					XPLMGetNthAircraftModel(index+1, FileName, AircraftPath[index]);
-					pAircraft[index] = (char *)AircraftPath[index];
-				}
-
-				if (XPLMAcquirePlanes((char **)&pAircraft, NULL, NULL))
-					for (index = 0; index < planeCount-1; index++)
-					{
-						XPLMSetAircraftModel(index+1, pAircraft[index]);
-						XPLMDisableAIForPlane(index+1);
-					}
-			}*/
-
 		}
         for (auto it : arrAI)
 		{
@@ -276,10 +280,11 @@ namespace xffs2play
                         Buff[Len]='\0';
                         CallSign = Buff;
                         delete[] Buff;
+						AIResol Aircraft;
+                        Aircraft.ParseFromIstream(&data);
 #ifdef XFFS_DEBUG
-						Log->log(_("Receive Add Peer = ") + CallSign, LEVEL_DEBUG);
+						Log->log(_("SimController : Recieve ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
 #endif
-                        ReceivedData.ParseFromIstream(&data);
                         m_ObjectID++;
                         //Check if callsign already exist
                         bool Exist = false;
@@ -297,9 +302,9 @@ namespace xffs2play
 						Mutex.unlock();
 						if ((!Exist) && (Number > 0))
 						{
-							CAircraft* PeerData = new CAircraft(Number,CallSign);
+							CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft);
 							ptrAI[Number-1]=PeerData;
-							PeerData->fromAirData(ReceivedData);
+							//PeerData->fromAirData(ReceivedData);
 							Mutex.lock();
 							arrAI.insert(PeerElement(m_ObjectID,PeerData));
 							Mutex.unlock();

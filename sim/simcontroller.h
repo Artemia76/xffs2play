@@ -104,6 +104,7 @@ static		float				LoopUpdateCallback(float, float, int, void*);
 			AITab_t				arrAI;
 			CAircraft*			ptrAI[20];
 			std::mutex			Mutex;
-			std::vector<char*>	m_arrAircraftModel;
+			char*				m_aircraft[20];
+			char				m_aircraftPath[20][512];
     };
 }

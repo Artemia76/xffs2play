@@ -26,13 +26,15 @@
 
 namespace xffs2play
 {
-	CAircraft::CAircraft(int pNumberID, std::string pCallSign)
+	CAircraft::CAircraft(int pNumberID, std::string pCallSign, AIResol& pAircraft)
 	{
 		m_spawned = 0;
 		m_old_fps = 0;
 		m_NumberID=pNumberID;
 		m_CallSign = pCallSign;
-
+		m_AircraftPath = pAircraft.path();
+		m_CGHeight=pAircraft.cgheight();
+		m_Pitch=pAircraft.pitch();
 		m_lastRender = Now();
 
 		std::string ref_base = _("sim/multiplayer/position/plane") + std::to_string(m_NumberID);
@@ -79,7 +81,7 @@ namespace xffs2play
 		XPLMDisableAIForPlane(m_NumberID);
 		m_log = CLogger::instance();
 #ifdef XFFS_DEBUG
-		m_log->log(_("CAircraft::creation ref base = ")+x_str ,LEVEL_DEBUG);
+		m_log->log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
 	}
 
@@ -166,10 +168,16 @@ namespace xffs2play
 			}
 			XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);
 			XPLMProbeTerrainXYZ(m_terrRef,plane_x,0,plane_z,&m_terrData);
-			double DeltaY = plane_y - m_terrData.locationY;
-			if (m_data.OnGround && ((DeltaY < 0)||(DeltaY > 3)))
+			double GndLon,GndLat,GndAlt;
+			XPLMLocalToWorld(plane_x,m_terrData.locationY,plane_z,&GndLat,&GndLon,&GndAlt);
+			GndAlt /=0.3048;
+			if (m_data.OnGround)
 			{
-				plane_y = m_terrData.locationY+1;
+				if ((m_AIData.Altitude > 10)&&(GndAlt != 0))
+				{
+					m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
+					XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);
+				}
 			}
 			for (int i=0; i<5 ; i++)
 			{
@@ -196,6 +204,11 @@ namespace xffs2play
 			XPLMSetDataf(dr_plane_yolk_pitch, (float)m_AIData.ElevatorPos);
 			XPLMSetDataf(dr_plane_yolk_roll, (float)m_AIData.AileronPos);
 			XPLMSetDataf(dr_plane_yolk_yaw, (float)m_AIData.RudderPos);
+			if (m_current_AircraftPath != m_AircraftPath)
+			{
+				XPLMSetAircraftModel(m_NumberID,m_AircraftPath.c_str());
+				m_current_AircraftPath = m_AircraftPath;
+			}
 		}
 	}
 
