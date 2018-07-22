@@ -86,6 +86,8 @@ static		float				LoopNetworkCallback(float,float,int,void*);
 			float				LoopNetwork (float,float,int);
 static		float				LoopUpdateCallback(float, float, int, void*);
 			float				LoopUpdate (float, float, int);
+static      int                 DrawCallback (XPLMDrawingPhase, int, void*);
+            int                 Draw (XPLMDrawingPhase, int);
 			void				UpdateAircraftData();
 			void				IncomingRequest();
 			void				SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);

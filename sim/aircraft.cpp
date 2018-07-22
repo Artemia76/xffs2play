@@ -212,6 +212,51 @@ namespace xffs2play
 		}
 	}
 
+    void CAircraft::draw(XPLMDrawingPhase pPhase)
+    {
+        if (m_spawned>=1)
+        {
+            switch(pPhase)
+            {
+                case xplm_Phase_Airplanes:
+                {
+                    double text_x,text_y,text_z;
+                    XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&text_x,&text_y,&text_z);
+                    GLdouble modelM[16];
+                    GLdouble pro﻿jM[16];
+                    GLint viewport[4];
+
+                    glGetDoublev (GL_MODELVIEW_MATRIX,modelM);
+                    glGetDoublev (GL_PROJECTION_MATRIX,pro﻿jM);
+                    glGetIntegerv(GL_VIEWPORT, viewport);
+
+
+                    m_result= gluProject (
+                        text_x,
+                        text_y,
+                        text_z,
+                        modelM,
+                        pro﻿jM,
+                        viewport,
+                        &m_winX,
+                        &m_winY,
+                        &m_winZ
+                    ) ;
+                    break;
+                }
+                case xplm_Phase_Window:
+                {
+                    if (m_result != GL_FALSE)
+                    {
+                        float Color[] = { 1.0, 0.0, 0.0 };
+                        XPLMDrawString(Color,m_winX,m_winY,(char*)m_CallSign.c_str(),nullptr,xplmFont_Basic);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
 	void CAircraft::fromAirData (const AirData& pAirData)
 	{
 		datetime curr_time = Now();

@@ -26,10 +26,20 @@
 #include <XPLMPlanes.h>
 #include <XPLMDataAccess.h>
 #include <XPLMScenery.h>
+#include <XPLMDisplay.h>
+
 #include "sim/aircraftstate.h"
 #include "proto/aircraftstate.pb.h"
 #include "tools/log.h"
 #include "tools/datetime.h"
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
+#include <OpenGL/glu.h> // Header File For The GLu32 Library
+#else
+#include <GL/gl.h>  // Header File For The OpenGL32 Library
+#include <GL/glu.h> // Header File For The GLu32 Library
+#endif
 
 namespace xffs2play
 {
@@ -50,6 +60,7 @@ virtual						~CAircraft();
 			void			setAircraftData(float inElapsedSinceLastCall);
 			void			fromAirData (const AirData& pAirData);
 			bool			isCallSign(std::string& pCallSign);
+			void            draw(XPLMDrawingPhase pPhase);
 
 		private:
 			int				m_NumberID;
@@ -98,6 +109,10 @@ virtual						~CAircraft();
 			double			m_CGHeight;
 			double			m_Pitch;
 			std::string 	m_current_AircraftPath;
+            GLdouble        m_winX;
+            GLdouble        m_winY;
+            GLdouble        m_winZ;
+            GLint           m_result;
 	};
 }
 

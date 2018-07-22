@@ -33,7 +33,8 @@ namespace xffs2play
 	SimController::SimController()
 	{
 		XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2, this);
-		//XPLMRegisterDrawCallback(&SimController::LoopUpdateCallback, xplm_Phase_Airplanes, 0, this);
+		XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Airplanes, 0, this);
+		XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
 		XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
 		Log = CLogger::instance();
 		m_ObjectID=0;
@@ -173,6 +174,24 @@ namespace xffs2play
 			it.second->setAircraftData(inElapsedSinceLastCall);
 		}
 		return -1;
+	}
+
+	int SimController::DrawCallback(XPLMDrawingPhase inPhase, int inIsBefore, void* inRefcon)
+	{
+        if ((inRefcon==m_ptSimController) && m_ptSimController)
+		{
+			return m_ptSimController->Draw(inPhase, inIsBefore);
+		}
+		return -1;
+	}
+
+	int SimController::Draw(XPLMDrawingPhase inPhase, int inIsBefore)
+	{
+        for (auto it : arrAI)
+		{
+			it.second->draw(inPhase);
+		}
+		return 1;
 	}
 
 	void SimController::OnAddClient(const uint32_t pClient)
