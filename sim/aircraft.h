@@ -113,6 +113,7 @@ virtual						~CAircraft();
             GLdouble        m_winY;
             GLdouble        m_winZ;
             GLint           m_result;
+			GLint			viewport[4];
 	};
 }
 

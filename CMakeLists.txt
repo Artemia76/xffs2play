@@ -17,6 +17,12 @@ file(GLOB TOOLS tools/*.c*)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(DEBUG_MODE OFF CACHE BOOL "Check this to enable Debug information in plugin logs")
+
+if(DEBUG_MODE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXFFS_DEBUG=1")
+endif(DEBUG_MODE)
+
 #Boost dependency
 
 set(Boost_USE_MULTITHREADED      ON)
@@ -30,6 +36,12 @@ else ()
 endif()
 
 include_directories( ${Boost_INCLUDE_DIR} )
+
+#opengl
+
+if (MSVC)
+find_package(OpenGL REQUIRED)
+endif()
 
 #protobuf
 
@@ -64,6 +76,6 @@ add_xplane_plugin(XFFS2Play
                   ${SIM}
                   ${TOOLS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC proto ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY})
+target_link_libraries( XFFS2Play LINK_PUBLIC proto ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)

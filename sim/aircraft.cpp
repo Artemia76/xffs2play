@@ -218,35 +218,42 @@ namespace xffs2play
         {
             switch(pPhase)
             {
-                case xplm_Phase_Airplanes:
+                case xplm_Phase_LastScene:
                 {
                     double text_x,text_y,text_z;
                     XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&text_x,&text_y,&text_z);
-                    GLdouble modelM[16];
-                    GLdouble pro﻿jM[16];
-                    GLint viewport[4];
 
+					viewport[4]={0};
+					GLdouble modelM[16] = { 0.0 };
+					GLdouble projM[16] = { 0.0 };
                     glGetDoublev (GL_MODELVIEW_MATRIX,modelM);
-                    glGetDoublev (GL_PROJECTION_MATRIX,pro﻿jM);
+                    glGetDoublev (GL_PROJECTION_MATRIX,projM);
                     glGetIntegerv(GL_VIEWPORT, viewport);
-
+					//XPLMGetScreenSize(viewport + 2, viewport + 3);
 
                     m_result= gluProject (
                         text_x,
                         text_y,
                         text_z,
                         modelM,
-                        pro﻿jM,
+                        projM,
                         viewport,
                         &m_winX,
                         &m_winY,
                         &m_winZ
                     ) ;
+					m_log->log(_("CAircraft::projection ") + m_CallSign + 
+						_(" x=")+ std::to_string(m_winX) +
+						_(" y=") + std::to_string(m_winY) +
+						_(" z=") + std::to_string(m_winZ) +
+						_(" lat=") + std::to_string(m_AIData.Latitude) +
+						_(" lon=") + std::to_string(m_AIData.Longitude) + 
+						_(" alt=") + std::to_string((m_AIData.Altitude + (m_CGHeight * 2))*0.3048));
                     break;
                 }
                 case xplm_Phase_Window:
                 {
-                    if (m_result != GL_FALSE)
+					if ((m_winZ>=0) && (m_winX<(viewport[0]+viewport[2])) && (m_winY>=0) && (m_winY<(viewport[1]+viewport[3])));
                     {
                         float Color[] = { 1.0, 0.0, 0.0 };
                         XPLMDrawString(Color,m_winX,m_winY,(char*)m_CallSign.c_str(),nullptr,xplmFont_Basic);
