@@ -39,6 +39,7 @@ namespace xffs2play
 		Log = CLogger::instance();
 		m_ObjectID=0;
 		m_FirstScan=true;
+		m_Options = (uint32_t)DisplayCallSign;
 #ifdef XFFS_DEBUG
 		Log->log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
@@ -168,6 +169,7 @@ namespace xffs2play
 			{
 				ptrAI[i]=nullptr;
 			}
+			setup_cull_info(&m_gl_camera);
 		}
         for (auto it : arrAI)
 		{
@@ -187,6 +189,7 @@ namespace xffs2play
 
 	int SimController::Draw(XPLMDrawingPhase inPhase, int inIsBefore)
 	{
+        if (inPhase == xplm_Phase_LastScene) setup_cull_info(&m_gl_camera);
         for (auto it : arrAI)
 		{
 			it.second->draw(inPhase);
@@ -237,10 +240,17 @@ namespace xffs2play
 				{
 					case PING:
 					{
-#ifdef XFFS_DEBUG
-						Log->log(_("Receive Ping"), LEVEL_DEBUG);
-#endif
 						it->second.LastPing = Now();
+						uint32_t Options;
+						data.read((char*)(&Options),sizeof(Options));
+						if (m_Options != Options)
+						{
+                            m_Options = Options;
+                            UpdateOptions();
+						}
+#ifdef XFFS_DEBUG
+						Log->log(_("Receive Ping with option = ") + std::to_string(Options), LEVEL_DEBUG);
+#endif
 						std::ostringstream  ssoutput;
 						ssoutput << (byte)PONG << (byte)XFF2_PROTOCOL;
 						Server->SendToClient(ssoutput.str(), pMessage.second);
@@ -321,7 +331,7 @@ namespace xffs2play
 						Mutex.unlock();
 						if ((!Exist) && (Number > 0))
 						{
-							CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft);
+							CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_gl_camera,GetOption(DisplayCallSign));
 							ptrAI[Number-1]=PeerData;
 							//PeerData->fromAirData(ReceivedData);
 							Mutex.lock();
@@ -446,4 +456,17 @@ namespace xffs2play
 			}
 		}
 	}
+
+    void SimController::UpdateOptions()
+    {
+        for (auto it : arrAI)
+		{
+			it.second->enableDisplayCallsign = GetOption(DisplayCallSign);
+		}
+    }
+
+    bool SimController::GetOption(SimOption pOption)
+    {
+        return (m_Options & (uint32_t)pOption) > 0;
+    }
 }

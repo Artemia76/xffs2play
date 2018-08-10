@@ -23,6 +23,16 @@ if(DEBUG_MODE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXFFS_DEBUG=1")
 endif(DEBUG_MODE)
 
+set(XPLANE_VERSION 11 CACHE STRING "Choose version of targetted X-Plane")
+
+set_property(CACHE XPLANE_VERSION PROPERTY STRINGS 10 11)
+
+if(XPLANE_VERSION EQUAL "11")
+	set(XP_VERSION 3)
+else()
+	set(XP_VERSION 2)
+endif()
+
 #Boost dependency
 
 set(Boost_USE_MULTITHREADED      ON)
@@ -69,7 +79,7 @@ endif( MSVC )
 add_subdirectory(xplane_sdk/ bin/)
 
 add_xplane_plugin(XFFS2Play
-                  3
+                  ${XP_VERSION}
                   xpmain.cpp
                   ${GUI}
                   ${NET}

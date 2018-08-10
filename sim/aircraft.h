@@ -33,6 +33,8 @@
 #include "tools/log.h"
 #include "tools/datetime.h"
 
+#include "tools/utils3d.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
 #include <OpenGL/glu.h> // Header File For The GLu32 Library
@@ -46,7 +48,7 @@ namespace xffs2play
 	class CAircraft
 	{
 		public:
-							CAircraft(int pNumberId, std::string pCallSign, AIResol& pAircraft);
+							CAircraft(int pNumberId, std::string pCallSign, AIResol& pAircraft,cull_info_t* pGl_camera, bool pEnableDisplayCallSign=true);
 virtual						~CAircraft();
 			double			plane_x;
 			double			plane_y;
@@ -61,6 +63,7 @@ virtual						~CAircraft();
 			void			fromAirData (const AirData& pAirData);
 			bool			isCallSign(std::string& pCallSign);
 			void            draw(XPLMDrawingPhase pPhase);
+			bool            enableDisplayCallsign;
 
 		private:
 			int				m_NumberID;
@@ -109,11 +112,12 @@ virtual						~CAircraft();
 			double			m_CGHeight;
 			double			m_Pitch;
 			std::string 	m_current_AircraftPath;
-            GLdouble        m_winX;
-            GLdouble        m_winY;
-            GLdouble        m_winZ;
-            GLint           m_result;
+            double          m_coordX;
+            GLdouble        m_coordY;
+            GLdouble        m_coordZ;
 			GLint			viewport[4];
+			cull_info_t*	m_gl_camera;
+			bool            m_cull;
 	};
 }
 

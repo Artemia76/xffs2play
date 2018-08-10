@@ -26,7 +26,7 @@
 
 namespace xffs2play
 {
-	CAircraft::CAircraft(int pNumberID, std::string pCallSign, AIResol& pAircraft)
+	CAircraft::CAircraft(int pNumberID, std::string pCallSign, AIResol& pAircraft, cull_info_t* pGl_camera, bool pEnableDisplayCallSign)
 	{
 		m_spawned = 0;
 		m_old_fps = 0;
@@ -79,7 +79,11 @@ namespace xffs2play
 		m_terrRef = XPLMCreateProbe(xplm_ProbeY);
 		m_terrData.structSize=sizeof(XPLMProbeInfo_t);
 		XPLMDisableAIForPlane(m_NumberID);
+		m_gl_camera=pGl_camera;
 		m_log = CLogger::instance();
+		m_cull = false;
+		enableDisplayCallsign = pEnableDisplayCallSign;
+
 #ifdef XFFS_DEBUG
 		m_log->log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -216,47 +220,36 @@ namespace xffs2play
     {
         if (m_spawned>=1)
         {
+            if (!enableDisplayCallsign) return;
             switch(pPhase)
             {
                 case xplm_Phase_LastScene:
                 {
-                    double text_x,text_y,text_z;
-                    XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&text_x,&text_y,&text_z);
-
-					viewport[4]={0};
-					GLdouble modelM[16] = { 0.0 };
-					GLdouble projM[16] = { 0.0 };
-                    glGetDoublev (GL_MODELVIEW_MATRIX,modelM);
-                    glGetDoublev (GL_PROJECTION_MATRIX,projM);
-                    glGetIntegerv(GL_VIEWPORT, viewport);
-					//XPLMGetScreenSize(viewport + 2, viewport + 3);
-
-                    m_result= gluProject (
-                        text_x,
-                        text_y,
-                        text_z,
-                        modelM,
-                        projM,
-                        viewport,
-                        &m_winX,
-                        &m_winY,
-                        &m_winZ
-                    ) ;
-					m_log->log(_("CAircraft::projection ") + m_CallSign + 
-						_(" x=")+ std::to_string(m_winX) +
-						_(" y=") + std::to_string(m_winY) +
-						_(" z=") + std::to_string(m_winZ) +
-						_(" lat=") + std::to_string(m_AIData.Latitude) +
-						_(" lon=") + std::to_string(m_AIData.Longitude) + 
-						_(" alt=") + std::to_string((m_AIData.Altitude + (m_CGHeight * 2))*0.3048));
+                    XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&m_coordX,&m_coordY,&m_coordZ);
+                    m_cull = sphere_is_visible(m_gl_camera,m_coordX,m_coordY,m_coordZ,1.0);
                     break;
                 }
                 case xplm_Phase_Window:
                 {
-					if ((m_winZ>=0) && (m_winX<(viewport[0]+viewport[2])) && (m_winY>=0) && (m_winY<(viewport[1]+viewport[3])));
+                    if (m_cull)
                     {
+                        GLfloat	vp[4];
+                        glGetFloatv(GL_VIEWPORT,vp);
+                        glMatrixMode(GL_PROJECTION);
+                        glPushMatrix();
+                        glLoadIdentity();
+                        glOrtho(0, vp[2], 0, vp[3], -1, 1);
+                        glMatrixMode(GL_MODELVIEW);
+                        glPushMatrix();
+                        glLoadIdentity();
+                        float x, y ;
+                        convert_to_2d(m_gl_camera, vp, m_coordX, m_coordY, m_coordZ, 1.0, &x, &y);
                         float Color[] = { 1.0, 0.0, 0.0 };
-                        XPLMDrawString(Color,m_winX,m_winY,(char*)m_CallSign.c_str(),nullptr,xplmFont_Basic);
+                        XPLMDrawString(Color,x,y,(char*)m_CallSign.c_str(),nullptr,xplmFont_Basic);
+                        glMatrixMode(GL_PROJECTION);
+                        glPopMatrix();
+                        glMatrixMode(GL_MODELVIEW);
+                        glPopMatrix();
                     }
                     break;
                 }

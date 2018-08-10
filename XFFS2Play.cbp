@@ -106,6 +106,7 @@
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />
+		<Unit filename="tools/utils3d.h" />
 		<Unit filename="tools/version.h" />
 		<Unit filename="xpmain.cpp" />
 		<Unit filename="xpmain.h" />

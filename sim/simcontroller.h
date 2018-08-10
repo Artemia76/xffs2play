@@ -34,6 +34,7 @@
 #include "sim/useraircraft.h"
 #include "tools/log.h"
 #include "aircraft.h"
+#include "tools/utils3d.h"
 
 #define XFF2_PROTOCOL 1
 
@@ -57,6 +58,11 @@ namespace xffs2play
 		ADD_PEER = 0x05, // Add Peer
 		DEL_PEER = 0x06 // Remove Peer
 	};
+
+	enum SimOption : unsigned int
+    {
+        DisplayCallSign = 0x01
+    };
 
 	typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
 	typedef std::map<uint32_t, CAircraft*> AITab_t;
@@ -95,7 +101,10 @@ static      int                 DrawCallback (XPLMDrawingPhase, int, void*);
 			void				ClearObjectAI();
 			int					GetFirstFreeAI();
 			void                RemoveAI(CAircraft* pPtr);
+			void                UpdateOptions();
+            bool                GetOption(SimOption pOption);
 			uint32_t			m_ObjectID;
+			uint32_t            m_Options;
 			bool				m_FirstScan;
 			int					m_PlaneCount;
 			AirData				SendData;
@@ -108,5 +117,6 @@ static      int                 DrawCallback (XPLMDrawingPhase, int, void*);
 			std::mutex			Mutex;
 			char*				m_aircraft[20];
 			char				m_aircraftPath[20][512];
+			cull_info_t         m_gl_camera;
     };
 }
