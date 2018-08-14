@@ -21,6 +21,7 @@
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Wrappers" />
 					<Add directory="sim" />
 					<Add directory="build" />
+					<Add directory="tools" />
 				</Compiler>
 			</Target>
 			<Target title="XP11_Release">
@@ -36,6 +37,7 @@
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane11_sdk.INCLUDE)/Wrappers" />
 					<Add directory="sim" />
+					<Add directory="tools" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -53,6 +55,7 @@
 					<Add directory="$(#xplane10_sdk.INCLUDE)/XPLM" />
 					<Add directory="$(#xplane10_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane10_sdk.INCLUDE)/Wrappers" />
+					<Add directory="tools" />
 				</Compiler>
 			</Target>
 			<Target title="XP10_Release">
@@ -66,6 +69,7 @@
 					<Add directory="$(#xplane10_sdk.INCLUDE)/XPLM" />
 					<Add directory="$(#xplane10_sdk.INCLUDE)/Widgets" />
 					<Add directory="$(#xplane10_sdk.INCLUDE)/Wrappers" />
+					<Add directory="tools" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -106,6 +110,8 @@
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />
+		<Unit filename="tools/simple_file_parser.cpp" />
+		<Unit filename="tools/simple_file_parser.h" />
 		<Unit filename="tools/utils3d.h" />
 		<Unit filename="tools/version.h" />
 		<Unit filename="xpmain.cpp" />

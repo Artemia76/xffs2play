@@ -1,12 +1,14 @@
 #include "sim/useraircraft.h"
+#include "tools/simple_file_parser.h"
 
 namespace xffs2play
 {
 	CUserAircraft::CUserAircraft()
 	{
+        Log = CLogger::instance();
 		GroundSpeed = 0;
 		TASSpeed = 0;
-		xpbTitle = XPLMFindDataRef("sim/aircraft/view/acf_descrip");
+		xpbDescription = XPLMFindDataRef("sim/aircraft/view/acf_descrip");
 		xpbModel = XPLMFindDataRef("sim/aircraft/view/acf_ICAO");
 		xpbType = XPLMFindDataRef("sim/aircraft/view/acf_author");
 		xpdAltitude = XPLMFindDataRef("sim/flightmodel/position/elevation");
@@ -34,6 +36,7 @@ namespace xffs2play
 		xpAileronPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
 		xpRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
 		xpSquawk = XPLMFindDataRef("sim/cockpit/radios/transponder_code");
+		xpfParkingBrake = XPLMFindDataRef("sim/cockpit2/controls/parking_brake_ratio");
 	}
 
 	CUserAircraft::~CUserAircraft()
@@ -58,9 +61,17 @@ namespace xffs2play
 	void CUserAircraft::Update()
 	{
 		TimeStamp = Now();
-		char title[261] ;
-		XPLMGetDatab(xpbTitle, title,0,260);
-		Title=title;
+		char description[261] ;
+		std::string Description;
+		XPLMGetDatab(xpbDescription, description,0,260);
+		Description=description;
+		// If Descirption change
+		if (m_description.compare(Description) != 0)
+		{
+            readDataFromACF();
+            m_description = Description;
+		}
+
 		char model[41];
 		XPLMGetDatab(xpbModel, model,0,40);
 		Model=model;
@@ -78,6 +89,10 @@ namespace xffs2play
 		Pitch = -XPLMGetDataf(xpfPitch);
 		Bank = -XPLMGetDataf(xpfBank);
 		OnGround = (bool)XPLMGetDatai(xpiOnGround);
+		float ParkingBrakeRatio = XPLMGetDataf(xpfParkingBrake);
+		ParkingBrakePos = ParkingBrakeRatio;
+		if (ParkingBrakeRatio > 0.5) ParkingBrake =true;
+		else ParkingBrake = false;
 		Smoke =(bool)XPLMGetDatai(xpiSmoke);
 		float _throttle[4];
 		XPLMGetDatavf(xpThrottleEng, _throttle, 0, 4);
@@ -103,5 +118,59 @@ namespace xffs2play
 		AileronPos = XPLMGetDataf(xpAileronPos);
 		RudderPos = XPLMGetDataf(xpRudderPos);
 		Squawk = XPLMGetDatai(xpSquawk);
+	}
+
+	void CUserAircraft::readDataFromACF()
+	{
+        int PlaneCount=0;
+        char FileName[256], AircraftPath[256];
+        XPLMCountAircraft(&PlaneCount, 0, 0);
+        if (PlaneCount > 1)
+		{
+            XPLMGetNthAircraftModel(0, FileName, AircraftPath);
+#ifdef XFFS_DEBUG
+			Log->log(_("AircraftPath = ") + std::string(AircraftPath), LEVEL_DEBUG);
+#endif
+            simple_file_parser parser;
+            parser.set_single_char_tokens(" ");
+            if (parser.open(AircraftPath))
+            {
+#ifdef XFFS_DEBUG
+                Log->log(_("Loading ACF OK"), LEVEL_DEBUG);
+#endif
+                while (!parser.eof())
+                {
+                    if (parser.get_next_line())
+                    {
+                        if (parser.get_num_tokens()>=3)
+                        {
+                            if (parser.get_token(1)=="acf/_name")
+                            {
+                                Title = parser.get_token(2);
+                                for (int i=3; i<parser.get_num_tokens();i++)
+                                {
+                                    Title += _(" ") + parser.get_token(i);
+                                }
+#ifdef XFFS_DEBUG
+                                Log->log(_("Title = ") + Title, LEVEL_DEBUG);
+#endif
+                            }
+                            if (parser.get_token(1)=="acf/_is_helicopter")
+                            {
+                                if (parser.get_token_uint(2) >0)
+                                {
+                                    Category = "Helicopter";
+                                }
+                                else
+                                {
+                                    Category = "Airplane";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+		}
 	}
 }

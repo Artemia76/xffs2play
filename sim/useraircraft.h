@@ -23,7 +23,10 @@
 #pragma once
 
 #include <XPLMDataAccess.h>
+#include <XPLMPlanes.h>
+
 #include "sim/aircraftstate.h"
+#include "tools/log.h"
 #define M_2_FEET 3.28084
 
 namespace xffs2play
@@ -46,10 +49,12 @@ virtual				~CUserAircraft();
 	protected:
 		void		Update();
 
-		private:
+    private:
+        void        readDataFromACF();
+        CLogger*    Log;
 
 		//Xplane Data Reference
-		XPLMDataRef	xpbTitle;
+		XPLMDataRef	xpbDescription;
 		XPLMDataRef xpbModel;
 		XPLMDataRef xpbType;
 		XPLMDataRef xpbCategory;
@@ -83,5 +88,9 @@ virtual				~CUserAircraft();
 		XPLMDataRef xpRecoLight;
 		XPLMDataRef xpStateEng;
 		XPLMDataRef xpiSmoke;
+		XPLMDataRef xpfParkingBrake;
+
+		//Internal Variable
+		std::string m_description;
 	};
 }

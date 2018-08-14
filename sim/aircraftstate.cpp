@@ -141,6 +141,7 @@ namespace xffs2play
 		data.set_recolight(RecoLight);
 		data.set_smoke(Smoke);
 		data.set_onground(OnGround);
+		data.set_parkingbrake(ParkingBrake);
 	}
 
 	void CAircraftState::fromAirData(const AirData& data)
@@ -184,5 +185,6 @@ namespace xffs2play
 		RecoLight = data.recolight();
 		Smoke = data.smoke();
 		OnGround = data.onground();
+		ParkingBrake = data.parkingbrake();
 	}
 }
