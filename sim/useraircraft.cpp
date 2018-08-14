@@ -37,6 +37,7 @@ namespace xffs2play
 		xpRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
 		xpSquawk = XPLMFindDataRef("sim/cockpit/radios/transponder_code");
 		xpfParkingBrake = XPLMFindDataRef("sim/cockpit2/controls/parking_brake_ratio");
+		xpfVariometer = XPLMFindDataRef("sim/cockpit2/gauges/indicators/vvi_fpm_pilot");
 	}
 
 	CUserAircraft::~CUserAircraft()
@@ -118,6 +119,7 @@ namespace xffs2play
 		AileronPos = XPLMGetDataf(xpAileronPos);
 		RudderPos = XPLMGetDataf(xpRudderPos);
 		Squawk = XPLMGetDatai(xpSquawk);
+		Vario = XPLMGetDataf(xpfVariometer);
 	}
 
 	void CUserAircraft::readDataFromACF()

@@ -45,6 +45,7 @@ message AirData {
 	double		TASSpeed = 40;
 	double		GNDSpeed = 41;
     bool        ParkingBrake = 42;
+    double      VSpeed = 43;
 }
 
 message AIResol {

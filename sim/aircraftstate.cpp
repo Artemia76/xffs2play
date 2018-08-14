@@ -142,6 +142,7 @@ namespace xffs2play
 		data.set_smoke(Smoke);
 		data.set_onground(OnGround);
 		data.set_parkingbrake(ParkingBrake);
+		data.set_vspeed(Vario);
 	}
 
 	void CAircraftState::fromAirData(const AirData& data)
@@ -186,5 +187,6 @@ namespace xffs2play
 		Smoke = data.smoke();
 		OnGround = data.onground();
 		ParkingBrake = data.parkingbrake();
+		Vario = data.vspeed();
 	}
 }
