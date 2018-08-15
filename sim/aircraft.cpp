@@ -177,7 +177,7 @@ namespace xffs2play
 			GndAlt /=0.3048;
 			if (m_data.OnGround)
 			{
-				if ((m_AIData.Altitude > 10)&&(GndAlt != 0))
+				if ((m_AIData.Altitude > 10)&&(GndAlt > 10))
 				{
 					m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
 					XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&plane_x,&plane_y,&plane_z);

@@ -15,6 +15,8 @@ file(GLOB NET net/*.c*)
 file(GLOB SIM sim/*.c*)
 file(GLOB TOOLS tools/*.c*)
 
+file(GLOB_RECURSE MY_HEADERS "*.h*")
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(DEBUG_MODE OFF CACHE BOOL "Check this to enable Debug information in plugin logs")
@@ -84,7 +86,8 @@ add_xplane_plugin(XFFS2Play
                   ${GUI}
                   ${NET}
                   ${SIM}
-                  ${TOOLS})
+                  ${TOOLS}
+				  ${MY_HEADERS})
 
 target_link_libraries( XFFS2Play LINK_PUBLIC proto ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES})
 
