@@ -32,14 +32,11 @@
 #include "sim/simcontroller.h"
 #include "tools/log.h"
 
-#ifdef LIN
-	#include <GL/gl.h>
+
+#ifdef __APPLE__
+	#include <OpenGL/gl.h>
 #else
-	#ifdef __GNUC__
-		#include <OpenGL/gl.h>
-	#else
-		#include <GL/gl.h>
-	#endif
+	#include <GL/gl.h>
 #endif
 
 namespace xffs2play

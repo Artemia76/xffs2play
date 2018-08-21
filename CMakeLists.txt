@@ -51,9 +51,11 @@ include_directories( ${Boost_INCLUDE_DIR} )
 
 #opengl
 
-if (MSVC)
 find_package(OpenGL REQUIRED)
-endif()
+include_directories(${OPENGL_INCLUDE_DIR})
+
+find_package(GLUT REQUIRED)
+include_directories(${GLUT_INCLUDE_DIR})
 
 #protobuf
 
