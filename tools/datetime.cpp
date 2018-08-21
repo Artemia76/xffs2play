@@ -24,21 +24,30 @@
 
 namespace xffs2play
 {
-	datetime Now()
-	{
-		return time_point_cast<milliseconds>(system_clock::now());
-	}
+    ///
+    /// Return Immediate time
+    ///
+    datetime Now()
+    {
+        return time_point_cast<milliseconds>(system_clock::now());
+    }
 
-	datetime fromTimeStamp(uint64_t pTS)
-	{
-		auto epoch = time_point<system_clock>();
-		auto since_epoch = milliseconds(pTS);
-		return time_point_cast<std::chrono::milliseconds>(epoch + since_epoch);
-	}
+    ///
+    /// Decode UTC MilliTimeStamp to DateTime type
+    ///
+    datetime FromTimeStamp(uint64_t pTS)
+    {
+        auto epoch = time_point<system_clock>();
+        auto since_epoch = milliseconds(pTS);
+        return time_point_cast<std::chrono::milliseconds>(epoch + since_epoch);
+    }
 
-	uint64_t toTimeStamp(datetime pTime)
-	{
-		auto epoch = time_point<system_clock>();
-		return duration_cast<milliseconds>(pTime - epoch).count();
-	}
+    ///
+    /// Code given datetime to UTC milliTimeStamp
+    ///
+    uint64_t ToTimeStamp(datetime pTime)
+    {
+        auto epoch = time_point<system_clock>();
+        return duration_cast<milliseconds>(pTime - epoch).count();
+    }
 }

@@ -32,19 +32,25 @@
 
 namespace xffs2play
 {
-    struct cull_info_t
-    {					                    // This struct has everything we need to cull fast!
-        float	model_view[16];				// The model view matrix, to get from local OpenGL to eye coordinates.
-        float	proj[16];					// Proj matrix - this is just a hack to use for gluProject.
-        float	nea_clip[4];				// Four clip planes in the form of Ax + By + Cz + D = 0 (ABCD are in the array.)
-        float	far_clip[4];				// They are oriented so the positive side of the clip plane is INSIDE the view volume.
+    ///
+    ///
+    ///
+    struct CullInfo_t
+    {                           // This struct has everything we need to cull fast!
+        float	model_view[16]; // The model view matrix, to get from local OpenGL to eye coordinates.
+        float	proj[16];       // Proj matrix - this is just a hack to use for gluProject.
+        float	nea_clip[4];    // Four clip planes in the form of Ax + By + Cz + D = 0 (ABCD are in the array.)
+        float	far_clip[4];    // They are oriented so the positive side of the clip plane is INSIDE the view volume.
         float	lft_clip[4];
         float	rgt_clip[4];
         float	bot_clip[4];
         float	top_clip[4];
     };
 
-    static void setup_cull_info(cull_info_t * i)
+    ///
+    ///
+    ///
+    static inline void SetupCullInfo(CullInfo_t * i)
     {
         // First, just read out the current OpenGL matrices...do this once at setup because it's not the fastest thing to do.
         glGetFloatv(GL_MODELVIEW_MATRIX ,i->model_view);
@@ -78,7 +84,10 @@ namespace xffs2play
         i->far_clip[0] =-i->proj[2]+i->proj[3];	i->far_clip[1] =-i->proj[6]+i->proj[7];	i->far_clip[2] =-i->proj[10]+i->proj[11];	i->far_clip[3] =-i->proj[14]+i->proj[15];
     }
 
-    static int sphere_is_visible(const cull_info_t * i, float x, float y, float z, float r)
+    ///
+    ///
+    ///
+    static inline int SphereIsVisible(const CullInfo_t * i, float x, float y, float z, float r)
     {
         // First: we transform our coordinate into eye coordinates from model-view.
         float xp = x * i->model_view[0] + y * i->model_view[4] + z * i->model_view[ 8] + i->model_view[12];
@@ -100,7 +109,7 @@ namespace xffs2play
         return true;
     }
 
-    static void convert_to_2d(const cull_info_t * i, const float * vp, float x, float y, float z, float w, float * out_x, float * out_y)
+    static inline void ConvertTo2D(const CullInfo_t * i, const float * vp, float x, float y, float z, float w, float * out_x, float * out_y)
     {
         float xe = x * i->model_view[0] + y * i->model_view[4] + z * i->model_view[ 8] + w * i->model_view[12];
         float ye = x * i->model_view[1] + y * i->model_view[5] + z * i->model_view[ 9] + w * i->model_view[13];
@@ -109,12 +118,12 @@ namespace xffs2play
 
         float xc = xe * i->proj[0] + ye * i->proj[4] + ze * i->proj[ 8] + we * i->proj[12];
         float yc = xe * i->proj[1] + ye * i->proj[5] + ze * i->proj[ 9] + we * i->proj[13];
-    //	float zc = xe * i->proj[2] + ye * i->proj[6] + ze * i->proj[10] + we * i->proj[14];
+    //  float zc = xe * i->proj[2] + ye * i->proj[6] + ze * i->proj[10] + we * i->proj[14];
         float wc = xe * i->proj[3] + ye * i->proj[7] + ze * i->proj[11] + we * i->proj[15];
 
         xc /= wc;
         yc /= wc;
-    //	zc /= wc;
+    //  zc /= wc;
 
         *out_x = vp[0] + (1.0f + xc) * vp[2] / 2.0f;
         *out_y = vp[1] + (1.0f + yc) * vp[3] / 2.0f;

@@ -406,7 +406,6 @@ private:
   unsigned       m_lineno;
   char*          m_buf;
   unsigned       m_bufsz;
-  unsigned       m_v;
   bool           m_single_char_tokens[256];
   bool           m_in_comment;
 };

@@ -25,14 +25,14 @@
 
 namespace xffs2play
 {
-	using namespace std::chrono;
+    using namespace std::chrono;
 
-	using datetime = time_point<system_clock, milliseconds>;
+    using datetime = time_point<system_clock, milliseconds>;
 
-	using timespan = milliseconds;
+    using timespan = milliseconds;
 
-	datetime Now();
+    datetime Now();
 
-	datetime fromTimeStamp(uint64_t pTS);
-	uint64_t toTimeStamp(datetime pTime);
+    datetime FromTimeStamp(uint64_t pTS);
+    uint64_t ToTimeStamp(datetime pTime);
 }

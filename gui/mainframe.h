@@ -41,69 +41,76 @@
 
 namespace xffs2play
 {
+    class MainFrame : public CLoggerEventHandler
+    {
+    public:
+static  MainFrame*          Instance();
+static  void                Kill();
 
-	class MainFrame : public CLogger_Event_Handler
-	{
-	public:
-static	MainFrame*			instance();
-static	void				kill();
-	protected:
-		void				OnLogMessage(const std::string& pMessage);
-	private:
+    protected:
+        void                OnLogMessage(const std::string& pMessage);
 
-static	MainFrame*			m_ptMainFrame;
+    private:
 
-							MainFrame();
-virtual							~MainFrame();
+static  MainFrame*          m_ptMainFrame;
 
-static	void				stDrawWindowCallback(
-								XPLMWindowID inWindowID,
-								void* inRefcon);
-		void				DrawWindowCallback();
-static	void				stHandleKeyCallback(
-								XPLMWindowID inWindowID,
-								char inKey,
-								XPLMKeyFlags inFlags,
-								char inVirtualKey,
-								void* inRefcon,
-								int losingFocus);
+                            MainFrame();
+virtual                     ~MainFrame();
 
-static	int					stHandleMouseClickCallback(
-								XPLMWindowID inWindowID,
-								int x,
-								int	y,
-								XPLMMouseStatus inMouse,
-								void* inRefcon);
+static  void                DrawWindowCallback(
+                                XPLMWindowID pWindowID,
+                                void* pRefcon
+                            );
+
+        void                DrawWindow();
+
+static  void                HandleKeyCallback(
+                                XPLMWindowID pWindowID,
+                                char pKey,
+                                XPLMKeyFlags pFlags,
+                                char pVirtualKey,
+                                void* pRefCon,
+                                int pLosingFocus
+                            );
+
+static  int                 HandleMouseClickCallback(
+                                XPLMWindowID pWindowID,
+                                int pX,
+                                int	pY,
+                                XPLMMouseStatus pMouse,
+                                void* pRefCon
+                            );
 #ifdef XPLM300
 
-static	int					stHandleMouseWheelCallback(
-								XPLMWindowID inWindowID,
-								int x,
-								int y,
-								int wheel,
-								int clicks,
-								void * in_refcon)
-							{ return 0; }
-static	XPLMCursorStatus	stHandleCursorCallback(
-								XPLMWindowID in_window_id,
-								int x,
-								int y,
-								void* in_refcon)
-							{ return xplm_CursorDefault; }
+static  int                 HandleMouseWheelCallback(
+                                XPLMWindowID pWindowID,
+                                int pX,
+                                int pY,
+                                int pWheel,
+                                int pClicks,
+                                void* pRefCon
+                            ) { return 0; }
+
+static  XPLMCursorStatus    HandleCursorCallback(
+                                XPLMWindowID pWindowId,
+                                int pX,
+                                int pY,
+                                void* pRefCon
+                            ) { return xplm_CursorDefault; }
 #endif
-		int					left;
-		int					top;
-		int					right;
-		int					bottom;
-		XPLMWindowID		gWindow = NULL;
-		XPLMDataRef			gPlaneX = NULL;
-		XPLMDataRef			gPlaneY = NULL;
-		XPLMDataRef			gPlaneZ = NULL;
-		XPLMProbeRef		gTerrain = NULL;
-		XPLMProbeInfo_t		gTerrData;
-		int					global_desktop_bounds[4];
-		SimController*		sc;
-		std::string			lastMessage;
-		CLogger*			m_log;
-	};
+        int                 m_Left;
+        int                 m_Top;
+        int                 m_Right;
+        int                 m_Bottom;
+        XPLMWindowID        m_Window = NULL;
+        XPLMDataRef         m_PlaneX = NULL;
+        XPLMDataRef         m_PlaneY = NULL;
+        XPLMDataRef         m_PlaneZ = NULL;
+        XPLMProbeRef        m_Terrain = NULL;
+        XPLMProbeInfo_t     m_TerrData;
+        int                 m_GlobalDesktopBounds[4];
+        SimController*      m_SC;
+        std::string         m_LastMessage;
+        CLogger*            m_Log;
+    };
 }

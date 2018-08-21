@@ -22,110 +22,110 @@
 
 #include "xpmain.h"
 
-/*
-* XPluginDisable
-*
-* We do not need to do anything when we are disabled, but we must provide the handler.
-*
-*/
+///
+/// XPluginDisable
+///
+/// X-Plane Disable Signal
+///
 PLUGIN_API void XPluginDisable(void)
 {
-	XPLMDestroyMenu(g_menu_id);
-	XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
-	SimController::kill();
-	if (mainWindow!=nullptr)
-	{
-		MainFrame::kill();
-		mainWindow=nullptr;
-	}
-	UDPServer::kill();
-	CLogger::instance()->log(_("Plugin Disable"), LEVEL_INFO);
+    XPLMDestroyMenu(g_menu_id);
+    XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
+    SimController::Kill();
+    if (mainWindow!=nullptr)
+    {
+        MainFrame::Kill();
+        mainWindow=nullptr;
+    }
+    UDPServer::Kill();
+    CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
 }
 
-/*
-* XPluginStop
-*
-* Our cleanup routine deallocates our window.
-*
-*/
+///
+/// XPluginStop
+///
+/// Our cleanup routine deallocates our window.
+///
+///
 PLUGIN_API void	XPluginStop(void)
 {
-	CLogger::instance()->log(_("Plugin Stopped"), LEVEL_INFO);
-	CLogger::kill();
+    CLogger::Instance()->Log(_("Plugin Stopped"), LEVEL_INFO);
+    CLogger::Kill();
 }
 
-/*
-* XPluginEnable.
-*
-* We don't do any enable-specific initialization, but we must return 1 to indicate
-* that we may be enabled at this time.
-*
-*/
+///
+/// XPluginEnable.
+///
+/// We don't do any enable-specific initialization, but we must return 1 to indicate
+/// that we may be enabled at this time.
+///
 PLUGIN_API int XPluginEnable(void)
 {
-	g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
-	g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, menu_handler, NULL);
-	XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
-	XPLMSetErrorCallback(error_handler);
-	UDPServer::instance()->start();
-	SimController::instance();
-	CLogger::instance()->log(_("Plugin Enable"));
-	return 1;
+    g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
+    g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
+    XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
+    XPLMSetErrorCallback(ErrorHandler);
+    UDPServer::Instance()->Start();
+    SimController::Instance();
+    CLogger::Instance()->Log(_("Plugin Enable"));
+    return 1;
 }
 
-/*
-* XPluginStart
-*
-* Our start routine registers our window and does any other initialization we
-* must do.
-*
-*/
+///
+/// XPluginStart
+///
+/// Our start routine registers our window and does any other initialization we
+/// must do.
+///
 PLUGIN_API int XPluginStart(
-	char *		outName,
-	char *		outSig,
-	char *		outDesc)
+    char* pName,
+    char* pSig,
+    char* pDesc)
 {
-	strcpy(outName, VER_PRODNAME_STR);
-	strcpy(outSig, VER_COMPANYDOMAIN_STR);
-	strcpy(outDesc, VER_FILEDESCRIPTION_STR);
-	CLogger::instance()->log(_("Plugin loaded"));
-	return 1;
+    strcpy(pName, VER_PRODNAME_STR);
+    strcpy(pSig, VER_COMPANYDOMAIN_STR);
+    strcpy(pDesc, VER_FILEDESCRIPTION_STR);
+    CLogger::Instance()->Log(_("Plugin loaded"));
+    return 1;
 }
 
-/*
-* XPluginReceiveMessage
-*
-* We don't have to do anything in our receive message handler, but we must provide one.
-*
-*/
+///
+/// XPluginReceiveMessage
+///
+/// We don't have to do anything in our receive message handler, but we must provide one.
+///
 PLUGIN_API void XPluginReceiveMessage(
-	XPLMPluginID	inFromWho,
-	long			inMessage,
-	void *			inParam)
+    XPLMPluginID /*inFromWho*/,
+    long /*inMessage*/,
+    void* /*inParam*/)
 {
 }
 
-/*
-*/
-void menu_handler(void * in_menu_ref, void * in_item_ref)
+///
+///
+///
+void MenuHandler(void* pMenuRef, void* pItemRef)
 {
-	if(!strcmp((const char *)in_item_ref, "Menu Item 1"))
-	{
-		if (mainWindow==nullptr)
-		{
-			mainWindow=MainFrame::instance();
-			XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Hide Debug Window",1);
-		}
-		else
-		{
-			MainFrame::kill();
-			mainWindow=nullptr;
-			XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
-		}
-	}
+    if(!strcmp((const char *)pItemRef, "Menu Item 1"))
+    {
+        if (mainWindow==nullptr)
+        {
+            mainWindow=MainFrame::Instance();
+            XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Hide Debug Window",1);
+        }
+        else
+        {
+            MainFrame::Kill();
+            mainWindow=nullptr;
+            XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
+        }
+    }
 }
 
-void error_handler(const char* inMessage)
+///
+/// Handle X-Plane Error
+///
+void ErrorHandler(const char* pMessage)
 {
-	CLogger::instance()->log(_(inMessage),LEVEL_ERROR);
+	CLogger::Instance()->Log(_(pMessage),LEVEL_ERROR);
 }

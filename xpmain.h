@@ -45,5 +45,5 @@ PLUGIN_API int XPluginEnable(void);
 PLUGIN_API int XPluginStart(char*,char*,char*);
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID,long,void*);
 
-void menu_handler(void*, void*);
-void error_handler(const char*);
+void MenuHandler(void*, void*);
+void ErrorHandler(const char*);

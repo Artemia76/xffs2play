@@ -26,182 +26,186 @@
 
 namespace xffs2play
 {
-	MainFrame* MainFrame::m_ptMainFrame = nullptr;
+    ///
+    /// Static Pointer for Singleton
+    ///
+    MainFrame* MainFrame::m_ptMainFrame = nullptr;
 
-	MainFrame* MainFrame::instance()
-	{
-		if (m_ptMainFrame == nullptr)
-		{
-			m_ptMainFrame = new MainFrame();
-		}
-		return m_ptMainFrame;
-	}
+    MainFrame* MainFrame::Instance()
+    {
+        if (m_ptMainFrame == nullptr)
+        {
+            m_ptMainFrame = new MainFrame();
+        }
+        return m_ptMainFrame;
+    }
 
-	void MainFrame::kill()
-	{
-		if (m_ptMainFrame != nullptr)
-		{
-			delete m_ptMainFrame;
-			m_ptMainFrame = nullptr;
-		}
-	}
+    ///
+    /// Kill Method to delete SingleTon
+    ///
+    void MainFrame::Kill()
+    {
+        if (m_ptMainFrame != nullptr)
+        {
+            delete m_ptMainFrame;
+            m_ptMainFrame = nullptr;
+        }
+    }
 
-	MainFrame::MainFrame()
-	{
-		m_log = CLogger::instance();
+    ///
+    /// Private Constructor for MainFrame Singleton
+    ///
+    MainFrame::MainFrame()
+    {
+        m_Log = CLogger::Instance();
 #ifdef XFFS_DEBUG
-		m_log->log(_("Call MainFrame Constructor"), LEVEL_DEBUG);
+        m_Log->Log(_("Call MainFrame Constructor"), LEVEL_DEBUG);
 #endif
 #ifdef XPLM300
-		XPLMGetScreenBoundsGlobal(&global_desktop_bounds[0], &global_desktop_bounds[3], &global_desktop_bounds[2], &global_desktop_bounds[1]);
-		XPLMCreateWindow_t params;
-		params.structSize = sizeof(params);
-		params.left = global_desktop_bounds[0] + 50;
-		params.bottom = global_desktop_bounds[1] + 150;
-		params.right = params.left + 400;
-		params.top = params.bottom + 200;
-		params.visible = 1;
-		params.drawWindowFunc = &MainFrame::stDrawWindowCallback;
-		params.handleMouseClickFunc = &MainFrame::stHandleMouseClickCallback;
-		params.handleRightClickFunc = &MainFrame::stHandleMouseClickCallback;
-		params.handleMouseWheelFunc = &MainFrame::stHandleMouseWheelCallback;
-		params.handleKeyFunc = &MainFrame::stHandleKeyCallback;
-		params.handleCursorFunc = &MainFrame::stHandleCursorCallback;
-		params.refcon = NULL;
-		params.layer = xplm_WindowLayerFloatingWindows;
-		params.decorateAsFloatingWindow = 1;
-		gWindow = XPLMCreateWindowEx(&params);
+        XPLMGetScreenBoundsGlobal(
+            &m_GlobalDesktopBounds[0],
+            &m_GlobalDesktopBounds[3],
+            &m_GlobalDesktopBounds[2],
+            &m_GlobalDesktopBounds[1]
+        );
+        XPLMCreateWindow_t params;
+        params.structSize = sizeof(params);
+        params.left = m_GlobalDesktopBounds[0] + 50;
+        params.bottom = m_GlobalDesktopBounds[1] + 150;
+        params.right = params.left + 400;
+        params.top = params.bottom + 200;
+        params.visible = 1;
+        params.drawWindowFunc = &MainFrame::DrawWindowCallback;
+        params.handleMouseClickFunc = &MainFrame::HandleMouseClickCallback;
+        params.handleRightClickFunc = &MainFrame::HandleMouseClickCallback;
+        params.handleMouseWheelFunc = &MainFrame::HandleMouseWheelCallback;
+        params.handleKeyFunc = &MainFrame::HandleKeyCallback;
+        params.handleCursorFunc = &MainFrame::HandleCursorCallback;
+        params.refcon = NULL;
+        params.layer = xplm_WindowLayerFloatingWindows;
+        params.decorateAsFloatingWindow = 1;
+        m_Window = XPLMCreateWindowEx(&params);
 #else
-		gWindow = XPLMCreateWindow(
-			50, 600, 300, 200,
-			1,
-			&MainFrame::stDrawWindowCallback,
-			&MainFrame::stHandleKeyCallback,
-			&MainFrame::stHandleMouseClickCallback,
-			NULL);
+        m_Window = XPLMCreateWindow(
+            50, 600, 300, 200,
+            1,
+            &MainFrame::DrawWindowCallback,
+            &MainFrame::HandleKeyCallback,
+            &MainFrame::HandleMouseClickCallback,
+            NULL);
 #endif
 #ifdef XPLM300
-		// Position the window as a "free" floating window, which the user can drag around
-		XPLMSetWindowPositioningMode(gWindow, xplm_WindowPositionFree, -1);
-		// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
-		XPLMSetWindowResizingLimits(gWindow, 400, 200, 600, 300);
-		XPLMSetWindowTitle(gWindow, VER_PRODNAME_STR);
+        // Position the window as a "free" floating window, which the user can drag around
+        XPLMSetWindowPositioningMode(m_Window, xplm_WindowPositionFree, -1);
+        // Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
+        XPLMSetWindowResizingLimits(m_Window, 400, 200, 600, 300);
+        XPLMSetWindowTitle(m_Window, VER_PRODNAME_STR);
 #endif
-		sc=SimController::instance();
-		gPlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
-		gPlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
-		gPlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
-		gTerrain = XPLMCreateProbe(xplm_ProbeY);
-		gTerrData.structSize=sizeof(XPLMProbeInfo_t);
+        m_SC=SimController::Instance();
+        m_PlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
+        m_PlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
+        m_PlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
+        m_Terrain = XPLMCreateProbe(xplm_ProbeY);
+        m_TerrData.structSize=sizeof(XPLMProbeInfo_t);
+    }
 
-	}
-
-
-	MainFrame::~MainFrame()
-	{
-		XPLMDestroyProbe(gTerrain);
-		XPLMDestroyWindow(gWindow);
-		gWindow = NULL;
+    ///
+    /// Private Destructor for MainFrame Singleton
+    ///
+    MainFrame::~MainFrame()
+    {
+        XPLMDestroyProbe(m_Terrain);
+        XPLMDestroyWindow(m_Window);
+        m_Window = nullptr;
 #ifdef XFFS_DEBUG
-		m_log->log(_("Call MainFrame Destructor"), LEVEL_DEBUG);
+        m_Log->Log(_("Call MainFrame Destructor"), LEVEL_DEBUG);
 #endif
-	}
+    }
 
+    ///
+    /// CallBack for drawing window
+    ///
+    void MainFrame::DrawWindowCallback(
+        XPLMWindowID pWindowID,
+        void* pRefCon)
+    {
+        if (m_ptMainFrame!=nullptr)
+        {
+            if (pWindowID == m_ptMainFrame->m_Window) m_ptMainFrame->DrawWindow();
+        }
+    }
 
-	void MainFrame::stDrawWindowCallback(
-		XPLMWindowID         inWindowID,
-		void *               inRefcon)
-	{
-		if (m_ptMainFrame!=nullptr)
-		{
-			if (inWindowID == m_ptMainFrame->gWindow) m_ptMainFrame->DrawWindowCallback();
-		}
-	}
+    ///
+    /// Drawing Window
+    ///
+    void MainFrame::DrawWindow()
+    {
+        XPLMSetGraphicsState(
+            0 /* no fog */,
+            0 /* 0 texture units */,
+            0 /* no lighting */,
+            0 /* no alpha testing */,
+            1 /* do alpha blend */,
+            1 /* do depth testing */,
+            0 /* no depth writing */
+        );
 
-	/*
-	* MyDrawingWindowCallback
-	*
-	* This callback does the work of drawing our window once per sim cycle each time
-	* it is needed.  It dynamically changes the text depending on the saved mouse
-	* status.  Note that we don't have to tell X-Plane to redraw us when our text
-	* changes; we are redrawn by the sim continuously.
-	*
-	*/
-	void MainFrame::DrawWindowCallback()
-	{
-		XPLMSetGraphicsState(
-						 0 /* no fog */,
-						 0 /* 0 texture units */,
-						 0 /* no lighting */,
-						 0 /* no alpha testing */,
-						 1 /* do alpha blend */,
-						 1 /* do depth testing */,
-						 0 /* no depth writing */
-						 );
+        float color[] = { 1.0, 1.0, 1.0 };/* RGB White */
+        float X=XPLMGetDataf(m_PlaneX);
+        float Y=XPLMGetDataf(m_PlaneY);
+        float Z=XPLMGetDataf(m_PlaneZ);
+        XPLMProbeResult result = XPLMProbeTerrainXYZ(m_Terrain,X,0,Z,&m_TerrData);
+        if (result != xplm_ProbeHitTerrain)
+        {
+            m_Log->Log(_("Terrain Probe fail = ")+std::to_string(result), LEVEL_DEBUG);
+        }
+        XPLMGetWindowGeometry(m_Window, &m_Left, &m_Top, &m_Right, &m_Bottom);
 
-		float	color[] = { 1.0, 1.0, 1.0 }; 	/* RGB White */
-		float X=XPLMGetDataf(gPlaneX);
-		float Y=XPLMGetDataf(gPlaneY);
-		float Z=XPLMGetDataf(gPlaneZ);
-		XPLMProbeResult result = XPLMProbeTerrainXYZ(gTerrain,X,0,Z,&gTerrData);
-		if (result != xplm_ProbeHitTerrain)
-		{
-			m_log->log(_("Terrain Probe fail = ")+std::to_string(result), LEVEL_DEBUG);
-		}
-		XPLMGetWindowGeometry(gWindow, &left, &top, &right, &bottom);
+        // We now use an XPLMGraphics routine to draw a translucent dark
+        // rectangle that is our window's shape
+        XPLMDrawTranslucentDarkBox(m_Left, m_Top, m_Right, m_Bottom);
 
-		/* We now use an XPLMGraphics routine to draw a translucent dark
-		* rectangle that is our window's shape. */
-		XPLMDrawTranslucentDarkBox(left, top, right, bottom);
+        // Finally we draw the text into the window, also using XPLMGraphics
+        // routines.  The NULL indicates no word wrapping.
+        XPLMDrawString(color, m_Left + 5, m_Top - 20,(char*)(std::string("Version=") + std::string(VER_PRODNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 40,(char*)(std::string("X=") + std::to_string(X)).c_str(), nullptr, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 60, (char*)(std::string("Y=") + std::to_string(Y)).c_str(), nullptr, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 80, (char*)(std::string("Z=") + std::to_string(Z)).c_str(), nullptr, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 100, (char*)(std::string("MeshY=") + std::to_string(m_TerrData.locationY)).c_str(), NULL, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 120, (char*)(std::string("Log=") + m_LastMessage).c_str(), nullptr, xplmFont_Basic);
+    }
 
-		//CAircraftState& state = m_ptMainFrame->sc->GetAircraftState();
-		/* Finally we draw the text into the window, also using XPLMGraphics
-		* routines.  The NULL indicates no word wrapping. */
-		XPLMDrawString(color, left + 5, top - 20,(char*)(std::string("Version=") + std::string(VER_PRODNAME_STR) + _("-") + std::string(VER_FILEVERSION_STR)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 40,(char*)(std::string("X=") + std::to_string(X)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 60, (char*)(std::string("Y=") + std::to_string(Y)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 80, (char*)(std::string("Z=") + std::to_string(Z)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 100, (char*)(std::string("MeshY=") + std::to_string(gTerrData.locationY)).c_str(), NULL, xplmFont_Basic);
-		XPLMDrawString(color, left + 5, top - 120, (char*)(std::string("Log=") + lastMessage).c_str(), NULL, xplmFont_Basic);
-	}
+    ///
+    /// Handle KeyBoard
+    ///
+    void MainFrame::HandleKeyCallback(
+        XPLMWindowID,
+        char,
+        XPLMKeyFlags,
+        char,
+        void*,
+        int)
+    {
+    }
 
-	/*
-	* MyHandleKeyCallback
-	*
-	* Our key handling callback does nothing in this plugin.  This is ok;
-	* we simply don't use keyboard input.
-	*
-	*/
-	void MainFrame::stHandleKeyCallback(
-		XPLMWindowID         inWindowID,
-		char                 inKey,
-		XPLMKeyFlags         inFlags,
-		char                 inVirtualKey,
-		void *               inRefcon,
-		int                  losingFocus)
-	{
-	}
+    ///
+    /// Handle Mouse Click
+    ///
+    int MainFrame::HandleMouseClickCallback(
+        XPLMWindowID,
+        int,
+        int,
+        XPLMMouseStatus,
+        void*)
+    {
+        return 1;
+    }
 
-	/*
-	* MyHandleMouseClickCallback
-	*
-	* Our mouse click callback toggles the status of our mouse variable
-	* as the mouse is clicked.  We then update our text on the next sim
-	* cycle.
-	*
-	*/
-	int MainFrame::stHandleMouseClickCallback(
-		XPLMWindowID         inWindowID,
-		int                  x,
-		int                  y,
-		XPLMMouseStatus      inMouse,
-		void *               inRefcon)
-	{
-		return 1;
-	}
-
-	void MainFrame::OnLogMessage(const std::string& pMessage)
-	{
-		lastMessage = pMessage;
-	}
+    ///
+    /// Callback to get last Log Message
+    ///
+    void MainFrame::OnLogMessage(const std::string& pMessage)
+    {
+        m_LastMessage = pMessage;
+    }
 }

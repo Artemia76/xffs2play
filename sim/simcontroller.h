@@ -40,83 +40,87 @@
 
 namespace xffs2play
 {
+    struct FFS2ClientData
+    {
+        uint32_t    Id;
+        datetime    LastPing;
+        bool        ReceiveData;
+    };
 
-	struct FFS2ClientData
-	{
-		uint32_t	id;
-		datetime	LastPing;
-		bool		ReceiveData;
-	};
+    enum FFS2Proto
+    {
+        PING = 0x00, // Ping receive
+        PONG = 0x01, // Pong With protocol Version
+        DATA = 0x02, // Ask start or stop receive data
+        DATA_SEND = 0x03, // Contain data of user plane
+        DISC = 0x04, // Disconnect client
+        ADD_PEER = 0x05, // Add Peer
+        DEL_PEER = 0x06 // Remove Peer
+    };
 
-	enum FFS2Proto
-	{
-		PING = 0x00, // Ping receive
-		PONG = 0x01, // Pong With protocol Version
-		DATA = 0x02, // Ask start or stop receive data
-		DATA_SEND = 0x03, // Contain data of user plane
-		DISC = 0x04, // Disconnect client
-		ADD_PEER = 0x05, // Add Peer
-		DEL_PEER = 0x06 // Remove Peer
-	};
-
-	enum SimOption : unsigned int
+    enum SimOption : unsigned int
     {
         DisplayCallSign = 0x01
     };
 
-	typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
-	typedef std::map<uint32_t, CAircraft*> AITab_t;
-	typedef std::pair<uint32_t, CAircraft*> PeerElement;
-	typedef FFS2ClientList::value_type FFS2Client;
-	typedef unsigned char byte;
+    typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
+    typedef std::map<uint32_t, CAircraft*> AITab_t;
+    typedef std::pair<uint32_t, CAircraft*> PeerElement;
+    typedef FFS2ClientList::value_type FFS2Client;
+    typedef unsigned char byte;
 
     class SimController : public UDPServerEventHandler
     {
-	public:
-static		SimController*		instance();
-static		void				kill();
 
-			CAircraftState&		GetAircraftState()
-								{
-									return UserAircraft;
-								}
-	protected:
-			void				OnReceiveData(const ClientMessage& pMessage);
-			void				OnAddClient(uint32_t pClient);
-			void				OnRemoveClient(uint32_t pClient);
-	private:
-								SimController ();
-virtual							~SimController ();
-static		SimController*		m_ptSimController;
-static		float				LoopNetworkCallback(float,float,int,void*);
-			float				LoopNetwork (float,float,int);
-static		float				LoopUpdateCallback(float, float, int, void*);
-			float				LoopUpdate (float, float, int);
-static      int                 DrawCallback (XPLMDrawingPhase, int, void*);
-            int                 Draw (XPLMDrawingPhase, int);
-			void				UpdateAircraftData();
-			void				IncomingRequest();
-			void				SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
-			void				SendDelObjectID(uint32_t pObjectID);
-			void				ClearObjectAI();
-			int					GetFirstFreeAI();
-			void                RemoveAI(CAircraft* pPtr);
-			void                UpdateOptions();
-            bool                GetOption(SimOption pOption);
-			uint32_t			m_ObjectID;
-			uint32_t            m_Options;
-			bool				m_FirstScan;
-			int					m_PlaneCount;
-			AirData				SendData;
-			AirData				ReceivedData;
-			CUserAircraft		UserAircraft;
-			CLogger*			Log;
-			FFS2ClientList		arrClients;
-			AITab_t				arrAI;
-			CAircraft*			ptrAI[20];
-			std::mutex			Mutex;
-			char*				m_aircraft[20];
-			char				m_aircraftPath[20][512];
-			cull_info_t         m_gl_camera;
+    public:
+static  SimController*  Instance();
+static  void            Kill();
+
+        CAircraftState& GetAircraftState()
+                        {
+                            return m_UserAircraft;
+                        }
+
+    protected:
+        void            OnReceiveData(const ClientMessage& pMessage);
+        void            OnAddClient(uint32_t pClient);
+        void            OnRemoveClient(uint32_t pClient);
+
+    private:
+                        SimController ();
+virtual                 ~SimController ();
+static  SimController*  m_ptSimController;
+static  float           LoopNetworkCallback(float,float,int,void*);
+        float           LoopNetwork (float,float,int);
+static  float           LoopUpdateCallback(float, float, int, void*);
+        float           LoopUpdate (float, float, int);
+static  int             DrawCallback (XPLMDrawingPhase, int, void*);
+        int             Draw (XPLMDrawingPhase, int);
+        void            UpdateAircraftData();
+        void            IncomingRequest();
+        void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
+        void            SendDelObjectID(uint32_t pObjectID);
+        void            ClearObjectAI();
+        int             GetFirstFreeAI();
+        void            RemoveAI(CAircraft* pPtr);
+        void            UpdateOptions();
+        bool            GetOption(SimOption pOption);
+
+        uint32_t        m_ObjectID;
+        uint32_t        m_Options;
+        bool            m_FirstScan;
+        int             m_PlaneCount;
+        AirData         m_SendData;
+        AirData         m_ReceivedData;
+        CUserAircraft   m_UserAircraft;
+        CLogger*        m_Log;
+        UDPServer*      m_Server;
+        FFS2ClientList  m_ArrClients;
+        AITab_t         m_ArrAI;
+        CAircraft*      m_PtrAI[20];
+        std::mutex      m_Mutex;
+        char*           m_Aircraft[20];
+        char            m_AircraftPath[20][512];
+        CullInfo_t      m_GlCamera;
     };
 }

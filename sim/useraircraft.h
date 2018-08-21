@@ -31,67 +31,67 @@
 
 namespace xffs2play
 {
-	class SimController;
+    class SimController;
 
-	class CUserAircraft : public CAircraftState
-	{
-	friend			SimController;
-	public:
-					CUserAircraft();
-virtual				~CUserAircraft();
+    class CUserAircraft : public CAircraftState
+    {
+friend              SimController;
+    public:
+                    CUserAircraft();
+virtual             ~CUserAircraft();
 
-	void			toAirData(AirData& pAirData) const;
-	void			fromAirData(const AirData& pAirData);
+        void            ToAirData(AirData& pAirData) const;
+        void            FromAirData(const AirData& pAirData);
 
-	double			GroundSpeed;
-	double			TASSpeed;
+        double          GroundSpeed;
+        double          TASSpeed;
 
-	protected:
-		void		Update();
+    protected:
+        void            Update();
 
     private:
-        void        readDataFromACF();
-        CLogger*    Log;
+        void            ReadDataFromACF();
+        CLogger*        m_Log;
 
-		//Xplane Data Reference
-		XPLMDataRef	xpbDescription;
-		XPLMDataRef xpbModel;
-		XPLMDataRef xpbType;
-		XPLMDataRef xpbCategory;
-		XPLMDataRef	xpdAltitude;
-		XPLMDataRef xpfGroundAltitude;
-		XPLMDataRef xpfHeading;
-		XPLMDataRef	xpdLatitude;
-		XPLMDataRef	xpdLongitude;
-		XPLMDataRef xpfIASSpeed;
-		XPLMDataRef xpfGNDSpeed;
-		XPLMDataRef xpfTASSpeed;
-		XPLMDataRef xpfPitch;
-		XPLMDataRef xpfBank;
-		XPLMDataRef xpSquawk;
-		XPLMDataRef xpElevatorPos;
-		XPLMDataRef xpAileronPos;
-		XPLMDataRef xpRudderPos;
-		XPLMDataRef xpDoor1Pos;
-		XPLMDataRef xpDoor2Pos;
-		XPLMDataRef xpDoor3Pos;
-		XPLMDataRef xpDoor4Pos;
-		XPLMDataRef xpFlapsIndex;
-		XPLMDataRef xpNumEngine;
-		XPLMDataRef xpThrottleEng;
-		XPLMDataRef xpiOnGround;
-		XPLMDataRef xpGearPos;
-		XPLMDataRef xpLandingLight;
-		XPLMDataRef xpBeaconLight;
-		XPLMDataRef xpStrobeLight;
-		XPLMDataRef xpNavLight;
-		XPLMDataRef xpRecoLight;
-		XPLMDataRef xpStateEng;
-		XPLMDataRef xpiSmoke;
-		XPLMDataRef xpfParkingBrake;
-		XPLMDataRef xpfVariometer;
+        //Xplane Data Reference
+        XPLMDataRef     m_XPDescription;
+        XPLMDataRef     m_XPModel;
+        XPLMDataRef     m_XPType;
+        XPLMDataRef     m_XPCategory;
+        XPLMDataRef     m_XPAltitude;
+        XPLMDataRef     m_XPGroundAltitude;
+        XPLMDataRef     m_XPHeading;
+        XPLMDataRef     m_XPLatitude;
+        XPLMDataRef     m_XPLongitude;
+        XPLMDataRef     m_XPIASSpeed;
+        XPLMDataRef     m_XPGNDSpeed;
+        XPLMDataRef     m_XPTASSpeed;
+        XPLMDataRef     m_XPPitch;
+        XPLMDataRef     m_XPBank;
+        XPLMDataRef     m_XPSquawk;
+        XPLMDataRef     m_XPElevatorPos;
+        XPLMDataRef     m_XPAileronPos;
+        XPLMDataRef     m_XPRudderPos;
+        XPLMDataRef     m_XPDoor1Pos;
+        XPLMDataRef     m_XPDoor2Pos;
+        XPLMDataRef     m_XPDoor3Pos;
+        XPLMDataRef     m_XPDoor4Pos;
+        XPLMDataRef     m_XPFlapsIndex;
+        XPLMDataRef     m_XPNumEngine;
+        XPLMDataRef     m_XPThrottleEng;
+        XPLMDataRef     m_XPOnGround;
+        XPLMDataRef     m_XPGearPos;
+        XPLMDataRef     m_XPLandingLight;
+        XPLMDataRef     m_XPBeaconLight;
+        XPLMDataRef     m_XPStrobeLight;
+        XPLMDataRef     m_XPNavLight;
+        XPLMDataRef     m_XPRecoLight;
+        XPLMDataRef     m_XPStateEng;
+        XPLMDataRef     m_XPSmoke;
+        XPLMDataRef     m_XPParkingBrake;
+        XPLMDataRef     m_XPVariometer;
 
-		//Internal Variable
-		std::string m_description;
-	};
+        //Internal Variable
+        std::string     m_Description;
+    };
 }

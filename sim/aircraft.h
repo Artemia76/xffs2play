@@ -45,79 +45,85 @@
 
 namespace xffs2play
 {
-	class CAircraft
-	{
-		public:
-							CAircraft(int pNumberId, std::string pCallSign, AIResol& pAircraft,cull_info_t* pGl_camera, bool pEnableDisplayCallSign=true);
-virtual						~CAircraft();
-			double			plane_x;
-			double			plane_y;
-			double			plane_z;
-			float			plane_the;
-			float			plane_phi;
-			float			plane_psi;
-			float			plane_gear_deploy[5];
-			float			plane_throttle[8];
-			void			getAircraftData(void);
-			void			setAircraftData(float inElapsedSinceLastCall);
-			void			fromAirData (const AirData& pAirData);
-			bool			isCallSign(std::string& pCallSign);
-			void            draw(XPLMDrawingPhase pPhase);
-			bool            enableDisplayCallsign;
+    class CAircraft
+    {
+    public:
+                        CAircraft(
+                            int pNumberId,
+                            std::string pCallSign,
+                            AIResol& pAircraft,
+                            CullInfo_t* pGl_camera,
+                            bool pEnableDisplayCallSign=true
+                        );
 
-		private:
-			int				m_NumberID;
-			CLogger*		m_log;
-			std::string		m_CallSign;
-			std::string		m_AircraftPath;
-			bool			m_onGround;
-			XPLMDataRef		dr_plane_x;
-			XPLMDataRef		dr_plane_y;
-			XPLMDataRef		dr_plane_z;
-			XPLMDataRef		dr_plane_the;
-			XPLMDataRef		dr_plane_phi;
-			XPLMDataRef		dr_plane_psi;
-			XPLMDataRef		dr_plane_gear_deploy;
-			XPLMDataRef		dr_plane_throttle;
-			XPLMDataRef		dr_plane_flaps_ratio;
-			XPLMDataRef		dr_plane_beacon_lights;
-			XPLMDataRef		dr_plane_landing_lights;
-			XPLMDataRef		dr_plane_nav_lights;
-			XPLMDataRef		dr_plane_strobe_lights;
-			XPLMDataRef		dr_plane_taxi_lights;
-			XPLMDataRef		dr_plane_yolk_pitch;
-			XPLMDataRef		dr_plane_yolk_roll;
-			XPLMDataRef		dr_plane_yolk_yaw;
+virtual                 ~CAircraft();
+        void            GetAircraftData(void);
+        void            SetAircraftData(float inElapsedSinceLastCall);
+        void            FromAirData (const AirData& pAirData);
+        bool            IsCallSign(std::string& pCallSign);
+        void            Draw(XPLMDrawingPhase pPhase);
+        bool            EnableDisplayCallsign;
 
-			XPLMProbeRef	m_terrRef;
-			XPLMProbeInfo_t	m_terrData;
-			CAircraftState	m_actualPos;
-			CAircraftState	m_futurData;
-			CAircraftState	m_oldData;
-			CAircraftState	m_data;
-			CAircraftState	m_AIData;
-			int				m_spawned;
-			timespan		m_predictiveTime;
-			timespan		m_remoteRefreshRate;
-			timespan		m_refreshRate;
-			datetime		m_lastData;
-			datetime		m_lastRender;
-			double			m_deltaAltitude;
-			double			m_deltaLongitude;
-			double			m_deltaLatitude;
-			double			m_deltaHeading;
-			double			m_deltaPitch;
-			double			m_deltaBank;
-			double			m_old_fps;
-			double			m_CGHeight;
-			double			m_Pitch;
-			std::string 	m_current_AircraftPath;
-            double          m_coordX;
-            GLdouble        m_coordY;
-            GLdouble        m_coordZ;
-			GLint			viewport[4];
-			cull_info_t*	m_gl_camera;
-			bool            m_cull;
-	};
+    private:
+        double          m_PlaneX;
+        double          m_PlaneY;
+        double          m_PlaneZ;
+        float           m_PlaneThe;
+        float           m_PlanePhi;
+        float           m_PlanePsi;
+        float           m_PlaneGearDeploy[5];
+        float           m_PlaneThrottle[8];
+        int             m_NumberID;
+        CLogger*        m_Log;
+        std::string     m_CallSign;
+        std::string     m_AircraftPath;
+        int             m_Spawned;
+        timespan        m_PredictiveTime;
+        timespan        m_RemoteRefreshRate;
+        timespan        m_RefreshRate;
+        datetime        m_LastData;
+        datetime        m_LastRender;
+        double          m_DeltaAltitude;
+        double          m_DeltaLongitude;
+        double          m_DeltaLatitude;
+        double          m_DeltaHeading;
+        double          m_DeltaPitch;
+        double          m_DeltaBank;
+        double          m_OldFps;
+        double          m_CGHeight;
+        double          m_Pitch;
+        std::string     m_CurrentAircraftPath;
+        double          m_CoordX;
+        GLdouble        m_CoordY;
+        GLdouble        m_CoordZ;
+        CullInfo_t*     m_GlCamera;
+        bool            m_Cull;
+
+        XPLMDataRef     m_XPPlaneX;
+        XPLMDataRef     m_XPPlaneY;
+        XPLMDataRef     m_XPPlaneZ;
+        XPLMDataRef     m_XPPlaneThe;
+        XPLMDataRef     m_XPPlanePhi;
+        XPLMDataRef     m_XPPlanePsi;
+        XPLMDataRef     m_XPPlaneGearDeploy;
+        XPLMDataRef     m_XPPlaneThrottle;
+        XPLMDataRef     m_XPPlaneFlapsRatio;
+        XPLMDataRef     m_XPPlaneBeaconLights;
+        XPLMDataRef     m_XPPlaneLandingLights;
+        XPLMDataRef     m_XPPlaneNavLights;
+        XPLMDataRef     m_XPPlaneStrobeLights;
+        XPLMDataRef     m_XPPlaneTaxiLights;
+        XPLMDataRef     m_XPPlaneYolkPitch;
+        XPLMDataRef     m_XPPlaneYolkRoll;
+        XPLMDataRef     m_XPPlaneYolkYaw;
+
+        XPLMProbeRef    m_TerrRef;
+        XPLMProbeInfo_t m_TerrData;
+        CAircraftState  m_ActualPos;
+        CAircraftState  m_FuturData;
+        CAircraftState  m_OldData;
+        CAircraftState  m_Data;
+        CAircraftState  m_AIData;
+    };
 }
 

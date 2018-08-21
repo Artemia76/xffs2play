@@ -24,262 +24,341 @@
 
 namespace xffs2play
 {
-	UDPServerEventHandler::UDPServerEventHandler()
-	{
-		Server = UDPServer::instance();
-		Server->subscribe_events(this);
-	}
+    ///
+    /// Constructor with auto suscribe for UDP Server Event
+    ///
+    UDPServerEventHandler::UDPServerEventHandler()
+    {
+        UDPServer::Instance()->SubscribeEvents(this);
+    }
 
-	UDPServerEventHandler::~UDPServerEventHandler()
-	{
-		Server->unsubscribe_events(this);
-	}
+    ///
+    /// Destructor with auto unSuscribe from UDP Server
+    ///
+    UDPServerEventHandler::~UDPServerEventHandler()
+    {
+        UDPServer::Instance()->UnsubscribeEvents(this);
+    }
 
+    ///
+    /// Static pointer for UDP Server Singleton
+    ///
+    UDPServer* UDPServer::m_ptUDPServer = nullptr;
 
-	UDPServer* UDPServer::m_ptUDPServer = nullptr;
+    ///
+    /// Static method return Singleton pointer
+    /// Instanciate the Singleton if it not yet exist
+    ///
+    UDPServer* UDPServer::Instance()
+    {
+        if (m_ptUDPServer==nullptr)
+        {
+            m_ptUDPServer=new UDPServer;
+        }
+        return m_ptUDPServer;
+    }
 
-	UDPServer* UDPServer::instance()
-	{
-		if (m_ptUDPServer==nullptr)
-		{
-			m_ptUDPServer=new UDPServer;
-		}
-		return m_ptUDPServer;
-	}
+    ///
+    /// Singleton Static Kill Method
+    ///
 
-	void UDPServer::kill()
-	{
-		if (m_ptUDPServer!=nullptr)
-		{
-			delete m_ptUDPServer;
-			m_ptUDPServer=nullptr;
-		}
-	}
+    void UDPServer::Kill()
+    {
+        if (m_ptUDPServer!=nullptr)
+        {
+            delete m_ptUDPServer;
+            m_ptUDPServer=nullptr;
+        }
+    }
 
-	UDPServer::UDPServer()
-	{
-		initialized=false;
-		socket = nullptr;
-		Log = CLogger::instance();
+    ///
+    /// Private UDP Server Constructor
+    ///
+    UDPServer::UDPServer()
+    {
+        m_Initialized=false;
+        m_Socket = nullptr;
+        m_Log = CLogger::Instance();
 #ifdef XFFS_DEBUG
-		Log->log(_("Call UDPServer Constructor"), LEVEL_DEBUG);
+        m_Log->Log(_("Call UDPServer Constructor"), LEVEL_DEBUG);
 #endif
-	}
+    }
 
-	UDPServer::~UDPServer()
-	{
-		stop();
+    ///
+    /// Private Destructor for SingleTon UDP Server
+    ///
+    UDPServer::~UDPServer()
+    {
+        Stop();
 #ifdef XFFS_DEBUG
-		Log->log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
+        m_Log->Log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-	}
+    }
 
-	void UDPServer::start(unsigned short local_port)
-	{
-		if (initialized) stop();
-		socket = new udp::socket(io_service, udp::endpoint(udp::v4(), local_port));
-		service_thread = new std::thread(&UDPServer::run_service, this);
-		nextClientID=0;
-		initialized=true;
+    ///
+    /// Start Listening to specified port
+    ///
+    void UDPServer::Start(unsigned short pPort)
+    {
+        if (m_Initialized) Stop();
+        m_Socket = new udp::socket(m_IoService, udp::endpoint(udp::v4(), pPort));
+        m_ServiceThread = new std::thread(&UDPServer::RunService, this);
+        m_NextClientID=0;
+        m_Initialized=true;
 #ifdef XFFS_DEBUG
-		Log->log(_("UDPServer::start"),LEVEL_DEBUG);
+        m_Log->Log(_("UDPServer::start"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-	}
+    }
 
-	void UDPServer::stop()
-	{
-		if (initialized)
-		{
-			io_service.stop();
-			service_thread->join();
-			//service_thread->detach();
-			delete service_thread;
-			delete socket;
-			service_thread = nullptr;
-			socket = nullptr;
-			initialized = false;
+    ///
+    /// Stop listening
+    ///
+    void UDPServer::Stop()
+    {
+        if (m_Initialized)
+        {
+            m_IoService.stop();
+            m_ServiceThread->join();
+            delete m_ServiceThread;
+            delete m_Socket;
+            m_ServiceThread = nullptr;
+            m_Socket = nullptr;
+            m_Initialized = false;
 #ifdef XFFS_DEBUG
-			Log->log(_("UDPServer::stopped"),LEVEL_DEBUG);
+            m_Log->Log(_("UDPServer::stopped"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-		}
-	}
+        }
+    }
 
-	void UDPServer::start_receive()
-	{
-		socket->async_receive_from(boost::asio::buffer(recv_buffer),
-									remote_endpoint,
-									boost::bind(&UDPServer::handle_receive, this,
-									boost::asio::placeholders::error,
-									boost::asio::placeholders::bytes_transferred
-									));
-	}
+    ///
+    /// Handle Receive data from UDP Socket
+    ///
+    void UDPServer::StartReceive()
+    {
+        m_Socket->async_receive_from(
+            boost::asio::buffer(m_RecvBuffer),
+            m_RemoteEndpoint,
+            boost::bind(
+                &UDPServer::HandleReceive,
+                this,
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred
+                )
+            );
+    }
 
-	void UDPServer::DisconnectClient(int32_t id)
-	{
-		clients.erase(id);
-		send_remove_client_to_subscribers(id);
-	}
+    ///
+    /// Disconnect client with given id
+    ///
+    void UDPServer::DisconnectClient(int32_t pId)
+    {
+        m_Clients.erase(pId);
+        SendRemoveClientToSubscribers(pId);
+    }
 
-	void UDPServer::handle_remote_error(const boost::system::error_code error, const udp::endpoint remote_endpoint)
-	{
-		bool found = false;
-		int32_t id;
-		for (const auto& client : clients)
-			if (client.second == remote_endpoint)
-			{
-				found = true;
-				id = client.first;
-				break;
-			}
-		if (found == false) return;
-		DisconnectClient(id);
-	}
+    ///
+    /// Manage Remote Error
+    ///
+    void UDPServer::HandleRemoteError(const boost::system::error_code pError, const udp::endpoint pRemoteEndpoint)
+    {
+        bool found = false;
+        int32_t id;
+        for (const auto& client : m_Clients)
+            if (client.second == pRemoteEndpoint)
+            {
+                found = true;
+                id = client.first;
+                break;
+            }
+        if (found == false) return;
+        DisconnectClient(id);
+    }
 
-	void UDPServer::handle_receive(const boost::system::error_code& error, std::size_t bytes_transferred)
-	{
-		if (!error)
-		{
-			try {
-				ClientMessage message = ClientMessage(std::string(recv_buffer.data(), recv_buffer.data() + bytes_transferred), get_or_create_client_id(remote_endpoint));
-				if (!message.first.empty())
-					send_receive_to_subscribers(message);
-			}
-			catch (std::exception ex) {
-				Log->log(_("handle_receive: Error parsing incoming message:") + ex.what(), LEVEL_ERROR);
-			}
-			catch (...) {
-				Log->log(_("handle_receive: Unknown error while parsing incoming message"), LEVEL_ERROR);
-			}
-		}
-		else
-		{
-			std::stringstream Mess;
-			Mess << _("handle_receive: error: ") <<  error.message() << _(" while receiving from address ") << remote_endpoint;
-			Log->log(Mess.str(),LEVEL_ERROR);
-			handle_remote_error(error, remote_endpoint);
-		}
+    ///
+    /// Process Received Data and start a new receive waiting
+    ///
+    void UDPServer::HandleReceive(const boost::system::error_code& pError, std::size_t pBytesTransferred)
+    {
+        if (!pError)
+        {
+            try
+            {
+                ClientMessage message = ClientMessage(
+                    std::string(m_RecvBuffer.data(),
+                    m_RecvBuffer.data() + pBytesTransferred),
+                    GetOrCreateClientId(m_RemoteEndpoint)
+                );
+                if (!message.first.empty())
+                    SendReceiveToSubscribers(message);
+            }
+            catch (std::exception ex)
+            {
+                m_Log->Log(_("handle_receive: Error parsing incoming message:") + ex.what(), LEVEL_ERROR);
+            }
+            catch (...)
+            {
+                m_Log->Log(_("handle_receive: Unknown error while parsing incoming message"), LEVEL_ERROR);
+            }
+        }
+        else
+        {
+            std::stringstream Mess;
+            Mess << _("handle_receive: error: ") <<  pError.message() << _(" while receiving from address ") << m_RemoteEndpoint;
+            m_Log->Log(Mess.str(),LEVEL_ERROR);
+            HandleRemoteError(pError, m_RemoteEndpoint);
+        }
+        StartReceive();
+    }
 
-		start_receive();
-	}
+    ///
+    /// Send Data to Endpoint Target
+    ///
+    void UDPServer::Send(const std::string& pMessage, udp::endpoint pTargetEndpoint)
+    {
+        m_Socket->send_to(boost::asio::buffer(pMessage), pTargetEndpoint);
+    }
 
-	void UDPServer::send(const std::string& message, udp::endpoint target_endpoint)
-	{
-		socket->send_to(boost::asio::buffer(message), target_endpoint);
-	}
-
-	void UDPServer::run_service()
-	{
-		start_receive();
+    ///
+    /// Main Loop Thread Listener
+    ///
+    void UDPServer::RunService()
+    {
+        StartReceive();
 #ifdef XFFS_DEBUG
-			Log->log(_("UDPServer::run_service"),LEVEL_DEBUG);
+        m_Log->Log(_("UDPServer::run_service"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-		while (!io_service.stopped())
-		{
-			try
-			{
-				io_service.run();
-			}
-			catch (const std::exception& e)
-			{
-				Log->log(_("Server: Network exception: ") + e.what(), LEVEL_ERROR);
-			}
-			catch (...)
-			{
-				Log->log(_("Server: Network exception: unknown"),LEVEL_ERROR);
-			}
+        while (!m_IoService.stopped())
+        {
+            try
+            {
+                m_IoService.run();
+            }
+            catch (const std::exception& e)
+            {
+                m_Log->Log(_("Server: Network exception: ") + e.what(), LEVEL_ERROR);
+            }
+            catch (...)
+            {
+                m_Log->Log(_("Server: Network exception: unknown"),LEVEL_ERROR);
+            }
 #ifdef XFFS_DEBUG
-			Log->log(_("Server network thread stopped"),LEVEL_DEBUG);
+            m_Log->Log(_("Server network thread stopped"),LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-		}
-	}
+        }
+    }
 
-	int32_t UDPServer::get_or_create_client_id(udp::endpoint endpoint)
-	{
-		for (const auto& client : clients)
-			if (client.second == endpoint)
-				return client.first;
+    ///
+    /// Return Client ID from Endpoint connexion
+    /// If client not exist, we create a new one
+    ///
+    int32_t UDPServer::GetOrCreateClientId(udp::endpoint pEndpoint)
+    {
+        for (const auto& client : m_Clients)
+            if (client.second == pEndpoint)
+                return client.first;
 
-		auto id = ++nextClientID;
-		clients.insert(Client(id, endpoint));
-		send_add_client_to_subscribers(id);
-		return id;
-	}
+        auto id = ++m_NextClientID;
+        m_Clients.insert(Client(id, pEndpoint));
+        SendAddClientToSubscribers(id);
+        return id;
+    }
 
-	void UDPServer::SendToClient(const std::string& message, uint32_t clientID)
-	{
-		try
-		{
-			send(message, clients.at(clientID));
-		}
-		catch (std::out_of_range)
-		{
-			Log->log(_("SendToClient : Unknown client ID ") + std::to_string(clientID),LEVEL_ERROR);
-		}
-	}
+    ///
+    /// Send a message to client
+    ///
+    void UDPServer::SendToClient(const std::string& pMessage, uint32_t pClientID)
+    {
+        try
+        {
+            Send(pMessage, m_Clients.at(pClientID));
+        }
+        catch (std::out_of_range)
+        {
+            m_Log->Log(_("SendToClient : Unknown client ID ") + std::to_string(pClientID),LEVEL_ERROR);
+        }
+    }
 
-	void UDPServer::SendToAllExcept(const std::string& message, uint32_t clientID)
-	{
-		for (auto client : clients)
-			if (client.first != clientID)
-				send(message, client.second);
-	}
+    ///
+    /// Send a message to all clients
+    ///
+    void UDPServer::SendToAll(const std::string& pMessage)
+    {
+        for (auto client : m_Clients)
+            Send(pMessage, client.second);
+    }
 
-	void UDPServer::SendToAll(const std::string& message)
-	{
-		for (auto client : clients)
-			send(message, client.second);
-	}
+    ///
+    /// Return number of client registered
+    ///
+    size_t UDPServer::GetClientCount()
+    {
+        return m_Clients.size();
+    }
 
-	size_t UDPServer::GetClientCount()
-	{
-		return clients.size();
-	}
+    ///
+    /// Return client ID by index
+    ///
+    uint32_t UDPServer::GetClientIdByIndex(size_t pIndex)
+    {
+        auto it = m_Clients.begin();
+        for (int i = 0; i < pIndex; i++)
+            ++it;
+        return it->first;
+    }
 
-	uint32_t UDPServer::GetClientIdByIndex(size_t index)
-	{
-		auto it = clients.begin();
-		for (int i = 0; i < index; i++)
-			++it;
-		return it->first;
-	}
+    ///
+    /// Subscribe for callback event
+    ///
+    void UDPServer::SubscribeEvents(UDPServerEventHandler* pSubscriber)
+    {
+        if (std::find(m_ArrSubscribers.begin(), m_ArrSubscribers.end(), pSubscriber)==m_ArrSubscribers.end())
+        {
+            m_ArrSubscribers.push_back(pSubscriber);
+        }
+    }
 
-	void UDPServer::subscribe_events(UDPServerEventHandler* pSubscriber)
-	{
-		if (std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber)==arrSubscribers.end())
-		{
-			arrSubscribers.push_back(pSubscriber);
-		}
-	}
+    ///
+    /// Unsubscribe from callback events
+    ///
+    void UDPServer::UnsubscribeEvents(UDPServerEventHandler* pSubscriber)
+    {
+        auto it = std::find(m_ArrSubscribers.begin(), m_ArrSubscribers.end(), pSubscriber);
+        if (it != m_ArrSubscribers.end())
+        {
+            m_ArrSubscribers.erase(it);
+        }
+    }
 
-	void UDPServer::unsubscribe_events(UDPServerEventHandler* pSubscriber)
-	{
-		auto it = std::find(arrSubscribers.begin(), arrSubscribers.end(), pSubscriber);
-		if (it != arrSubscribers.end())
-		{
-			arrSubscribers.erase(it);
-		}
-	}
+    ///
+    /// Send Add client event to subscribers
+    ///
+    void UDPServer::SendAddClientToSubscribers(const uint32_t pClient)
+    {
+        for (UDPServerEventHandler* it : m_ArrSubscribers)
+        {
+            it->OnAddClient(pClient);
+        }
+    }
 
-	void UDPServer::send_add_client_to_subscribers(const uint32_t pClient)
-	{
-		for (UDPServerEventHandler* it : arrSubscribers)
-		{
-			it->OnAddClient(pClient);
-		}
-	}
+    ///
+    /// Send Remove Client Event to subscribers
+    ///
+    void UDPServer::SendRemoveClientToSubscribers(const uint32_t pClient)
+    {
+        for (UDPServerEventHandler* it : m_ArrSubscribers)
+        {
+            it->OnRemoveClient(pClient);
+        }
+    }
 
-	void UDPServer::send_remove_client_to_subscribers(const uint32_t pClient)
-	{
-		for (UDPServerEventHandler* it : arrSubscribers)
-		{
-			it->OnRemoveClient(pClient);
-		}
-	}
-	void UDPServer::send_receive_to_subscribers(const ClientMessage& pMessage)
-	{
-		for (UDPServerEventHandler* it : arrSubscribers)
-		{
-			it->OnReceiveData(pMessage);
-		}
-	}
+    ///
+    /// Send Receive Data Event to Subscribers
+    ///
+    void UDPServer::SendReceiveToSubscribers(const ClientMessage& pMessage)
+    {
+        for (UDPServerEventHandler* it : m_ArrSubscribers)
+        {
+            it->OnReceiveData(pMessage);
+        }
+    }
 }
