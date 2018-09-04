@@ -26,41 +26,41 @@ This repository use a submodule git wich embedd X-Plane SDK.
 
 To build XFFS2Play plugin, before install dependencies :
 
-  1. BUILD
-     1. LINUX
+1. BUILD
+    1. LINUX
         1. Ubuntu and derivates
 
-           On a terminal:
+        On a terminal:
 
-           ```
-           sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
-           ```
+        ~~~
+        sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
+        ~~~
 
         1. Arch Linux and derivates
 
-           On a terminal:
+        On a terminal:
 
-           ```
-           sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
-           ```
+        ~~~
+        sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
+        ~~~
 
         1. Gentoo / Calculate Linux
 
-           on a terminal as root:
+        on a terminal as root:
 
-           ```
-           emerge protobuf boost cmake
-           ```
+        ~~~
+        emerge protobuf boost cmake
+        ~~~
 
         1. Final build
 
-           on git root:
+        on git root:
 
-           ```
-           git submodule init
-           git submodule update --recursive
-           mkdir build && cd build
-           cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
-           make -j3
-           make install
-           ```
+        ~~~
+        git submodule init
+        git submodule update --recursive
+        mkdir build && cd build
+        cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
+        make -j3
+        make install
+        ~~~
