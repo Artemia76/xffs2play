@@ -1,5 +1,4 @@
-XFFS2PLAY
-====================
+# XFFS2PLAY
 
 XFFS2Play is an X-Plane Plugin to enable connectivity to FFS2Play mesh network.
 
@@ -32,35 +31,38 @@ To build XFFS2Play plugin, before install dependencies :
 
         On a terminal:
 
-        ~~~
+        ```
         sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
-        ~~~
+        ```
 
-        1. Arch Linux and derivates
+        2. Arch Linux and derivates
 
         On a terminal:
 
-        ~~~
+        ```
         sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
-        ~~~
+        ```
 
-        1. Gentoo / Calculate Linux
+        3. Gentoo / Calculate Linux
 
         on a terminal as root:
 
-        ~~~
+        ```
         emerge protobuf boost cmake
-        ~~~
+        ```
 
-        1. Final build
+        4. Final build
 
         on git root:
 
-        ~~~
+        ```
         git submodule init
         git submodule update --recursive
         mkdir build && cd build
         cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
         make -j3
         make install
-        ~~~
+        ```
+    2. WINDOWS
+
+    coming...
