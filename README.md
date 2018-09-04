@@ -30,39 +30,31 @@ To build XFFS2Play plugin, before install dependencies :
 
 		On a terminal:
 
-		```
-		sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
-		```
+			sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
 
 	2. Arch Linux and derivates
 
 		On a terminal:
 
-		```
-		sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
-		```
+			sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
 
 	3. Gentoo / Calculate Linux
 
-		on a terminal as root:
+		On a terminal as root:
 
-		```
-		emerge protobuf boost cmake
-		```
+			emerge protobuf boost cmake
 
 	4. Final build
 
-		on git root:
+		On this git base folder:
 
-		```
-		git submodule init
-		git submodule update --recursive
-		mkdir build && cd build
-		cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
-		make -j3
-		make install
-		```
+			git submodule init
+			git submodule update --recursive
+			mkdir build && cd build
+			cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
+			make -j3
+			make install
 
 2. Build on Windows
 
-	coming...
+	Coming...
