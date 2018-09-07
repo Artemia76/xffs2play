@@ -144,6 +144,7 @@ namespace xffs2play
     void CUserAircraft::ReadDataFromACF()
     {
         int PlaneCount=0;
+        std::string Desc;
         char FileName[256], AircraftPath[256];
         XPLMCountAircraft(&PlaneCount, 0, 0);
         if (PlaneCount > 1)
@@ -172,6 +173,7 @@ namespace xffs2play
                                 {
                                     Title += _(" ") + parser.get_token(i);
                                 }
+
 #ifdef XFFS_DEBUG
                                 m_Log->Log(_("Title = ") + Title, LEVEL_DEBUG);
 #endif
@@ -187,10 +189,22 @@ namespace xffs2play
                                     Category = "Airplane";
                                 }
                             }
+                            if (parser.get_token(1)=="acf/_descrip")
+                            {
+                                Desc = parser.get_token(2);
+                                for (int i=3; i<parser.get_num_tokens();i++)
+                                {
+                                    Desc += _(" ") + parser.get_token(i);
+                                }
+#ifdef XFFS_DEBUG
+                                m_Log->Log(_("Description = ") + Desc, LEVEL_DEBUG);
+#endif
+                            }
                         }
                     }
                 }
             }
+            if (Title.length() < 3) Title = Desc;
         }
     }
 }
