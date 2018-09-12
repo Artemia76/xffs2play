@@ -147,6 +147,9 @@ namespace xffs2play
         std::string Desc;
         char FileName[256], AircraftPath[256];
         XPLMCountAircraft(&PlaneCount, 0, 0);
+        Title="";
+        Desc="";
+        Category="";
         if (PlaneCount > 1)
         {
             XPLMGetNthAircraftModel(0, FileName, AircraftPath);
