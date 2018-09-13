@@ -35,7 +35,7 @@ namespace xffs2play
         m_XPNavLight = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
         m_XPRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
         m_XPGearPos = XPLMFindDataRef("sim/aircraft/parts/acf_gear_deploy");
-        //xpFlapsIndex = sim/flightmodel/controls/flaprqst
+		m_XPFlapsIndex = XPLMFindDataRef("sim/cockpit2/controls/flap_ratio");
         m_XPElevatorPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_pitch_ratio");
         m_XPAileronPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
         m_XPRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
@@ -135,6 +135,7 @@ namespace xffs2play
         RudderPos = XPLMGetDataf(m_XPRudderPos);
         Squawk = XPLMGetDatai(m_XPSquawk);
         Vario = XPLMGetDataf(m_XPVariometer);
+		FlapsIndex = XPLMGetDataf(m_XPFlapsIndex)*3;
     }
 
     ///

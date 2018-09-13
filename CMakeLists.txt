@@ -51,13 +51,14 @@ endif()
 
 include_directories( ${Boost_INCLUDE_DIR} )
 
-#opengl
-
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
-find_package(GLUT REQUIRED)
-include_directories(${GLUT_INCLUDE_DIR})
+#opengl
+if (UNIX)
+  find_package(GLUT REQUIRED)
+  include_directories(${GLUT_INCLUDE_DIR})
+endif()
 
 #protobuf
 
