@@ -219,7 +219,7 @@ namespace xffs2play
             XPLMSetDataf(m_XPPlanePsi, m_AIData.Heading);
             XPLMSetDatavf(m_XPPlaneGearDeploy, m_PlaneGearDeploy, 0, 5);
             XPLMSetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);
-            XPLMSetDataf(m_XPPlaneFlapsRatio, (float)(m_AIData.FlapsIndex*100.0/3.0));
+            XPLMSetDataf(m_XPPlaneFlapsRatio, (float)(m_AIData.FlapsIndex/3.0));
             XPLMSetDatai(m_XPPlaneBeaconLights, m_AIData.BeaconLight);
             XPLMSetDatai(m_XPPlaneLandingLights, m_AIData.LandingLight);
             XPLMSetDatai(m_XPPlaneNavLights, m_AIData.NavLight);

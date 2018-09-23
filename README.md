@@ -1,4 +1,4 @@
-XFFS2PLAY
+# XFFS2PLAY
 
 XFFS2Play is an X-Plane Plugin to enable connectivity to FFS2Play mesh network.
 
@@ -25,30 +25,36 @@ This repository use a submodule git wich embedd X-Plane SDK.
 
 To build XFFS2Play plugin, before install dependencies :
 
-1 LINUX
-1.1 Ubuntu and derivates
+1. Build on Linux
+	1. Ubuntu and derivates
 
-on a terminal :
+		On a terminal:
 
-sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
+			sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake
 
-1.2 Arch Linux and derivates
+	2. Arch Linux and derivates
 
-on a terminal :
-sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
+		On a terminal:
 
-1.3 Gentoo / Calculate Linux
+			sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
 
-on a terminal as root:
-emerge protobuf boost cmake
+	3. Gentoo / Calculate Linux
 
-1.4 all distrib
+		On a terminal as root:
 
-in git root:
-git submodule init
-git submodule update --recursive
-mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
-make -j3
-make install
+			emerge protobuf boost cmake
 
+	4. Final build
+
+		On this git base folder:
+
+			git submodule init
+			git submodule update --recursive
+			mkdir build && cd build
+			cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
+			make -j3
+			make install
+
+2. Build on Windows
+
+	Coming...

@@ -35,7 +35,7 @@ namespace xffs2play
         m_XPNavLight = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
         m_XPRecoLight = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
         m_XPGearPos = XPLMFindDataRef("sim/aircraft/parts/acf_gear_deploy");
-        //xpFlapsIndex = sim/flightmodel/controls/flaprqst
+		m_XPFlapsIndex = XPLMFindDataRef("sim/cockpit2/controls/flap_ratio");
         m_XPElevatorPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_pitch_ratio");
         m_XPAileronPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
         m_XPRudderPos = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
@@ -135,6 +135,7 @@ namespace xffs2play
         RudderPos = XPLMGetDataf(m_XPRudderPos);
         Squawk = XPLMGetDatai(m_XPSquawk);
         Vario = XPLMGetDataf(m_XPVariometer);
+		FlapsIndex = XPLMGetDataf(m_XPFlapsIndex)*3;
     }
 
     ///
@@ -144,8 +145,12 @@ namespace xffs2play
     void CUserAircraft::ReadDataFromACF()
     {
         int PlaneCount=0;
+        std::string Desc;
         char FileName[256], AircraftPath[256];
         XPLMCountAircraft(&PlaneCount, 0, 0);
+        Title="";
+        Desc="";
+        Category="";
         if (PlaneCount > 1)
         {
             XPLMGetNthAircraftModel(0, FileName, AircraftPath);
@@ -172,6 +177,7 @@ namespace xffs2play
                                 {
                                     Title += _(" ") + parser.get_token(i);
                                 }
+
 #ifdef XFFS_DEBUG
                                 m_Log->Log(_("Title = ") + Title, LEVEL_DEBUG);
 #endif
@@ -187,10 +193,22 @@ namespace xffs2play
                                     Category = "Airplane";
                                 }
                             }
+                            if (parser.get_token(1)=="acf/_descrip")
+                            {
+                                Desc = parser.get_token(2);
+                                for (int i=3; i<parser.get_num_tokens();i++)
+                                {
+                                    Desc += _(" ") + parser.get_token(i);
+                                }
+#ifdef XFFS_DEBUG
+                                m_Log->Log(_("Description = ") + Desc, LEVEL_DEBUG);
+#endif
+                            }
                         }
                     }
                 }
             }
+            if (Title.length() < 3) Title = Desc;
         }
     }
 }
