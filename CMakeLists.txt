@@ -42,7 +42,7 @@ endif()
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-if (MSVC)
+if (APPLE OR WIN32)
   set(Boost_USE_STATIC_LIBS        ON) # only find static libs
   find_package(Boost REQUIRED COMPONENTS system date_time regex)
 else ()
@@ -61,6 +61,7 @@ include_directories(${GLUT_INCLUDE_DIR})
 
 #protobuf
 
+set(PROTOBUF_USE_STATIC_LIBS ON)
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
