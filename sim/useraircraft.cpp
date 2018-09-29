@@ -151,7 +151,7 @@ namespace xffs2play
         Title="";
         Desc="";
         Category="";
-        if (PlaneCount > 1)
+        if (PlaneCount > 0)
         {
             XPLMGetNthAircraftModel(0, FileName, AircraftPath);
 #ifdef XFFS_DEBUG
