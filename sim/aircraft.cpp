@@ -302,7 +302,6 @@ namespace xffs2play
         // Else we have enough previous data to interpolate
         else
         {
-            double CoefHoriz = 0;
             m_PredictiveTime = m_RemoteRefreshRate*3;
             // Extrapolation compute
             timespan Retard = m_LastData - m_Data.TimeStamp; //Calcul du retard absolu de la donnée
@@ -319,7 +318,7 @@ namespace xffs2play
                 m_ActualPos.Pitch = m_AIData.Pitch;
 
                 m_FuturData.TimeStamp = m_LastRender + m_PredictiveTime;
-                CoefHoriz = (m_FuturData.TimeStamp - m_Data.TimeStamp) / m_RemoteRefreshRate;
+				double CoefHoriz = static_cast<double>((m_FuturData.TimeStamp - m_Data.TimeStamp).count()) / static_cast<double>(m_RemoteRefreshRate.count());
                 m_FuturData.Altitude = m_Data.Altitude + ((m_Data.Altitude - m_OldData.Altitude) * CoefHoriz);
                 m_FuturData.Longitude = m_Data.Longitude + ((m_Data.Longitude - m_OldData.Longitude) * CoefHoriz);
                 m_FuturData.Latitude = m_Data.Latitude + ((m_Data.Latitude - m_OldData.Latitude) * CoefHoriz);
