@@ -30,7 +30,7 @@ To build XFFS2Play plugin, before install dependencies :
 
 		On a terminal:
 
-			sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake pkg-config
+			sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake pkg-config freeglut3-dev
 
 	2. Arch Linux and derivates
 
