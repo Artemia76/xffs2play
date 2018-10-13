@@ -41,6 +41,7 @@ namespace xffs2play
         m_ObjectID=0;
         m_FirstScan=true;
         m_Options = (uint32_t)DisplayCallSign;
+        m_PlaneCount = 1;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
@@ -163,16 +164,27 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
+        int PlaneCount=1;
+        XPLMCountAircraft(&PlaneCount, nullptr, nullptr);
         if (m_FirstScan)
         {
             m_FirstScan=false;
+            for (int i=0 ; i<20 ; i++)
+            {
+                m_PtrAI[i]=nullptr;
+            }
+            SetupCullInfo(&m_GlCamera);
+        }
+        if (PlaneCount>m_PlaneCount)
+        {
             int Index;
             char FileName[256], AircraftPath[256];
-
-            XPLMCountAircraft(&m_PlaneCount, 0, 0);
-            if (m_PlaneCount > 1)
+            if (PlaneCount > 1)
             {
-                for (Index = 1; Index < m_PlaneCount; Index++)
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
+#endif
+                for (Index = m_PlaneCount; Index <= PlaneCount; Index++)
                 {
                     XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
                     strcpy(m_AircraftPath[Index-1], AircraftPath);
@@ -181,20 +193,14 @@ namespace xffs2play
                 m_Aircraft[Index-1] = nullptr;
                 if (XPLMAcquirePlanes((char **)&m_Aircraft, NULL, NULL))
                 {
-                    m_Log->Log(std::to_string(Index)+_(" Aircraft Acquired successfully"));
+                    m_Log->Log(std::to_string(Index-1)+_(" Aircraft Acquired successfully"));
                 }
                 else
                 {
                     m_Log->Log(_("Aircraft not Acquired"));
                 }
+                m_PlaneCount = PlaneCount;
             }
-
-            m_PlaneCount--;
-            for (int i=0 ; i<20 ; i++)
-            {
-                m_PtrAI[i]=nullptr;
-            }
-            SetupCullInfo(&m_GlCamera);
         }
         for (auto it : m_ArrAI)
         {
@@ -378,7 +384,7 @@ namespace xffs2play
                         m_Mutex.unlock();
                         if ((!Exist) && (Number > 0))
                         {
-                            Object=m_ObjectID++;
+                            ObjectID=++m_ObjectID;
 #ifdef XFFS_DEBUG
                             m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
 #endif
@@ -388,6 +394,12 @@ namespace xffs2play
                             m_Mutex.lock();
                             m_ArrAI.insert(PeerElement(m_ObjectID,PeerData));
                             m_Mutex.unlock();
+                        }
+                        else
+                        {
+#ifdef XFFS_DEBUG
+                            m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(Number), LEVEL_DEBUG);
+#endif
                         }
                         SendAddObjectID(ObjectID, CallSign);
                         break;
