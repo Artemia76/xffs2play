@@ -361,7 +361,6 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("SimController : Recieve ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
 #endif
-                        m_ObjectID++;
                         //Check if callsign already exist
                         bool Exist = false;
                         int Number = 0;
@@ -375,17 +374,22 @@ namespace xffs2play
                             }
                         }
                         Number = GetFirstFreeAI();
+                        uint32_t ObjectID=0;
                         m_Mutex.unlock();
                         if ((!Exist) && (Number > 0))
                         {
+                            Object=m_ObjectID++;
+#ifdef XFFS_DEBUG
+                            m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
+#endif
                             CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign));
                             m_PtrAI[Number-1]=PeerData;
                             //PeerData->fromAirData(ReceivedData);
                             m_Mutex.lock();
                             m_ArrAI.insert(PeerElement(m_ObjectID,PeerData));
                             m_Mutex.unlock();
-                            SendAddObjectID(m_ObjectID, CallSign);
                         }
+                        SendAddObjectID(ObjectID, CallSign);
                         break;
                     }
                     case DEL_PEER:
