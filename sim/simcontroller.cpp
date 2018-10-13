@@ -103,9 +103,9 @@ namespace xffs2play
     /// Loop Network management
     ///
     float SimController::LoopNetwork (
-        float pElapsedSinceLastCall,
-        float pElapsedTimeSinceLastFlightLoop,
-        int pCounter)
+        float /*pElapsedSinceLastCall*/,
+        float /*pElapsedTimeSinceLastFlightLoop*/,
+        int /*pCounter*/)
     {
         m_UserAircraft.Update();
         m_UserAircraft.ToAirData(m_SendData);
@@ -160,8 +160,8 @@ namespace xffs2play
     ///
     float SimController::LoopUpdate(
         float pElapsedSinceLastCall,
-        float pElapsedTimeSinceLastFlightLoop,
-        int pCounter)
+        float /*pElapsedTimeSinceLastFlightLoop*/,
+        int /*pCounter*/)
     {
         if (m_FirstScan)
         {
@@ -220,7 +220,7 @@ namespace xffs2play
     /// We take profit of this event to draw any object on
     /// the 3D and 2D scenery
     ///
-    int SimController::Draw(XPLMDrawingPhase pPhase, int pIsBefore)
+    int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
         if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
         for (auto it : m_ArrAI)

@@ -48,9 +48,9 @@ namespace xffs2play
 friend  class       UDPServer;
 
     protected:
-virtual void        OnReceiveData(const ClientMessage& pMessage){}
-virtual void        OnAddClient(uint32_t pClient){}
-virtual void        OnRemoveClient(uint32_t pClient){}
+virtual void        OnReceiveData(const ClientMessage& /*pMessage*/){}
+virtual void        OnAddClient(uint32_t /*pClient*/){}
+virtual void        OnRemoveClient(uint32_t /*pClient*/){}
 
     public:
                     UDPServerEventHandler();

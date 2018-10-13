@@ -104,7 +104,7 @@ PLUGIN_API void XPluginReceiveMessage(
 ///
 ///
 ///
-void MenuHandler(void* pMenuRef, void* pItemRef)
+void MenuHandler(void* /*pMenuRef*/, void* pItemRef)
 {
     if(!strcmp((const char *)pItemRef, "Menu Item 1"))
     {

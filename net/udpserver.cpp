@@ -159,7 +159,7 @@ namespace xffs2play
     ///
     /// Manage Remote Error
     ///
-    void UDPServer::HandleRemoteError(const boost::system::error_code pError, const udp::endpoint pRemoteEndpoint)
+    void UDPServer::HandleRemoteError(const boost::system::error_code /*pError*/, const udp::endpoint pRemoteEndpoint)
     {
         bool found = false;
         int32_t id;

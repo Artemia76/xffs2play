@@ -127,7 +127,7 @@ namespace xffs2play
     ///
     void MainFrame::DrawWindowCallback(
         XPLMWindowID pWindowID,
-        void* pRefCon)
+        void* /*pRefCon*/)
     {
         if (m_ptMainFrame!=nullptr)
         {
