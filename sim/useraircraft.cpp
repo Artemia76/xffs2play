@@ -154,8 +154,9 @@ namespace xffs2play
         if (PlaneCount > 0)
         {
             XPLMGetNthAircraftModel(0, FileName, AircraftPath);
+
 #ifdef XFFS_DEBUG
-            m_Log->Log(_("AircraftPath = ") + std::string(AircraftPath), LEVEL_DEBUG);
+            m_Log->Log(_("FileName=") + std::string(FileName) + _(" AircraftPath = ") + std::string(AircraftPath), LEVEL_DEBUG);
 #endif
             simple_file_parser parser;
             parser.set_single_char_tokens(" ");
