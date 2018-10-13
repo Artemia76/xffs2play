@@ -21,7 +21,7 @@
 ****************************************************************************/
 
 #include "xpmain.h"
-
+#include <XPLMPlugin.h>
 ///
 /// XPluginDisable
 ///
@@ -61,6 +61,9 @@ PLUGIN_API void	XPluginStop(void)
 ///
 PLUGIN_API int XPluginEnable(void)
 {
+#ifdef __APPLE__
+    XPLMEnableFeature("XPLM_USE_NATIVE_PATHS",1);
+#endif
     g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
     g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
     XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
