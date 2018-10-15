@@ -21,6 +21,7 @@
 ****************************************************************************/
 
 #include "sim/simcontroller.h"
+#include "tools/version.h"
 #include "tools/hexa.h"
 #include <istream>
 #include <iostream>
@@ -40,7 +41,7 @@ namespace xffs2play
         m_Server = UDPServer::Instance();
         m_ObjectID=0;
         m_FirstScan=true;
-        m_Options = (uint32_t)DisplayCallSign;
+        m_Options = static_cast<uint32_t>(DisplayCallSign);
         m_PlaneCount = 1;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
@@ -118,7 +119,7 @@ namespace xffs2play
                 try
                 {
                     std::ostringstream  ssoutput;
-                    ssoutput << (byte)DATA_SEND;
+                    ssoutput << static_cast<uint8_t>(DATA_SEND);
                     m_SendData.SerializeToOstream(&ssoutput);
                     m_Server->SendToClient(ssoutput.str(), it.first);
                 }
@@ -188,10 +189,10 @@ namespace xffs2play
                 {
                     XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
                     strcpy(m_AircraftPath[Index-1], AircraftPath);
-                    m_Aircraft[Index-1] = (char *)m_AircraftPath[Index-1];
+                    m_Aircraft[Index-1] = reinterpret_cast<char *>(m_AircraftPath[Index-1]);
                 }
                 m_Aircraft[Index-1] = nullptr;
-                if (XPLMAcquirePlanes((char **)&m_Aircraft, NULL, NULL))
+                if (XPLMAcquirePlanes(reinterpret_cast<char **>(&m_Aircraft), nullptr, nullptr))
                 {
                     m_Log->Log(std::to_string(Index-1)+_(" Aircraft Acquired successfully"));
                 }
@@ -286,7 +287,7 @@ namespace xffs2play
         if (it != m_ArrClients.end())
         {
             std::istringstream data(pMessage.first);
-            byte Code;
+            uint8_t Code;
             if ((data >> Code))
             {
                 switch ((FFS2Proto)Code)
@@ -295,7 +296,7 @@ namespace xffs2play
                     {
                         it->second.LastPing = Now();
                         uint32_t Options;
-                        data.read((char*)(&Options),sizeof(Options));
+                        data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
                         if (m_Options != Options)
                         {
                             m_Options = Options;
@@ -305,7 +306,11 @@ namespace xffs2play
                         m_Log->Log(_("Receive Ping with option = ") + std::to_string(Options), LEVEL_DEBUG);
 #endif
                         std::ostringstream  ssoutput;
-                        ssoutput << (byte)PONG << (byte)XFF2_PROTOCOL;
+                        ssoutput << static_cast<uint8_t>(PONG);
+                        ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
+                        ssoutput << static_cast<uint8_t>(APP_MAJOR);
+                        ssoutput << static_cast<uint8_t>(APP_MINOR);
+                        ssoutput << static_cast<uint8_t>(APP_BUILD);
                         m_Server->SendToClient(ssoutput.str(), pMessage.second);
                         break;
                     }
@@ -322,15 +327,15 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Data"), LEVEL_DEBUG);
 #endif
-                        byte Flag=0;
+                        uint8_t Flag=0;
                         data>>Flag;
-                        it->second.ReceiveData=(bool)Flag;
+                        it->second.ReceiveData=static_cast<bool>(Flag);
                         break;
                     }
                     case DATA_SEND:
                     {
                         uint32_t Object_ID;
-                        data.read((char*)(&Object_ID),sizeof(Object_ID));
+                        data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
                         m_ReceivedData.ParseFromIstream(&data);
                         m_Mutex.lock();
                         for (auto it : m_ArrAI)
@@ -355,7 +360,7 @@ namespace xffs2play
                     case ADD_PEER:
                     {
                         std::string CallSign;
-                        byte Len;
+                        uint8_t Len;
                         data >> Len;
                         char* Buff = new char [Len+1];
                         data.read(Buff, Len);
@@ -407,7 +412,7 @@ namespace xffs2play
                     case DEL_PEER:
                     {
                         uint32_t Object_ID;
-                        data.read((char*)(&Object_ID),sizeof(Object_ID));
+                        data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
                         uint32_t Deleted_Object_ID = 0;
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
@@ -457,11 +462,11 @@ namespace xffs2play
             try
             {
                 std::ostringstream  ssoutput;
-                ssoutput << (byte)ADD_PEER;
-                byte len = pCallSign.length();
+                ssoutput << static_cast<uint8_t>(ADD_PEER);
+                uint8_t len = pCallSign.length();
                 ssoutput << len;
                 ssoutput.write(pCallSign.c_str(),len);
-                ssoutput.write((char*)(&pObjectID), sizeof(pObjectID));
+                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
                 m_Server->SendToClient(ssoutput.str(), it.first);
             }
             catch (const std::exception& e)
@@ -482,8 +487,8 @@ namespace xffs2play
             try
             {
                 std::ostringstream  ssoutput;
-                ssoutput << (byte)DEL_PEER;
-                ssoutput.write((char*)(&pObjectID), sizeof(pObjectID));
+                ssoutput << static_cast<uint8_t>(DEL_PEER);
+                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
                 m_Server->SendToClient(ssoutput.str(), it.first);
             }
             catch (const std::exception& e)
@@ -551,6 +556,6 @@ namespace xffs2play
     ///
     bool SimController::GetOption(SimOption pOption)
     {
-        return (m_Options & (uint32_t)pOption) > 0;
+        return (m_Options & static_cast<uint32_t>(pOption)) > 0;
     }
 }

@@ -52,9 +52,9 @@ namespace xffs2play
     ///
     ///
     float CLogger::LoopCallback(
-        float pElapsedSinceLastCall,
-        float pElapsedTimeSinceLastFlightLoop,
-        int pCounter,
+        float /*pElapsedSinceLastCall*/,
+        float /*pElapsedTimeSinceLastFlightLoop*/,
+        int /*pCounter*/,
         void* pRef
     )
     {

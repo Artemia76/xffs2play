@@ -67,7 +67,6 @@ namespace xffs2play
     typedef std::map<uint32_t, CAircraft*> AITab_t;
     typedef std::pair<uint32_t, CAircraft*> PeerElement;
     typedef FFS2ClientList::value_type FFS2Client;
-    typedef unsigned char byte;
 
     class SimController : public UDPServerEventHandler
     {

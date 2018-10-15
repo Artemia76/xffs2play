@@ -176,7 +176,7 @@ namespace xffs2play
             m_AIData.Smoke = m_Data.Smoke;
             if ((m_Spawned>=2) && (interFPS > 0))
             {
-                double CoefInterpol = interFPS / (double)duration_cast<milliseconds>(m_FuturData.TimeStamp - m_ActualPos.TimeStamp).count();
+                double CoefInterpol = interFPS / static_cast<double>(duration_cast<milliseconds>(m_FuturData.TimeStamp - m_ActualPos.TimeStamp).count());
                 m_AIData.Altitude += m_DeltaAltitude * CoefInterpol;
                 m_AIData.Latitude += m_DeltaLatitude * CoefInterpol;
                 m_AIData.Longitude += m_DeltaLongitude * CoefInterpol;
@@ -205,12 +205,12 @@ namespace xffs2play
             }
             for (int i=0; i<5 ; i++)
             {
-                m_PlaneGearDeploy[i]=(float)m_AIData.GearPos;
+                m_PlaneGearDeploy[i]=static_cast<float>(m_AIData.GearPos);
             }
-            m_PlaneThrottle[0] = (float)m_AIData.ThrottleEng1/100;
-            m_PlaneThrottle[1] = (float)m_AIData.ThrottleEng2/100;
-            m_PlaneThrottle[2] = (float)m_AIData.ThrottleEng3/100;
-            m_PlaneThrottle[3] = (float)m_AIData.ThrottleEng4/100;
+            m_PlaneThrottle[0] = static_cast<float>(m_AIData.ThrottleEng1/100.0);
+            m_PlaneThrottle[1] = static_cast<float>(m_AIData.ThrottleEng2/100.0);
+            m_PlaneThrottle[2] = static_cast<float>(m_AIData.ThrottleEng3/100.0);
+            m_PlaneThrottle[3] = static_cast<float>(m_AIData.ThrottleEng4/100.0);
             XPLMSetDataf(m_XPPlaneX, m_PlaneX);
             XPLMSetDataf(m_XPPlaneY, m_PlaneY);
             XPLMSetDataf(m_XPPlaneZ, m_PlaneZ);
@@ -219,15 +219,15 @@ namespace xffs2play
             XPLMSetDataf(m_XPPlanePsi, m_AIData.Heading);
             XPLMSetDatavf(m_XPPlaneGearDeploy, m_PlaneGearDeploy, 0, 5);
             XPLMSetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);
-            XPLMSetDataf(m_XPPlaneFlapsRatio, (float)(m_AIData.FlapsIndex/3.0));
+            XPLMSetDataf(m_XPPlaneFlapsRatio, static_cast<float>(m_AIData.FlapsIndex/3.0));
             XPLMSetDatai(m_XPPlaneBeaconLights, m_AIData.BeaconLight);
             XPLMSetDatai(m_XPPlaneLandingLights, m_AIData.LandingLight);
             XPLMSetDatai(m_XPPlaneNavLights, m_AIData.NavLight);
             XPLMSetDatai(m_XPPlaneStrobeLights, m_AIData.StrobeLight);
             XPLMSetDatai(m_XPPlaneTaxiLights, m_AIData.RecoLight);
-            XPLMSetDataf(m_XPPlaneYolkPitch, (float)m_AIData.ElevatorPos);
-            XPLMSetDataf(m_XPPlaneYolkRoll, (float)m_AIData.AileronPos);
-            XPLMSetDataf(m_XPPlaneYolkYaw, (float)m_AIData.RudderPos);
+            XPLMSetDataf(m_XPPlaneYolkPitch, static_cast<float>(m_AIData.ElevatorPos));
+            XPLMSetDataf(m_XPPlaneYolkRoll, static_cast<float>(m_AIData.AileronPos));
+            XPLMSetDataf(m_XPPlaneYolkYaw, static_cast<float>(m_AIData.RudderPos));
             if (m_CurrentAircraftPath != m_AircraftPath)
             {
                 XPLMSetAircraftModel(m_NumberID,m_AircraftPath.c_str());
@@ -268,11 +268,13 @@ namespace xffs2play
                         float x, y ;
                         ConvertTo2D(m_GlCamera, vp, m_CoordX, m_CoordY, m_CoordZ, 1.0, &x, &y);
                         float Color[] = { 1.0, 0.0, 0.0 };
-                        XPLMDrawString(Color,x,y,(char*)m_CallSign.c_str(),nullptr,xplmFont_Basic);
+                        char* text = strdup(m_CallSign.c_str());
+                        XPLMDrawString(Color,x,y,text,nullptr,xplmFont_Basic);
                         glMatrixMode(GL_PROJECTION);
                         glPopMatrix();
                         glMatrixMode(GL_MODELVIEW);
                         glPopMatrix();
+                        delete[] text;
                     }
                     break;
                 }

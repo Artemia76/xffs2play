@@ -32,11 +32,11 @@ using namespace std;
 
 #define MYDEBUG(msg) cout << "DEBUG:" << __FILE__ << ":" << __LINE__ << ": " << msg << endl
 
-simple_file_parser::simple_file_parser(const simple_file_parser& obj)
+simple_file_parser::simple_file_parser(const simple_file_parser& /*obj*/)
 {
 }
 
-simple_file_parser& simple_file_parser::operator=(const simple_file_parser& obj)
+simple_file_parser& simple_file_parser::operator=(const simple_file_parser& /*obj*/)
 {
   return *this;
 }

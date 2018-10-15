@@ -83,19 +83,19 @@ static  int                 HandleMouseClickCallback(
 #ifdef XPLM300
 
 static  int                 HandleMouseWheelCallback(
-                                XPLMWindowID pWindowID,
-                                int pX,
-                                int pY,
-                                int pWheel,
-                                int pClicks,
-                                void* pRefCon
+                                XPLMWindowID /*pWindowID*/,
+                                int /*pX*/,
+                                int /*pY*/,
+                                int /*pWheel*/,
+                                int /*pClicks*/,
+                                void* /*pRefCon*/
                             ) { return 0; }
 
 static  XPLMCursorStatus    HandleCursorCallback(
-                                XPLMWindowID pWindowId,
-                                int pX,
-                                int pY,
-                                void* pRefCon
+                                XPLMWindowID /*pWindowId*/,
+                                int /*pX*/,
+                                int /*pY*/,
+                                void* /*pRefCon*/
                             ) { return xplm_CursorDefault; }
 #endif
         int                 m_Left;
