@@ -26,9 +26,9 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
-constexpr auto APP_MAJOR = 1;
-constexpr auto APP_MINOR = 0;
-constexpr auto APP_BUILD = 18;
+#define APP_MAJOR                   1
+#define APP_MINOR                   0
+#define APP_BUILD                   18
 
 #define VER_FILEVERSION             APP_MAJOR,APP_MINOR,APP_BUILD,0
 #define VER_FILEVERSION_STR         STR(APP_MAJOR) "." STR(APP_MINOR) "." STR(APP_BUILD) ".0\0"
