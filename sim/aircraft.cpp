@@ -23,6 +23,7 @@
 #include "aircraft.h"
 #include "XPLMGraphics.h"
 #include "XPLMScenery.h"
+#include <sstream>
 
 namespace xffs2play
 {
@@ -95,6 +96,8 @@ namespace xffs2play
         m_Cull = false;
         EnableDisplayCallsign = pEnableDisplayCallSign;
 
+        m_LastTextPhaseChange = Now();
+        m_TextPhase=0;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -133,7 +136,7 @@ namespace xffs2play
     ///
     /// Move and change AI Aircraft data on X-Plane
     ///
-    void CAircraft::SetAircraftData(float pElapsedSinceLastCall)
+    void CAircraft::SetAircraftData(float pElapsedSinceLastCall, double pLat, double pLon)
     {
         datetime curr_time = Now();
         //std::chrono::duration<double, std::milli> diff = curr_time - m_lastRender;
@@ -189,6 +192,8 @@ namespace xffs2play
                 m_AIData.Bank += m_DeltaBank * CoefInterpol;
                 if (m_AIData.Bank < -180) m_AIData.Bank += 360;
                 if (m_AIData.Bank >= 180) m_AIData.Bank -= 360;
+                // Update Distance
+                m_Distance = Distance(pLat,pLon,m_AIData.Latitude,m_AIData.Longitude,'N');
             }
             XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
             XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
@@ -241,6 +246,14 @@ namespace xffs2play
     ///
     void CAircraft::Draw(XPLMDrawingPhase pPhase)
     {
+        // Callsign text loop
+        if (duration_cast<milliseconds>(Now()-m_LastTextPhaseChange).count() > 1000)
+        {
+            m_TextPhase++;
+            if (m_TextPhase > 2) m_TextPhase=0;
+            m_LastTextPhaseChange = Now();
+        }
+
         if (m_Spawned>=1)
         {
             if (!EnableDisplayCallsign) return;
@@ -254,7 +267,7 @@ namespace xffs2play
                 }
                 case xplm_Phase_Window:
                 {
-                    if (m_Cull)
+                    if (m_Cull && (m_TextPhase>0))
                     {
                         GLfloat	vp[4];
                         glGetFloatv(GL_VIEWPORT,vp);
@@ -268,8 +281,20 @@ namespace xffs2play
                         float x, y ;
                         ConvertTo2D(m_GlCamera, vp, m_CoordX, m_CoordY, m_CoordZ, 1.0, &x, &y);
                         float Color[] = { 1.0, 0.0, 0.0 };
-                        char* text = strdup(m_CallSign.c_str());
-                        XPLMDrawString(Color,x,y,text,nullptr,xplmFont_Basic);
+                        std::ostringstream Text;
+                        Text.precision(1);
+                        switch (m_TextPhase)
+                        {
+                            case 1:
+                                Text << m_CallSign;
+                                break;
+                            case 2:
+                                Text << std::fixed <<  m_Distance << " NM" ;
+                                break;
+                        }
+                        char* text = strdup(Text.str().c_str());
+                        int text_width = XPLMMeasureString(xplmFont_Proportional, text, strlen(text));
+                        XPLMDrawString(Color,x - (text_width/2),y,text,nullptr,xplmFont_Proportional);
                         glMatrixMode(GL_PROJECTION);
                         glPopMatrix();
                         glMatrixMode(GL_MODELVIEW);

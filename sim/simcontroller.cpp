@@ -205,7 +205,7 @@ namespace xffs2play
         }
         for (auto it : m_ArrAI)
         {
-            it.second->SetAircraftData(pElapsedSinceLastCall);
+            it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
         }
         return -1;
     }

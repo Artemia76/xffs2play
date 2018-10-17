@@ -30,6 +30,9 @@
 #include <GL/gl.h>
 #endif
 
+#define _USE_MATH_DEFINES
+#include<cmath>
+
 namespace xffs2play
 {
     ///
@@ -127,5 +130,53 @@ namespace xffs2play
 
         *out_x = vp[0] + (1.0f + xc) * vp[2] / 2.0f;
         *out_y = vp[1] + (1.0f + yc) * vp[3] / 2.0f;
+    }
+
+    ///
+    /// \brief deg2rad
+    /// \param deg
+    /// \return
+    ///
+    static inline double deg2rad(double deg)
+    {
+        return (deg * M_PI  / 180.0);
+    }
+
+    ///
+    /// \brief rad2deg
+    /// \param rad
+    /// \return
+    ///
+    static inline double rad2deg(double rad)
+    {
+        return (rad / M_PI * 180.0);
+    }
+
+    ///
+    /// \brief distance
+    /// \param lat1
+    /// \param lon1
+    /// \param lat2
+    /// \param lon2
+    /// \param unit
+    /// \return
+    ///
+    static inline double Distance(double lat1, double lon1, double lat2, double lon2, char unit)
+    {
+        double theta = lon1 - lon2;
+        double dist = std::sin(deg2rad(lat1)) * std::sin(deg2rad(lat2)) + std::cos(deg2rad(lat1)) * std::cos(deg2rad(lat2)) * std::cos(deg2rad(theta));
+        dist = std::acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+        if (unit == 'K')
+        {
+            dist = dist * 1.609344;
+        }
+        else if (unit == 'N')
+        {
+            dist = dist * 0.8684;
+        }
+        if (std::isnan(dist)) dist = 0;
+        return (dist);
     }
 }

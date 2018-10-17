@@ -58,13 +58,14 @@ namespace xffs2play
 
 virtual                 ~CAircraft();
         void            GetAircraftData(void);
-        void            SetAircraftData(float inElapsedSinceLastCall);
+        void            SetAircraftData(float inElapsedSinceLastCall,double pLat, double pLon);
         void            FromAirData (const AirData& pAirData);
         bool            IsCallSign(std::string& pCallSign);
         void            Draw(XPLMDrawingPhase pPhase);
         bool            EnableDisplayCallsign;
 
     private:
+        double          m_Distance;
         double          m_PlaneX;
         double          m_PlaneY;
         double          m_PlaneZ;
@@ -98,6 +99,8 @@ virtual                 ~CAircraft();
         GLdouble        m_CoordZ;
         CullInfo_t*     m_GlCamera;
         bool            m_Cull;
+        int             m_TextPhase;
+        datetime        m_LastTextPhaseChange;
 
         XPLMDataRef     m_XPPlaneX;
         XPLMDataRef     m_XPPlaneY;
