@@ -22,6 +22,13 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
+#ifndef M_PI
+	#define M_PI       3.14159265358979323846   // pi
+#endif
+
 #if IBM
 #include <GL/gl.h>
 #elif APL
@@ -29,9 +36,6 @@
 #else
 #include <GL/gl.h>
 #endif
-
-#define _USE_MATH_DEFINES
-#include<cmath>
 
 namespace xffs2play
 {

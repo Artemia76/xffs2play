@@ -32,7 +32,6 @@
 #include "proto/aircraftstate.pb.h"
 #include "tools/log.h"
 #include "tools/datetime.h"
-
 #include "tools/utils3d.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
