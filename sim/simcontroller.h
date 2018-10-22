@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <mutex>
+#include <queue>
 
 #include <XPLMDataAccess.h>
 #include <XPLMProcessing.h>
@@ -35,6 +36,7 @@
 #include "tools/log.h"
 #include "aircraft.h"
 #include "tools/utils3d.h"
+#include "tools/sharedqueue.h"
 
 #define XFF2_PROTOCOL 1
 
@@ -64,8 +66,6 @@ namespace xffs2play
     };
 
     typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
-    typedef std::map<uint32_t, CAircraft*> AITab_t;
-    typedef std::pair<uint32_t, CAircraft*> PeerElement;
     typedef FFS2ClientList::value_type FFS2Client;
 
     class SimController : public UDPServerEventHandler
@@ -95,8 +95,6 @@ static  float           LoopUpdateCallback(float, float, int, void*);
         float           LoopUpdate (float, float, int);
 static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         int             Draw (XPLMDrawingPhase, int);
-        void            UpdateAircraftData();
-        void            IncomingRequest();
         void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
         void            SendDelObjectID(uint32_t pObjectID);
         void            ClearObjectAI();
@@ -104,22 +102,23 @@ static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         void            RemoveAI(CAircraft* pPtr);
         void            UpdateOptions();
         bool            GetOption(SimOption pOption);
+		void			ProcessIncomingMessage();
 
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
         bool            m_FirstScan;
-        int             m_PlaneCount;
+        uint8_t         m_PlaneCount;
         AirData         m_SendData;
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
         CLogger*        m_Log;
         UDPServer*      m_Server;
         FFS2ClientList  m_ArrClients;
-        AITab_t         m_ArrAI;
         CAircraft*      m_PtrAI[20];
         std::mutex      m_Mutex;
-        char*           m_Aircraft[20];
-        char            m_AircraftPath[20][512];
+        char*           m_Aircraft[21];
+        char            m_AircraftPath[21][512];
         CullInfo_t      m_GlCamera;
+		SynchronisedQueue<ClientMessage> m_receive_queue;
     };
 }

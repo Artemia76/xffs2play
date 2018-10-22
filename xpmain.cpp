@@ -31,13 +31,9 @@ PLUGIN_API void XPluginDisable(void)
 {
     XPLMDestroyMenu(g_menu_id);
     XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
-    SimController::Kill();
-    if (mainWindow!=nullptr)
-    {
-        MainFrame::Kill();
-        mainWindow=nullptr;
-    }
-    UDPServer::Kill();
+	SimController::Kill();
+    MainFrame::Kill();
+	UDPServer::Kill();
     CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
 }
 
@@ -89,6 +85,7 @@ PLUGIN_API int XPluginStart(
     strcpy(pSig, VER_COMPANYDOMAIN_STR);
     strcpy(pDesc, VER_FILEDESCRIPTION_STR);
     CLogger::Instance()->Log(_("Plugin loaded"));
+	mainWindow = nullptr;
     return 1;
 }
 

@@ -14,6 +14,8 @@ endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+
 file(GLOB GUI gui/*.c*)
 file(GLOB NET net/*.c*)
 file(GLOB SIM sim/*.c*)
@@ -46,7 +48,7 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 
 if (APPLE OR WIN32)
   set(Boost_USE_STATIC_LIBS        ON) # only find static libs
-  find_package(Boost REQUIRED COMPONENTS system date_time regex)
+  find_package(Boost REQUIRED COMPONENTS thread system date_time regex)
 else ()
   find_package(Boost REQUIRED COMPONENTS system)
 endif()

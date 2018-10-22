@@ -33,7 +33,7 @@ namespace xffs2play
     /// ou plugin
     ///
     CAircraft::CAircraft(
-        int pNumberID,
+        int pObjectID,
         std::string pCallSign,
         AIResol& pAircraft,
         CullInfo_t* pGlCamera,
@@ -42,14 +42,14 @@ namespace xffs2play
     {
         m_Spawned = 0;
         m_OldFps = 0;
-        m_NumberID=pNumberID;
+        m_ObjectID= pObjectID;
         m_CallSign = pCallSign;
         m_AircraftPath = pAircraft.path();
         m_CGHeight=pAircraft.cgheight();
         m_Pitch=pAircraft.pitch();
         m_LastRender = Now();
 
-        std::string ref_base = _("sim/multiplayer/position/plane") + std::to_string(m_NumberID);
+        std::string ref_base = _("sim/multiplayer/position/plane") + std::to_string(m_ObjectID);
         std::string x_str = ref_base + _("_x");
         std::string y_str = ref_base + _("_y");
         std::string z_str = ref_base + _("_z");
@@ -90,7 +90,7 @@ namespace xffs2play
 
         m_TerrRef = XPLMCreateProbe(xplm_ProbeY);
         m_TerrData.structSize=sizeof(XPLMProbeInfo_t);
-        XPLMDisableAIForPlane(m_NumberID);
+        XPLMDisableAIForPlane(m_ObjectID);
         m_GlCamera=pGlCamera;
         m_Log = CLogger::Instance();
         m_Cull = false;
@@ -114,7 +114,7 @@ namespace xffs2play
         XPLMSetDataf(m_XPPlaneZ, 0);
         XPLMDestroyProbe(m_TerrRef);
 #ifdef XFFS_DEBUG
-        m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_NumberID) ,LEVEL_DEBUG);
+        m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
     }
 
@@ -235,7 +235,7 @@ namespace xffs2play
             XPLMSetDataf(m_XPPlaneYolkYaw, static_cast<float>(m_AIData.RudderPos));
             if (m_CurrentAircraftPath != m_AircraftPath)
             {
-                XPLMSetAircraftModel(m_NumberID,m_AircraftPath.c_str());
+                XPLMSetAircraftModel(m_ObjectID,m_AircraftPath.c_str());
                 m_CurrentAircraftPath = m_AircraftPath;
             }
         }

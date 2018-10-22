@@ -48,7 +48,7 @@ namespace xffs2play
     {
     public:
                         CAircraft(
-                            int pNumberId,
+                            int pObjectID,
                             std::string pCallSign,
                             AIResol& pAircraft,
                             CullInfo_t* pGl_camera,
@@ -61,6 +61,7 @@ virtual                 ~CAircraft();
         void            FromAirData (const AirData& pAirData);
         bool            IsCallSign(std::string& pCallSign);
         void            Draw(XPLMDrawingPhase pPhase);
+		int				GetObjectID() { return m_ObjectID; }
         bool            EnableDisplayCallsign;
 
     private:
@@ -73,7 +74,7 @@ virtual                 ~CAircraft();
         float           m_PlanePsi;
         float           m_PlaneGearDeploy[5];
         float           m_PlaneThrottle[8];
-        int             m_NumberID;
+        int             m_ObjectID;
         CLogger*        m_Log;
         std::string     m_CallSign;
         std::string     m_AircraftPath;

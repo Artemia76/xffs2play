@@ -117,6 +117,9 @@ namespace xffs2play
     {
         if (m_Initialized)
         {
+#ifdef XFFS_DEBUG
+			m_Log->Log(_("UDPServer::Stopping ..."), LEVEL_DEBUG);
+#endif // XFFS_DEBUG
             m_IoService.stop();
             m_ServiceThread->join();
             delete m_ServiceThread;
@@ -313,6 +316,9 @@ namespace xffs2play
     {
         if (std::find(m_ArrSubscribers.begin(), m_ArrSubscribers.end(), pSubscriber)==m_ArrSubscribers.end())
         {
+#ifdef XFFS_DEBUG
+			m_Log->Log(_("UDPServer::Subscribe to event"), LEVEL_DEBUG);
+#endif // XFFS_DEBUG
             m_ArrSubscribers.push_back(pSubscriber);
         }
     }
@@ -325,6 +331,9 @@ namespace xffs2play
         auto it = std::find(m_ArrSubscribers.begin(), m_ArrSubscribers.end(), pSubscriber);
         if (it != m_ArrSubscribers.end())
         {
+#ifdef XFFS_DEBUG
+			m_Log->Log(_("UDPServer::Unsuscribe to event"), LEVEL_DEBUG);
+#endif // XFFS_DEBUG
             m_ArrSubscribers.erase(it);
         }
     }

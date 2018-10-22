@@ -135,7 +135,7 @@ namespace xffs2play
         RudderPos = XPLMGetDataf(m_XPRudderPos);
         Squawk = XPLMGetDatai(m_XPSquawk);
         Vario = XPLMGetDataf(m_XPVariometer);
-		FlapsIndex = XPLMGetDataf(m_XPFlapsIndex)*3;
+		FlapsIndex = static_cast<int>(XPLMGetDataf(m_XPFlapsIndex)*3.0);
     }
 
     ///

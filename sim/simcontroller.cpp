@@ -33,7 +33,7 @@ namespace xffs2play
 
     SimController::SimController()
     {
-        XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2, this);
+        XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
@@ -43,6 +43,7 @@ namespace xffs2play
         m_FirstScan=true;
         m_Options = static_cast<uint32_t>(DisplayCallSign);
         m_PlaneCount = 1;
+		for (int i = 0; i < sizeof(m_PtrAI); i++) m_PtrAI[i] = nullptr;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
@@ -52,9 +53,10 @@ namespace xffs2play
     {
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
-        //XPLMUnregisterDrawCallback(&SimController::LoopUpdateCallback, xplm_Phase_Airplanes, 0, this);
+        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
+		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
+		ClearObjectAI();
         google::protobuf::ShutdownProtobufLibrary();
-        ClearObjectAI();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
 #endif
@@ -165,47 +167,42 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
-        int PlaneCount=1;
+        int PlaneCount=0;
         XPLMCountAircraft(&PlaneCount, nullptr, nullptr);
         if (m_FirstScan)
         {
             m_FirstScan=false;
-            for (int i=0 ; i<20 ; i++)
-            {
-                m_PtrAI[i]=nullptr;
-            }
+            for (int i=0 ; i < sizeof(m_PtrAI); i++) m_PtrAI[i]=nullptr;
             SetupCullInfo(&m_GlCamera);
         }
         if (PlaneCount>m_PlaneCount)
         {
             int Index;
             char FileName[256], AircraftPath[256];
-            if (PlaneCount > 1)
-            {
 #ifdef XFFS_DEBUG
-                m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
+            m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
 #endif
-                for (Index = m_PlaneCount; Index <= PlaneCount; Index++)
-                {
-                    XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
-                    strcpy(m_AircraftPath[Index-1], AircraftPath);
-                    m_Aircraft[Index-1] = reinterpret_cast<char *>(m_AircraftPath[Index-1]);
-                }
-                m_Aircraft[Index-1] = nullptr;
-                if (XPLMAcquirePlanes(reinterpret_cast<char **>(&m_Aircraft), nullptr, nullptr))
-                {
-                    m_Log->Log(std::to_string(Index-1)+_(" Aircraft Acquired successfully"));
-                }
-                else
-                {
-                    m_Log->Log(_("Aircraft not Acquired"));
-                }
-                m_PlaneCount = PlaneCount;
+            for (Index = m_PlaneCount; Index < PlaneCount; Index++)
+            {
+				XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
+                strcpy(m_AircraftPath[Index], AircraftPath);
+                m_Aircraft[Index] = reinterpret_cast<char *>(m_AircraftPath[Index]);
             }
+            m_Aircraft[Index] = nullptr;
+            if (XPLMAcquirePlanes(reinterpret_cast<char **>(&m_Aircraft), nullptr, nullptr))
+            {
+                m_Log->Log(std::to_string(Index)+_(" Aircraft Acquired successfully"));
+            }
+            else
+            {
+                m_Log->Log(_("Aircraft not Acquired"));
+            }
+            m_PlaneCount = PlaneCount;
         }
-        for (auto it : m_ArrAI)
+		ProcessIncomingMessage();
+        for (CAircraft* it : m_PtrAI)
         {
-            it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
+            if (it!=nullptr) it->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
         }
         return -1;
     }
@@ -230,9 +227,9 @@ namespace xffs2play
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
         if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
-        for (auto it : m_ArrAI)
+        for (CAircraft* it : m_PtrAI)
         {
-            it.second->Draw(pPhase);
+			if (it != nullptr) it->Draw(pPhase);
         }
         return 1;
     }
@@ -244,7 +241,6 @@ namespace xffs2play
     ///
     void SimController::OnAddClient(const uint32_t pClient)
     {
-        m_Mutex.lock();
         if (m_ArrClients.find(pClient)==m_ArrClients.end())
         {
             FFS2ClientData new_client;
@@ -254,7 +250,6 @@ namespace xffs2play
             m_ArrClients.insert(FFS2Client(pClient, new_client));
             m_Log->Log(_("Add client"), LEVEL_INFO);
         }
-        m_Mutex.unlock();
     }
 
     ///
@@ -263,38 +258,43 @@ namespace xffs2play
     ///
     void SimController::OnRemoveClient(const uint32_t pClient)
     {
-        m_Mutex.lock();
         if (m_ArrClients.find(pClient)!=m_ArrClients.end())
         {
             m_ArrClients.erase(pClient);
             m_Log->Log(_("Remove client"), LEVEL_INFO);
             ClearObjectAI();
         }
-        m_Mutex.unlock();
     }
 
     ///
     /// This callback is called when we receive data on UDP Server
-    /// Then we analyse each byte code and take action for each
-    /// request defined by our protocol
+    /// The data are pushed in a thread safe queue for reading by main thread 
     ///
-    void SimController::OnReceiveData(const ClientMessage& pMessage)
-    {
-        m_Mutex.lock();
-        //Select good client
-        std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(pMessage.second);
-        m_Mutex.unlock();
-        if (it != m_ArrClients.end())
-        {
-            std::istringstream data(pMessage.first);
-            uint8_t Code;
+	void SimController::OnReceiveData(const ClientMessage& pMessage)
+	{
+		m_receive_queue.Enqueue(pMessage);
+	}
+
+	///
+	void SimController::ProcessIncomingMessage()
+	{
+		while (m_receive_queue.Size()>0)
+		{
+			ClientMessage Message;
+			m_receive_queue.TryDequeue(Message);
+			//Select good client
+			std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(Message.second);
+			if (it == m_ArrClients.end()) return;
+			std::istringstream data(Message.first);
+            
+			uint8_t Code;
             if ((data >> Code))
             {
                 switch ((FFS2Proto)Code)
                 {
                     case PING:
                     {
-                        it->second.LastPing = Now();
+						it->second.LastPing = Now();
                         uint32_t Options;
                         data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
                         if (m_Options != Options)
@@ -311,7 +311,7 @@ namespace xffs2play
                         ssoutput << static_cast<uint8_t>(APP_MAJOR);
                         ssoutput << static_cast<uint8_t>(APP_MINOR);
                         ssoutput << static_cast<uint8_t>(APP_BUILD);
-                        m_Server->SendToClient(ssoutput.str(), pMessage.second);
+                        m_Server->SendToClient(ssoutput.str(), Message.second);
                         break;
                     }
                     case PONG:
@@ -337,16 +337,17 @@ namespace xffs2play
                         uint32_t Object_ID;
                         data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
                         m_ReceivedData.ParseFromIstream(&data);
-                        m_Mutex.lock();
-                        for (auto it : m_ArrAI)
+                        for (CAircraft* AI : m_PtrAI)
                         {
-                            if (it.first==Object_ID)
-                            {
-                                it.second->FromAirData(m_ReceivedData);
-                                break;
-                            }
+							if (AI != nullptr)
+							{
+								if (AI->GetObjectID() == Object_ID)
+								{
+									AI->FromAirData(m_ReceivedData);
+									break;
+								}
+							}
                         }
-                        m_Mutex.unlock();
                         break;
                     }
                     case DISC:
@@ -354,7 +355,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
 #endif
-                        m_Server->DisconnectClient(pMessage.second);
+                        m_Server->DisconnectClient(Message.second);
                         break;
                     }
                     case ADD_PEER:
@@ -375,30 +376,26 @@ namespace xffs2play
                         //Check if callsign already exist
                         bool Exist = false;
                         int Number = 0;
-                        m_Mutex.lock();
-                        for (auto it : m_ArrAI)
+                        for (CAircraft* AI : m_PtrAI)
                         {
-                            if (it.second->IsCallSign(CallSign))
-                            {
-                                Exist = true;
-                                break;
-                            }
+							if (AI != nullptr)
+							{
+								if (AI->IsCallSign(CallSign))
+								{
+									Exist = true;
+									break;
+								}
+							}
                         }
-                        Number = GetFirstFreeAI();
-                        uint32_t ObjectID=0;
-                        m_Mutex.unlock();
+						Number = GetFirstFreeAI();
                         if ((!Exist) && (Number > 0))
                         {
-                            ObjectID=++m_ObjectID;
 #ifdef XFFS_DEBUG
                             m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
 #endif
                             CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign));
-                            m_PtrAI[Number-1]=PeerData;
+                            m_PtrAI[Number]=PeerData;
                             //PeerData->fromAirData(ReceivedData);
-                            m_Mutex.lock();
-                            m_ArrAI.insert(PeerElement(m_ObjectID,PeerData));
-                            m_Mutex.unlock();
                         }
                         else
                         {
@@ -406,7 +403,7 @@ namespace xffs2play
                             m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(Number), LEVEL_DEBUG);
 #endif
                         }
-                        SendAddObjectID(ObjectID, CallSign);
+                        SendAddObjectID(Number, CallSign);
                         break;
                     }
                     case DEL_PEER:
@@ -417,19 +414,15 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                        m_Mutex.lock();
-                        for (auto it : m_ArrAI)
-                        {
-                            if (it.first==Object_ID)
-                            {
-                                RemoveAI(it.second);
-                                delete it.second;
-                                m_ArrAI.erase(Object_ID);
+						if ((Object_ID>0)&&(Object_ID <= m_PlaneCount))
+						{
+							if (m_PtrAI[Object_ID]!=nullptr)
+							{
+								RemoveAI(m_PtrAI[Object_ID]);
                                 Deleted_Object_ID=Object_ID;
                                 break;
                             }
                         }
-                        m_Mutex.unlock();
                         SendDelObjectID(Deleted_Object_ID);
                         break;
                     }
@@ -441,9 +434,7 @@ namespace xffs2play
                         break;
                     }
                 }
-                m_Mutex.lock();
-                it->second.LastPing = Now();
-                m_Mutex.unlock();
+				it->second.LastPing = Now();
             }
             else
             {
@@ -463,7 +454,7 @@ namespace xffs2play
             {
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(ADD_PEER);
-                uint8_t len = pCallSign.length();
+                uint8_t len = static_cast<uint8_t>(pCallSign.length());
                 ssoutput << len;
                 ssoutput.write(pCallSign.c_str(),len);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
@@ -504,12 +495,13 @@ namespace xffs2play
     ///
     void SimController::ClearObjectAI()
     {
-        for (auto it : m_ArrAI)
+        for (CAircraft* it : m_PtrAI)
         {
-            RemoveAI(it.second);
-            delete it.second;
+			if (it != nullptr)
+			{
+				RemoveAI(it);
+			}
         }
-        m_ArrAI.clear();
     }
 
     ///
@@ -517,10 +509,10 @@ namespace xffs2play
     ///
     int SimController::GetFirstFreeAI()
     {
-        int result = 0;
-        for (int i=0; (i<m_PlaneCount)&&(i<20) ; i++)
+        int result = -1;
+        for (int i=1; (i<m_PlaneCount)&&(i<sizeof(m_PtrAI)) ; i++)
         {
-            if (m_PtrAI[i]==nullptr) return i+1;
+            if (m_PtrAI[i]==nullptr) return i;
         }
         return result;
     }
@@ -530,10 +522,12 @@ namespace xffs2play
     ///
     void SimController::RemoveAI(CAircraft* pPtr)
     {
-        for (int i=0; i<20 ; i++)
+		if (pPtr == nullptr) return;
+        for (int i=1; i<sizeof(m_PtrAI) ; i++)
         {
             if (m_PtrAI[i]==pPtr)
             {
+				delete m_PtrAI[i];
                 m_PtrAI[i]=nullptr;
                 break;
             }
@@ -545,9 +539,12 @@ namespace xffs2play
     ///
     void SimController::UpdateOptions()
     {
-        for (auto it : m_ArrAI)
+        for (CAircraft* it : m_PtrAI)
         {
-            it.second->EnableDisplayCallsign = GetOption(DisplayCallSign);
+			if (it != nullptr)
+			{
+				it->EnableDisplayCallsign = GetOption(DisplayCallSign);
+			}
         }
     }
 
