@@ -110,6 +110,7 @@
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />
+		<Unit filename="tools/sharedqueue.h" />
 		<Unit filename="tools/simple_file_parser.cpp" />
 		<Unit filename="tools/simple_file_parser.h" />
 		<Unit filename="tools/utils3d.h" />

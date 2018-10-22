@@ -23,6 +23,7 @@
 #include "sim/simcontroller.h"
 #include "tools/version.h"
 #include "tools/hexa.h"
+#include "tools/simple_file_parser.h"
 #include <istream>
 #include <iostream>
 #include <string>
@@ -51,12 +52,13 @@ namespace xffs2play
 
     SimController::~SimController()
     {
+        SendDisc();
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
 		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
 		ClearObjectAI();
-        google::protobuf::ShutdownProtobufLibrary();
+        //google::protobuf::ShutdownProtobufLibrary();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
 #endif
@@ -268,7 +270,7 @@ namespace xffs2play
 
     ///
     /// This callback is called when we receive data on UDP Server
-    /// The data are pushed in a thread safe queue for reading by main thread 
+    /// The data are pushed in a thread safe queue for reading by main thread
     ///
 	void SimController::OnReceiveData(const ClientMessage& pMessage)
 	{
@@ -276,17 +278,19 @@ namespace xffs2play
 	}
 
 	///
+	/// This method check if message are available from network stack
+	/// If yes, it process anlysis
+	///
 	void SimController::ProcessIncomingMessage()
 	{
-		while (m_receive_queue.Size()>0)
+        ClientMessage Message;
+		while (m_receive_queue.TryDequeue(Message))
 		{
-			ClientMessage Message;
-			m_receive_queue.TryDequeue(Message);
 			//Select good client
 			std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(Message.second);
 			if (it == m_ArrClients.end()) return;
 			std::istringstream data(Message.first);
-            
+
 			uint8_t Code;
             if ((data >> Code))
             {
@@ -360,6 +364,7 @@ namespace xffs2play
                     }
                     case ADD_PEER:
                     {
+                        int Number = 0;
                         std::string CallSign;
                         uint8_t Len;
                         data >> Len;
@@ -370,38 +375,34 @@ namespace xffs2play
                         delete[] Buff;
                         AIResol Aircraft;
                         Aircraft.ParseFromIstream(&data);
+                        try
+                        {
 #ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Recieve ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
+                            m_Log->Log(_("SimController : Recieve ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
 #endif
-                        //Check if callsign already exist
-                        bool Exist = false;
-                        int Number = 0;
-                        for (CAircraft* AI : m_PtrAI)
-                        {
-							if (AI != nullptr)
-							{
-								if (AI->IsCallSign(CallSign))
-								{
-									Exist = true;
-									break;
-								}
-							}
-                        }
-						Number = GetFirstFreeAI();
-                        if ((!Exist) && (Number > 0))
-                        {
+                            //Check if callsign already exist
+                            for (CAircraft* AI : m_PtrAI)
+                            {
+                                if (AI != nullptr)
+                                {
+                                    if (AI->IsCallSign(CallSign)) throw std::runtime_error(_("SimController : Add Peer : Object Callsign already exist"));
+                                }
+                            }
+                            //Check if file exist
+                            if (!simple_file_parser::file_exists(Aircraft.path()))
+                                throw std::runtime_error(_("SimController : Add Peer : Aircraft file name does not exist"));
+
+                            if ( (Number = GetFirstFreeAI())<1)
+                                throw std::runtime_error(_("No more AI slot is available. Try to add more AI"));;
 #ifdef XFFS_DEBUG
                             m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
 #endif
                             CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign));
                             m_PtrAI[Number]=PeerData;
-                            //PeerData->fromAirData(ReceivedData);
                         }
-                        else
+                        catch (std::exception &e)
                         {
-#ifdef XFFS_DEBUG
-                            m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(Number), LEVEL_DEBUG);
-#endif
+                            m_Log->Log(_("SimController : Add Peer : ") + e.what(),LEVEL_ERROR);
                         }
                         SendAddObjectID(Number, CallSign);
                         break;
@@ -490,6 +491,27 @@ namespace xffs2play
         }
     }
 
+    ///
+    /// Send Disconnection for all udp client
+    ///
+    void SimController::SendDisc()
+    {
+        for (auto it : m_ArrClients)
+        {
+            try
+            {
+                std::ostringstream  ssoutput;
+                ssoutput << static_cast<uint8_t>(DISC);
+                m_Server->SendToClient(ssoutput.str(), it.first);
+                m_Server->DisconnectClient(it.first);
+            }
+            catch (const std::exception& e)
+            {
+                m_Log->Log(_("Error during send DISC") + _(e.what()), LEVEL_ERROR);
+                it.second.ReceiveData=false;
+            }
+        }
+    }
     ///
     /// We clear All Object AI from X-Plane
     ///
