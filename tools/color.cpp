@@ -40,9 +40,9 @@ namespace xffs2play
 
     void Color::getFloat(float (&pArr)[3]) const
     {
-        pArr[0] = static_cast<float>(R/255);
-        pArr[1] = static_cast<float>(G/255);
-        pArr[2] = static_cast<float>(B/255);
+        pArr[0] = static_cast<float>(R)/255.0f;
+        pArr[1] = static_cast<float>(G)/255.0f;
+        pArr[2] = static_cast<float>(B)/255.0f;
     }
 
     Color::~Color()
