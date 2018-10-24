@@ -57,7 +57,8 @@ namespace xffs2play
         DATA_SEND = 0x03, // Contain data of user plane
         DISC = 0x04, // Disconnect client
         ADD_PEER = 0x05, // Add Peer
-        DEL_PEER = 0x06 // Remove Peer
+        DEL_PEER = 0x06, // Remove Peer
+        CALLSIGN_COLOR = 0x07 // Change CallSign Color
     };
 
     enum SimOption : unsigned int
@@ -119,6 +120,7 @@ static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         char*           m_Aircraft[21];
         char            m_AircraftPath[21][512];
         CullInfo_t      m_GlCamera;
+        Color           m_CallSignColor;
 		SynchronisedQueue<ClientMessage> m_receive_queue;
     };
 }

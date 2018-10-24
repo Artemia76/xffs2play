@@ -105,6 +105,8 @@
 		<Unit filename="sim/simcontroller.h" />
 		<Unit filename="sim/useraircraft.cpp" />
 		<Unit filename="sim/useraircraft.h" />
+		<Unit filename="tools/color.cpp" />
+		<Unit filename="tools/color.h" />
 		<Unit filename="tools/datetime.cpp" />
 		<Unit filename="tools/datetime.h" />
 		<Unit filename="tools/hexa.h" />

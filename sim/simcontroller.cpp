@@ -45,6 +45,7 @@ namespace xffs2play
         m_Options = static_cast<uint32_t>(DisplayCallSign);
         m_PlaneCount = 1;
 		for (int i = 0; i < sizeof(m_PtrAI); i++) m_PtrAI[i] = nullptr;
+		m_CallSignColor.R=255;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
@@ -231,7 +232,7 @@ namespace xffs2play
         if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
         for (CAircraft* it : m_PtrAI)
         {
-			if (it != nullptr) it->Draw(pPhase);
+			if (it != nullptr) it->Draw(pPhase,m_CallSignColor);
         }
         return 1;
     }
@@ -425,6 +426,14 @@ namespace xffs2play
                             }
                         }
                         SendDelObjectID(Deleted_Object_ID);
+                        break;
+                    }
+                    case CALLSIGN_COLOR:
+                    {
+                        data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
+                        data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
+                        data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
+
                         break;
                     }
                     default:

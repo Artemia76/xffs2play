@@ -33,6 +33,7 @@
 #include "tools/log.h"
 #include "tools/datetime.h"
 #include "tools/utils3d.h"
+#include "tools/color.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
@@ -60,7 +61,7 @@ virtual                 ~CAircraft();
         void            SetAircraftData(float inElapsedSinceLastCall,double pLat, double pLon);
         void            FromAirData (const AirData& pAirData);
         bool            IsCallSign(std::string& pCallSign);
-        void            Draw(XPLMDrawingPhase pPhase);
+        void            Draw(XPLMDrawingPhase pPhase, const Color& pColor);
 		int				GetObjectID() { return m_ObjectID; }
         bool            EnableDisplayCallsign;
 

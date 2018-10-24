@@ -244,7 +244,7 @@ namespace xffs2play
     ///
     /// Draw Text as 3D object on OpenGL Render Scenery
     ///
-    void CAircraft::Draw(XPLMDrawingPhase pPhase)
+    void CAircraft::Draw(XPLMDrawingPhase pPhase, const Color& pColor)
     {
         // Callsign text loop
         if (duration_cast<milliseconds>(Now()-m_LastTextPhaseChange).count() > 1000)
@@ -280,7 +280,8 @@ namespace xffs2play
                         glLoadIdentity();
                         float x, y ;
                         ConvertTo2D(m_GlCamera, vp, m_CoordX, m_CoordY, m_CoordZ, 1.0, &x, &y);
-                        float Color[] = { 1.0, 0.0, 0.0 };
+                        float CallSignColor[3];
+                        pColor.getFloat(CallSignColor);
                         std::ostringstream Text;
                         Text.precision(1);
                         switch (m_TextPhase)
@@ -294,7 +295,7 @@ namespace xffs2play
                         }
                         char* text = strdup(Text.str().c_str());
                         int text_width = XPLMMeasureString(xplmFont_Proportional, text, strlen(text));
-                        XPLMDrawString(Color,x - (text_width/2),y,text,nullptr,xplmFont_Proportional);
+                        XPLMDrawString(CallSignColor,x - (text_width/2),y,text,nullptr,xplmFont_Proportional);
                         glMatrixMode(GL_PROJECTION);
                         glPopMatrix();
                         glMatrixMode(GL_MODELVIEW);
