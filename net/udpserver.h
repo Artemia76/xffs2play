@@ -97,7 +97,7 @@ static  UDPServer*                          m_ptUDPServer;
                                                 const std::string& pMessage,
                                                 udp::endpoint pTarget
                                             );
-
+		void								HandleSend(const boost::system::error_code& /*error*/);
         void                                SendReceiveToSubscribers(const ClientMessage& pMessage);
         void                                SendAddClientToSubscribers(const uint32_t pClient);
         void                                SendRemoveClientToSubscribers(const uint32_t pClient);

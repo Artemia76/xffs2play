@@ -218,8 +218,21 @@ namespace xffs2play
     ///
     void UDPServer::Send(const std::string& pMessage, udp::endpoint pTargetEndpoint)
     {
-        m_Socket->send_to(boost::asio::buffer(pMessage), pTargetEndpoint);
+		m_Socket->async_send_to(boost::asio::buffer(pMessage), pTargetEndpoint, boost::bind(&UDPServer::HandleSend, this, boost::asio::placeholders::error));
     }
+
+	///
+	/// Callback of send request
+	///
+	void UDPServer::HandleSend( const boost::system::error_code& pError)
+	{
+		if (pError)
+		{
+			std::stringstream Mess;
+			Mess << _("handle_send: error: ") << pError.message() << _(" while sent tp address ") << m_RemoteEndpoint;
+			m_Log->Log(Mess.str(), LEVEL_ERROR);
+		}
+	}
 
     ///
     /// Main Loop Thread Listener
