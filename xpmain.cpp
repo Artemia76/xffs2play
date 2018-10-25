@@ -31,8 +31,8 @@ PLUGIN_API void XPluginDisable(void)
 {
     XPLMDestroyMenu(g_menu_id);
     XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
-	SimController::Kill();
     MainFrame::Kill();
+	SimController::Kill();
 	UDPServer::Kill();
     CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
 }

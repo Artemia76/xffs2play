@@ -25,8 +25,6 @@
 #include "net/udpserver.h"
 
 #include <vector>
-#include <mutex>
-#include <queue>
 
 #include <XPLMDataAccess.h>
 #include <XPLMProcessing.h>
@@ -36,7 +34,7 @@
 #include "tools/log.h"
 #include "aircraft.h"
 #include "tools/utils3d.h"
-#include "tools/sharedqueue.h"
+#include <boost/thread.hpp>
 
 #define XFF2_PROTOCOL 1
 
@@ -104,7 +102,6 @@ static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         void            RemoveAI(CAircraft* pPtr);
         void            UpdateOptions();
         bool            GetOption(SimOption pOption);
-		void			ProcessIncomingMessage();
 
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
@@ -121,6 +118,6 @@ static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         char            m_AircraftPath[21][512];
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
-		SynchronisedQueue<ClientMessage> m_receive_queue;
+		boost::mutex    m_mutex;
     };
 }

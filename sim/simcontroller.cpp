@@ -53,12 +53,12 @@ namespace xffs2play
 
     SimController::~SimController()
     {
-        SendDisc();
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
 		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
-		ClearObjectAI();
+//        ClearObjectAI();
+//        SendDisc();
         //google::protobuf::ShutdownProtobufLibrary();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
@@ -114,9 +114,10 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
+        boost::unique_lock<boost::mutex> lock(m_mutex);
         m_UserAircraft.Update();
         m_UserAircraft.ToAirData(m_SendData);
-        for (auto it : m_ArrClients)
+        for (std::pair<const unsigned int,FFS2ClientData> it : m_ArrClients)
         {
             // Client want data
             if (it.second.ReceiveData)
@@ -170,6 +171,7 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
+        boost::unique_lock<boost::mutex> lock(m_mutex);
         int PlaneCount=0;
         XPLMCountAircraft(&PlaneCount, nullptr, nullptr);
         if (m_FirstScan)
@@ -202,7 +204,6 @@ namespace xffs2play
             }
             m_PlaneCount = PlaneCount;
         }
-		ProcessIncomingMessage();
         for (CAircraft* it : m_PtrAI)
         {
             if (it!=nullptr) it->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
@@ -229,12 +230,18 @@ namespace xffs2play
     ///
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
+        int ret=1;
         if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
         for (CAircraft* it : m_PtrAI)
         {
-			if (it != nullptr) it->Draw(pPhase,m_CallSignColor);
+			if (it != nullptr)
+			{
+                m_mutex.lock();
+                it->Draw(pPhase,m_CallSignColor);
+                m_mutex.unlock();
+            }
         }
-        return 1;
+        return ret;
     }
 
     ///
@@ -244,6 +251,7 @@ namespace xffs2play
     ///
     void SimController::OnAddClient(const uint32_t pClient)
     {
+        m_mutex.lock();
         if (m_ArrClients.find(pClient)==m_ArrClients.end())
         {
             FFS2ClientData new_client;
@@ -253,6 +261,7 @@ namespace xffs2play
             m_ArrClients.insert(FFS2Client(pClient, new_client));
             m_Log->Log(_("Add client"), LEVEL_INFO);
         }
+        m_mutex.unlock();
     }
 
     ///
@@ -261,45 +270,38 @@ namespace xffs2play
     ///
     void SimController::OnRemoveClient(const uint32_t pClient)
     {
+        m_mutex.lock();
         if (m_ArrClients.find(pClient)!=m_ArrClients.end())
         {
             m_ArrClients.erase(pClient);
             m_Log->Log(_("Remove client"), LEVEL_INFO);
             ClearObjectAI();
         }
+        m_mutex.lock();
     }
 
     ///
     /// This callback is called when we receive data on UDP Server
-    /// The data are pushed in a thread safe queue for reading by main thread
     ///
 	void SimController::OnReceiveData(const ClientMessage& pMessage)
 	{
-		m_receive_queue.Enqueue(pMessage);
-	}
+        boost::unique_lock<boost::mutex> lock(m_mutex);
+        try
+        {
+            //Select good client
+            std::map<const unsigned int,FFS2ClientData>::iterator it = m_ArrClients.find(pMessage.second);
+            if (it == m_ArrClients.end())
+                throw std::runtime_error(_("No UDP Client found"));
 
-	///
-	/// This method check if message are available from network stack
-	/// If yes, it process anlysis
-	///
-	void SimController::ProcessIncomingMessage()
-	{
-        ClientMessage Message;
-		while (m_receive_queue.TryDequeue(Message))
-		{
-			//Select good client
-			std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(Message.second);
-			if (it == m_ArrClients.end()) return;
-			std::istringstream data(Message.first);
-
-			uint8_t Code;
+            std::istringstream data(pMessage.first);
+            uint8_t Code;
             if ((data >> Code))
             {
                 switch ((FFS2Proto)Code)
                 {
                     case PING:
                     {
-						it->second.LastPing = Now();
+                        it->second.LastPing = Now();
                         uint32_t Options;
                         data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
                         if (m_Options != Options)
@@ -316,7 +318,7 @@ namespace xffs2play
                         ssoutput << static_cast<uint8_t>(APP_MAJOR);
                         ssoutput << static_cast<uint8_t>(APP_MINOR);
                         ssoutput << static_cast<uint8_t>(APP_BUILD);
-                        m_Server->SendToClient(ssoutput.str(), Message.second);
+                        m_Server->SendToClient(ssoutput.str(), pMessage.second);
                         break;
                     }
                     case PONG:
@@ -344,14 +346,14 @@ namespace xffs2play
                         m_ReceivedData.ParseFromIstream(&data);
                         for (CAircraft* AI : m_PtrAI)
                         {
-							if (AI != nullptr)
-							{
-								if (AI->GetObjectID() == Object_ID)
-								{
-									AI->FromAirData(m_ReceivedData);
-									break;
-								}
-							}
+                            if (AI != nullptr)
+                            {
+                                if (AI->GetObjectID() == Object_ID)
+                                {
+                                    AI->FromAirData(m_ReceivedData);
+                                    break;
+                                }
+                            }
                         }
                         break;
                     }
@@ -360,7 +362,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
 #endif
-                        m_Server->DisconnectClient(Message.second);
+                        m_Server->DisconnectClient(pMessage.second);
                         break;
                     }
                     case ADD_PEER:
@@ -394,7 +396,7 @@ namespace xffs2play
                                 throw std::runtime_error(_("SimController : Add Peer : Aircraft file name does not exist"));
 
                             if ( (Number = GetFirstFreeAI())<1)
-                                throw std::runtime_error(_("No more AI slot is available. Try to add more AI"));;
+                                throw std::runtime_error(_("No more AI slot is available. Try to add more AI"));
 #ifdef XFFS_DEBUG
                             m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
 #endif
@@ -416,11 +418,11 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-						if ((Object_ID>0)&&(Object_ID <= m_PlaneCount))
-						{
-							if (m_PtrAI[Object_ID]!=nullptr)
-							{
-								RemoveAI(m_PtrAI[Object_ID]);
+                        if ((Object_ID>0)&&(Object_ID <= m_PlaneCount))
+                        {
+                            if (m_PtrAI[Object_ID]!=nullptr)
+                            {
+                                RemoveAI(m_PtrAI[Object_ID]);
                                 Deleted_Object_ID=Object_ID;
                                 break;
                             }
@@ -444,12 +446,16 @@ namespace xffs2play
                         break;
                     }
                 }
-				it->second.LastPing = Now();
+                it->second.LastPing = Now();
             }
             else
             {
-                m_Log->Log(_("Protocol error from client"), LEVEL_ERROR);
+                throw std::runtime_error(_("Protocol error from client"));
             }
+        }
+        catch (std::exception &e)
+        {
+            m_Log->Log(_("SimController : OnReceiveData : ") + e.what(),LEVEL_ERROR);
         }
     }
 
@@ -526,6 +532,7 @@ namespace xffs2play
     ///
     void SimController::ClearObjectAI()
     {
+        boost::unique_lock<boost::mutex> lock(m_mutex);
         for (CAircraft* it : m_PtrAI)
         {
 			if (it != nullptr)
