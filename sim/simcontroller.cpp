@@ -39,12 +39,13 @@ namespace xffs2play
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
         m_Log = CLogger::Instance();
-        m_Server = UDPServer::Instance();
+        m_Server.SubscribeEvents(this);
         m_ObjectID=0;
         m_FirstScan=true;
         m_Options = static_cast<uint32_t>(DisplayCallSign);
         m_PlaneCount = 1;
 		m_CallSignColor.R=255;
+		m_Server.Start();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
@@ -52,10 +53,12 @@ namespace xffs2play
 
     SimController::~SimController()
     {
+        SendDisc();
+        m_Server.Stop();
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
-        //XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
-		//XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
+        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
+		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         google::protobuf::ShutdownProtobufLibrary();
         ClearObjectAI();
 #ifdef XFFS_DEBUG
@@ -112,6 +115,7 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         m_UserAircraft.Update();
         m_UserAircraft.ToAirData(m_SendData);
         for (auto it : m_ArrClients)
@@ -124,7 +128,7 @@ namespace xffs2play
                     std::ostringstream  ssoutput;
                     ssoutput << static_cast<uint8_t>(DATA_SEND);
                     m_SendData.SerializeToOstream(&ssoutput);
-                    m_Server->SendToClient(ssoutput.str(), it.first);
+                    m_Server.SendToClient(ssoutput.str(), it.first);
                 }
                 catch (const std::exception& e)
                 {
@@ -136,7 +140,7 @@ namespace xffs2play
             if (timespan(Now() - it.second.LastPing).count() > 10000)
             {
                 m_Log->Log(_("Client Timeout"), LEVEL_INFO);
-                m_Server->DisconnectClient(it.first);
+                m_Server.DisconnectClient(it.first);
             }
         }
         return 0.2;
@@ -174,10 +178,12 @@ namespace xffs2play
         if (m_FirstScan)
         {
             m_FirstScan=false;
+            m_Mutex.lock();
             for (int i=0 ; i<20 ; i++)
             {
                 m_PtrAI[i]=nullptr;
             }
+            m_Mutex.unlock();
             SetupCullInfo(&m_GlCamera);
         }
         if (PlaneCount>m_PlaneCount)
@@ -204,10 +210,12 @@ namespace xffs2play
             }
             m_PlaneCount = PlaneCount;
         }
+        m_Mutex.lock();
         for (auto it : m_ArrAI)
         {
             it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
         }
+        m_Mutex.unlock();
         return -1;
     }
 
@@ -231,10 +239,12 @@ namespace xffs2play
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
         if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
+        m_Mutex.lock();
         for (auto it : m_ArrAI)
         {
 			it.second->Draw(pPhase,m_CallSignColor);
         }
+        m_Mutex.unlock();
         return 1;
     }
 
@@ -245,7 +255,7 @@ namespace xffs2play
     ///
     void SimController::OnAddClient(const uint32_t pClient)
     {
-        m_Mutex.lock();
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         if (m_ArrClients.find(pClient)==m_ArrClients.end())
         {
             FFS2ClientData new_client;
@@ -255,7 +265,6 @@ namespace xffs2play
             m_ArrClients.insert(FFS2Client(pClient, new_client));
             m_Log->Log(_("Add client"), LEVEL_INFO);
         }
-        m_Mutex.unlock();
     }
 
     ///
@@ -264,14 +273,13 @@ namespace xffs2play
     ///
     void SimController::OnRemoveClient(const uint32_t pClient)
     {
-        m_Mutex.lock();
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         if (m_ArrClients.find(pClient)!=m_ArrClients.end())
         {
             m_ArrClients.erase(pClient);
             m_Log->Log(_("Remove client"), LEVEL_INFO);
             ClearObjectAI();
         }
-        m_Mutex.unlock();
     }
 
     ///
@@ -279,10 +287,9 @@ namespace xffs2play
     ///
 	void SimController::OnReceiveData(const ClientMessage& pMessage)
 	{
-        m_Mutex.lock();
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         //Select good client
         std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(pMessage.second);
-        m_Mutex.unlock();
         if (it != m_ArrClients.end())
         {
             std::istringstream data(pMessage.first);
@@ -310,7 +317,7 @@ namespace xffs2play
                         ssoutput << static_cast<uint8_t>(APP_MAJOR);
                         ssoutput << static_cast<uint8_t>(APP_MINOR);
                         ssoutput << static_cast<uint8_t>(APP_BUILD);
-                        m_Server->SendToClient(ssoutput.str(), pMessage.second);
+                        m_Server.SendToClient(ssoutput.str(), pMessage.second);
                         break;
                     }
                     case PONG:
@@ -336,7 +343,6 @@ namespace xffs2play
                         uint32_t Object_ID;
                         data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
                         m_ReceivedData.ParseFromIstream(&data);
-                        m_Mutex.lock();
                         for (auto it : m_ArrAI)
                         {
                             if (it.first==Object_ID)
@@ -345,7 +351,6 @@ namespace xffs2play
                                 break;
                             }
                         }
-                        m_Mutex.unlock();
                         break;
                     }
                     case DISC:
@@ -353,7 +358,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
 #endif
-                        m_Server->DisconnectClient(pMessage.second);
+                        m_Server.DisconnectClient(pMessage.second);
                         break;
                     }
                     case ADD_PEER:
@@ -374,7 +379,6 @@ namespace xffs2play
                         //Check if callsign already exist
                         bool Exist = false;
                         int Number = 0;
-                        m_Mutex.lock();
                         for (auto it : m_ArrAI)
                         {
                             if (it.second->IsCallSign(CallSign))
@@ -385,7 +389,6 @@ namespace xffs2play
                         }
                         Number = GetFirstFreeAI();
                         uint32_t ObjectID=0;
-                        m_Mutex.unlock();
                         if ((!Exist) && (Number > 0))
                         {
                             ObjectID=++m_ObjectID;
@@ -395,9 +398,7 @@ namespace xffs2play
                             CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign));
                             m_PtrAI[Number-1]=PeerData;
                             //PeerData->fromAirData(ReceivedData);
-                            m_Mutex.lock();
                             m_ArrAI.insert(PeerElement(m_ObjectID,PeerData));
-                            m_Mutex.unlock();
                         }
                         else
                         {
@@ -416,7 +417,6 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                        m_Mutex.lock();
                         for (auto it : m_ArrAI)
                         {
                             if (it.first==Object_ID)
@@ -428,7 +428,6 @@ namespace xffs2play
                                 break;
                             }
                         }
-                        m_Mutex.unlock();
                         SendDelObjectID(Deleted_Object_ID);
                         break;
                     }
@@ -437,7 +436,6 @@ namespace xffs2play
                         data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
                         data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
                         data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
-
                         break;
                     }
                     default:
@@ -448,9 +446,7 @@ namespace xffs2play
                         break;
                     }
                 }
-                m_Mutex.lock();
                 it->second.LastPing = Now();
-                m_Mutex.unlock();
             }
             else
             {
@@ -464,6 +460,7 @@ namespace xffs2play
     ///
     void SimController::SendAddObjectID(uint32_t pObjectID,std::string& pCallSign)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrClients)
         {
             try
@@ -474,7 +471,7 @@ namespace xffs2play
                 ssoutput << len;
                 ssoutput.write(pCallSign.c_str(),len);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server->SendToClient(ssoutput.str(), it.first);
+                m_Server.SendToClient(ssoutput.str(), it.first);
             }
             catch (const std::exception& e)
             {
@@ -489,6 +486,7 @@ namespace xffs2play
     ///
     void SimController::SendDelObjectID(uint32_t pObjectID)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrClients)
         {
             try
@@ -496,7 +494,7 @@ namespace xffs2play
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DEL_PEER);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server->SendToClient(ssoutput.str(), it.first);
+                m_Server.SendToClient(ssoutput.str(), it.first);
             }
             catch (const std::exception& e)
             {
@@ -509,22 +507,24 @@ namespace xffs2play
     ///
     /// Send Disconnection for all udp client
     ///
-/*    void SimController::SendDisc()
+    void SimController::SendDisc()
     {
+        /*std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrClients)
         {
             std::ostringstream  ssoutput;
             ssoutput << static_cast<uint8_t>(DISC);
-            m_Server->SendToClient(ssoutput.str(), it.first);
-            m_Server->DisconnectClient(it.first);
-        }
+            m_Server.SendToClient(ssoutput.str(), it.first);
+            m_Server.DisconnectClient(it.first);
+        }*/
     }
-*/
+
     ///
     /// We clear All Object AI from X-Plane
     ///
     void SimController::ClearObjectAI()
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrAI)
         {
 			RemoveAI(it.second);
@@ -538,6 +538,7 @@ namespace xffs2play
     ///
     int SimController::GetFirstFreeAI()
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         int result = 0;
         for (int i=0; (i<m_PlaneCount)&&(i<20) ; i++)
         {
@@ -551,6 +552,7 @@ namespace xffs2play
     ///
     void SimController::RemoveAI(CAircraft* pPtr)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 		for (int i=0; i<20 ; i++)
         {
             if (m_PtrAI[i]==pPtr)
@@ -566,6 +568,7 @@ namespace xffs2play
     ///
     void SimController::UpdateOptions()
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrAI)
         {
             it.second->EnableDisplayCallsign = GetOption(DisplayCallSign);
@@ -577,6 +580,7 @@ namespace xffs2play
     ///
     bool SimController::GetOption(SimOption pOption)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         return (m_Options & static_cast<uint32_t>(pOption)) > 0;
     }
 }

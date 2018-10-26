@@ -33,7 +33,6 @@ PLUGIN_API void XPluginDisable(void)
     XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
     MainFrame::Kill();
 	SimController::Kill();
-	UDPServer::Kill();
     CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
 }
 
@@ -64,7 +63,6 @@ PLUGIN_API int XPluginEnable(void)
     g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
     XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
     XPLMSetErrorCallback(ErrorHandler);
-    UDPServer::Instance()->Start();
     SimController::Instance();
     CLogger::Instance()->Log(_("Plugin Enable"));
     return 1;

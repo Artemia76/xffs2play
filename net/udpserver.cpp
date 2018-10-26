@@ -24,55 +24,9 @@
 
 namespace xffs2play
 {
-    ///
-    /// Constructor with auto suscribe for UDP Server Event
-    ///
-    UDPServerEventHandler::UDPServerEventHandler()
-    {
-        UDPServer::Instance()->SubscribeEvents(this);
-    }
 
     ///
-    /// Destructor with auto unSuscribe from UDP Server
-    ///
-    UDPServerEventHandler::~UDPServerEventHandler()
-    {
-        UDPServer::Instance()->UnsubscribeEvents(this);
-    }
-
-    ///
-    /// Static pointer for UDP Server Singleton
-    ///
-    UDPServer* UDPServer::m_ptUDPServer = nullptr;
-
-    ///
-    /// Static method return Singleton pointer
-    /// Instanciate the Singleton if it not yet exist
-    ///
-    UDPServer* UDPServer::Instance()
-    {
-        if (m_ptUDPServer==nullptr)
-        {
-            m_ptUDPServer=new UDPServer;
-        }
-        return m_ptUDPServer;
-    }
-
-    ///
-    /// Singleton Static Kill Method
-    ///
-
-    void UDPServer::Kill()
-    {
-        if (m_ptUDPServer!=nullptr)
-        {
-            delete m_ptUDPServer;
-            m_ptUDPServer=nullptr;
-        }
-    }
-
-    ///
-    /// Private UDP Server Constructor
+    /// UDP Server Constructor
     ///
     UDPServer::UDPServer()
     {

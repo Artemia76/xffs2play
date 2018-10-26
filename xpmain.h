@@ -24,7 +24,6 @@
 #pragma once
 
 #include <stdio.h>
-#include "net/udpserver.h"
 #include <XPLMMenus.h>
 #include "tools/log.h"
 #include "tools/version.h"

@@ -51,20 +51,15 @@ friend  class       UDPServer;
 virtual void        OnReceiveData(const ClientMessage& /*pMessage*/){}
 virtual void        OnAddClient(uint32_t /*pClient*/){}
 virtual void        OnRemoveClient(uint32_t /*pClient*/){}
-
-    public:
-                    UDPServerEventHandler();
-                    ~UDPServerEventHandler();
     };
 
     class UDPServer
     {
         friend class UDPServerEventHandler;
-    private:
+    public:
                                             UDPServer();
 virtual                                     ~UDPServer();
-
-static  UDPServer*                          m_ptUDPServer;
+    private:
         bool                                m_Initialized;
         boost::asio::io_service             m_IoService;
         udp::socket*                        m_Socket;
@@ -106,13 +101,10 @@ static  UDPServer*                          m_ptUDPServer;
         ClientList                          m_Clients;
         std::atomic<std::uint32_t>          m_NextClientID;
 
-    protected:
+    public:
         void                                SubscribeEvents(UDPServerEventHandler* pSubscriber);
         void                                UnsubscribeEvents(UDPServerEventHandler* pSubscriber);
 
-    public:
-static  UDPServer*                          Instance();
-static  void                                Kill();
         void                                Start(unsigned short local_port=47500);
         void                                Stop();
 
