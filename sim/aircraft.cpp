@@ -247,7 +247,7 @@ namespace xffs2play
     void CAircraft::Draw(XPLMDrawingPhase pPhase, const Color& pColor)
     {
         // Callsign text loop
-        if (duration_cast<milliseconds>(Now()-m_LastTextPhaseChange).count() > 1000)
+        if (duration_cast<milliseconds>(Now()-m_LastTextPhaseChange).count() > 2000)
         {
             m_TextPhase++;
             if (m_TextPhase > 2) m_TextPhase=0;
