@@ -87,6 +87,7 @@ namespace xffs2play
         NavLight=0;
         RecoLight=0;
         Smoke=0;
+        SquawkMode=0;
         //Etat
         OnGround = false;
         ParkingBrake = false;
@@ -152,6 +153,7 @@ namespace xffs2play
         pData.set_onground(OnGround);
         pData.set_parkingbrake(ParkingBrake);
         pData.set_vspeed(Vario);
+        pData.set_squawkmode(SquawkMode);
     }
 
     ///
@@ -200,5 +202,6 @@ namespace xffs2play
         OnGround = pData.onground();
         ParkingBrake = pData.parkingbrake();
         Vario = pData.vspeed();
+        SquawkMode = pData.squawkmode();
     }
 }

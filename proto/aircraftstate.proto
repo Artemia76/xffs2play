@@ -46,6 +46,7 @@ message AirData {
 	double		GNDSpeed = 41;
     bool        ParkingBrake = 42;
     double      VSpeed = 43;
+    int32       SquawkMode = 44;
 }
 
 message AIResol {

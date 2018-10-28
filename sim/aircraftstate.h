@@ -96,6 +96,8 @@ virtual void        FromAirData (const AirData& pData);
         int         NavLight;
         int         RecoLight;
         int         Smoke;
+        int         SquawkMode;
+
         //Etat
         bool        OnGround;
         bool        ParkingBrake;

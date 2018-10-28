@@ -90,6 +90,7 @@ virtual             ~CUserAircraft();
         XPLMDataRef     m_XPSmoke;
         XPLMDataRef     m_XPParkingBrake;
         XPLMDataRef     m_XPVariometer;
+        XPLMDataRef     m_XPSquawkMode;
 
         //Internal Variable
         std::string     m_Description;

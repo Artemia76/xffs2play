@@ -42,6 +42,7 @@ namespace xffs2play
         m_XPSquawk = XPLMFindDataRef("sim/cockpit/radios/transponder_code");
         m_XPParkingBrake = XPLMFindDataRef("sim/cockpit2/controls/parking_brake_ratio");
         m_XPVariometer = XPLMFindDataRef("sim/cockpit2/gauges/indicators/vvi_fpm_pilot");
+        m_XPSquawkMode = XPLMFindDataRef("sim/cockpit/radios/transponder_mode");
     }
 
     ///
@@ -136,6 +137,7 @@ namespace xffs2play
         Squawk = XPLMGetDatai(m_XPSquawk);
         Vario = XPLMGetDataf(m_XPVariometer);
 		FlapsIndex = static_cast<int>(XPLMGetDataf(m_XPFlapsIndex)*3.0);
+		SquawkMode = XPLMGetDatai(m_XPSquawkMode);
     }
 
     ///

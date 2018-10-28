@@ -54,12 +54,13 @@ namespace xffs2play
     SimController::~SimController()
     {
         SendDisc();
+        m_Server.UnsubscribeEvents(this);
         m_Server.Stop();
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
 		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
-        google::protobuf::ShutdownProtobufLibrary();
+        //google::protobuf::ShutdownProtobufLibrary();
         ClearObjectAI();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
