@@ -214,7 +214,8 @@ namespace xffs2play
         m_Mutex.lock();
         for (auto it : m_ArrAI)
         {
-            it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
+            if (it.second != nullptr)
+                it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
         }
         m_Mutex.unlock();
         return -1;
@@ -243,7 +244,8 @@ namespace xffs2play
         m_Mutex.lock();
         for (auto it : m_ArrAI)
         {
-			it.second->Draw(pPhase,m_CallSignColor);
+            if (it.second!= nullptr)
+                it.second->Draw(pPhase,m_CallSignColor);
         }
         m_Mutex.unlock();
         return 1;
@@ -348,7 +350,8 @@ namespace xffs2play
                         {
                             if (it.first==Object_ID)
                             {
-                                it.second->FromAirData(m_ReceivedData);
+                                if (it.second != nullptr)
+                                    it.second->FromAirData(m_ReceivedData);
                                 break;
                             }
                         }
@@ -382,10 +385,13 @@ namespace xffs2play
                         int Number = 0;
                         for (auto it : m_ArrAI)
                         {
-                            if (it.second->IsCallSign(CallSign))
+                            if (it.second != nullptr)
                             {
-                                Exist = true;
-                                break;
+                                if (it.second->IsCallSign(CallSign))
+                                {
+                                    Exist = true;
+                                    break;
+                                }
                             }
                         }
                         Number = GetFirstFreeAI();
@@ -420,7 +426,7 @@ namespace xffs2play
 #endif
                         for (auto it : m_ArrAI)
                         {
-                            if (it.first==Object_ID)
+                            if ((it.first==Object_ID) && (it.second != nullptr))
                             {
                                 RemoveAI(it.second);
                                 delete it.second;
@@ -528,8 +534,11 @@ namespace xffs2play
         std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrAI)
         {
-			RemoveAI(it.second);
-            delete it.second;
+            if (it.second != nullptr)
+            {
+                RemoveAI(it.second);
+                delete it.second;
+            }
         }
         m_ArrAI.clear();
     }
@@ -572,7 +581,8 @@ namespace xffs2play
         std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrAI)
         {
-            it.second->EnableDisplayCallsign = GetOption(DisplayCallSign);
+            if (it.second != nullptr)
+                it.second->EnableDisplayCallsign = GetOption(DisplayCallSign);
         }
     }
 
