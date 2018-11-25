@@ -37,7 +37,8 @@ namespace xffs2play
         std::string pCallSign,
         AIResol& pAircraft,
         CullInfo_t* pGlCamera,
-        bool pEnableDisplayCallSign
+        bool pEnableDisplayCallSign,
+		bool pDisableAltCorrection
     )
     {
         m_Spawned = 0;
@@ -95,6 +96,7 @@ namespace xffs2play
         m_Log = CLogger::Instance();
         m_Cull = false;
         EnableDisplayCallsign = pEnableDisplayCallSign;
+		DisableAltCorrection = pDisableAltCorrection;
 
         m_LastTextPhaseChange = Now();
         m_TextPhase=0;
@@ -200,13 +202,10 @@ namespace xffs2play
             double GndLon,GndLat,GndAlt;
             XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
             GndAlt /=0.3048;
-            if (m_Data.OnGround)
+            if (m_Data.OnGround && (!DisableAltCorrection))
             {
-                if ((m_AIData.Altitude > 10)&&(GndAlt > 10))
-                {
-                    m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
-                    XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
-                }
+                m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
+                XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
             }
             for (int i=0; i<5 ; i++)
             {

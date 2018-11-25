@@ -30,9 +30,12 @@
 #include <XPLMDataAccess.h>
 #include <XPLMProcessing.h>
 #include <XPLMDisplay.h>
+#include <XPLMGraphics.h>
+
 #include "proto/aircraftstate.pb.h"
 #include "sim/useraircraft.h"
 #include "tools/log.h"
+#include "tools/datetime.h"
 #include "aircraft.h"
 #include "tools/utils3d.h"
 
@@ -56,12 +59,14 @@ namespace xffs2play
         DISC = 0x04, // Disconnect client
         ADD_PEER = 0x05, // Add Peer
         DEL_PEER = 0x06, // Remove Peer
-        CALLSIGN_COLOR = 0x07 // Change CallSign Color
+        CALLSIGN_COLOR = 0x07, // Change CallSign Color
+		TCHAT = 0x08 //Receive Tchat Text
     };
 
     enum SimOption : unsigned int
     {
-        DisplayCallSign = 0x01
+        DisplayCallSign = 0x01,
+		DisableAltCorr = 0x02
     };
 
     typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
@@ -95,6 +100,7 @@ static  float           LoopNetworkCallback(float,float,int,void*);
 static  float           LoopUpdateCallback(float, float, int, void*);
         float           LoopUpdate (float, float, int);
 static  int             DrawCallback (XPLMDrawingPhase, int, void*);
+static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         int             Draw (XPLMDrawingPhase, int);
         void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
         void            SendDelObjectID(uint32_t pObjectID);
@@ -122,5 +128,8 @@ static  int             DrawCallback (XPLMDrawingPhase, int, void*);
         char            m_AircraftPath[21][512];
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
+		std::vector<std::string> m_TchatArr;
+		datetime		m_LastTchatMessage;
+		XPLMWindowID    m_TChatWindow;
     };
 }

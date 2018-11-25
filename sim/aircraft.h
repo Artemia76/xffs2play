@@ -48,12 +48,13 @@ namespace xffs2play
     class CAircraft
     {
     public:
-                        CAircraft(
-                            int pObjectID,
-                            std::string pCallSign,
-                            AIResol& pAircraft,
-                            CullInfo_t* pGl_camera,
-                            bool pEnableDisplayCallSign=true
+		CAircraft(
+			int pObjectID,
+			std::string pCallSign,
+			AIResol& pAircraft,
+			CullInfo_t* pGl_camera,
+			bool pEnableDisplayCallSign = true,
+			bool pDisableAltCorr = false
                         );
 
 virtual                 ~CAircraft();
@@ -64,6 +65,7 @@ virtual                 ~CAircraft();
         void            Draw(XPLMDrawingPhase pPhase, const Color& pColor);
 		int				GetObjectID() { return m_ObjectID; }
         bool            EnableDisplayCallsign;
+		bool			DisableAltCorrection;
 
     private:
         double          m_Distance;
