@@ -77,9 +77,9 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-fPIC" />
 			<Add option="-Wall" />
 			<Add option="-std=c++11" />
-			<Add option="-fPIC" />
 			<Add option="-shared -rdynamic -nodefaultlibs -undefined_warning -Qunused-arguments" />
 			<Add option="`pkg-config --cflags protobuf`" />
 			<Add option="-DXPLM200" />
@@ -87,10 +87,13 @@
 			<Add option="-DLIN=1" />
 			<Add directory="./" />
 			<Add directory="/usr/include/boost" />
+			<Add directory="./libxplanemp/include" />
 		</Compiler>
 		<Linker>
 			<Add option="`pkg-config --libs protobuf`" />
 			<Add library="boost_system" />
+			<Add library="xplanemp" />
+			<Add directory="/mnt/devel/git/libxplanemp" />
 		</Linker>
 		<Unit filename="gui/mainframe.cpp" />
 		<Unit filename="gui/mainframe.h" />
@@ -109,6 +112,8 @@
 		<Unit filename="tools/color.h" />
 		<Unit filename="tools/datetime.cpp" />
 		<Unit filename="tools/datetime.h" />
+		<Unit filename="tools/filepath.cpp" />
+		<Unit filename="tools/filepath.h" />
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />

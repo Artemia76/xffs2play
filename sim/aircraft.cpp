@@ -49,52 +49,8 @@ namespace xffs2play
         m_CGHeight=pAircraft.cgheight();
         m_Pitch=pAircraft.pitch();
         m_LastRender = Now();
-
-        std::string ref_base = _("sim/multiplayer/position/plane") + std::to_string(m_ObjectID);
-        std::string x_str = ref_base + _("_x");
-        std::string y_str = ref_base + _("_y");
-        std::string z_str = ref_base + _("_z");
-        std::string the_str = ref_base + _("_the");
-        std::string phi_str = ref_base + _("_phi");
-        std::string psi_str = ref_base + _("_psi");
-        std::string gear_deploy_str = ref_base + _("_gear_deploy");
-        std::string throttle_str = ref_base + _("_throttle");
-        std::string flaps_ratio_str = ref_base + _("_flap_ratio");
-        std::string beacon_lights_str = ref_base + _("beacon_lights_on");
-        std::string landing_lights_str = ref_base + _("_landing_lights_on");
-        std::string nav_lights_str = ref_base + _("_nav_lights_on");
-        std::string strobe_lights_str = ref_base + _("_strobe_lights_on");
-        std::string taxi_lights_str = ref_base + _("_taxi_light_on");
-        std::string yolk_pitch_str = ref_base + _("_yolk_pitch");
-        std::string yolk_roll_str = ref_base + _("_yolk_roll");
-        std::string yolk_yaw_str = ref_base + _("_yolk_yaw");
-
-        m_XPPlaneX = XPLMFindDataRef(x_str.c_str());
-        m_XPPlaneY = XPLMFindDataRef(y_str.c_str());
-        m_XPPlaneZ = XPLMFindDataRef(z_str.c_str());
-        m_XPPlaneThe = XPLMFindDataRef(the_str.c_str());
-        m_XPPlanePhi = XPLMFindDataRef(phi_str.c_str());
-        m_XPPlanePsi = XPLMFindDataRef(psi_str.c_str());
-        m_XPPlaneGearDeploy = XPLMFindDataRef(gear_deploy_str.c_str());
-        m_XPPlaneThrottle = XPLMFindDataRef(throttle_str.c_str());
-        m_XPPlaneFlapsRatio = XPLMFindDataRef(flaps_ratio_str.c_str());
-        m_XPPlaneBeaconLights = XPLMFindDataRef(beacon_lights_str.c_str());
-        m_XPPlaneLandingLights = XPLMFindDataRef(landing_lights_str.c_str());
-        m_XPPlaneNavLights = XPLMFindDataRef(nav_lights_str.c_str());
-        m_XPPlaneStrobeLights = XPLMFindDataRef(strobe_lights_str.c_str());
-        m_XPPlaneTaxiLights = XPLMFindDataRef(taxi_lights_str.c_str());
-        m_XPPlaneYolkPitch = XPLMFindDataRef(yolk_pitch_str.c_str());
-        m_XPPlaneYolkRoll =XPLMFindDataRef(yolk_roll_str.c_str());
-        m_XPPlaneYolkYaw =XPLMFindDataRef(yolk_yaw_str.c_str());
-
-        //Creat Terrain Probe to retrieve terrain altitude just below the AI
-
-        m_TerrRef = XPLMCreateProbe(xplm_ProbeY);
-        m_TerrData.structSize=sizeof(XPLMProbeInfo_t);
-        XPLMDisableAIForPlane(m_ObjectID);
-        m_GlCamera=pGlCamera;
         m_Log = CLogger::Instance();
-        m_Cull = false;
+
         EnableDisplayCallsign = pEnableDisplayCallSign;
 		DisableAltCorrection = pDisableAltCorrection;
 
@@ -110,11 +66,6 @@ namespace xffs2play
     ///
     CAircraft::~CAircraft()
     {
-        // We reset AI to center of world
-        XPLMSetDataf(m_XPPlaneX, 0);
-        XPLMSetDataf(m_XPPlaneY, -1000);
-        XPLMSetDataf(m_XPPlaneZ, 0);
-        XPLMDestroyProbe(m_TerrRef);
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -125,14 +76,14 @@ namespace xffs2play
     ///
     void CAircraft::GetAircraftData(void)
     {
-        m_PlaneX = XPLMGetDataf(m_XPPlaneX);
+        /*m_PlaneX = XPLMGetDataf(m_XPPlaneX);
         m_PlaneY = XPLMGetDataf(m_XPPlaneY);
         m_PlaneZ = XPLMGetDataf(m_XPPlaneZ);
         m_PlaneThe = XPLMGetDataf(m_XPPlaneThe);
         m_PlanePhi = XPLMGetDataf(m_XPPlanePhi);
         m_PlanePsi = XPLMGetDataf(m_XPPlanePsi);
         XPLMGetDatavf(m_XPPlaneGearDeploy, m_PlaneGearDeploy, 0, 5);
-        XPLMGetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);
+        XPLMGetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);*/
     }
 
     ///
@@ -197,15 +148,15 @@ namespace xffs2play
                 // Update Distance
                 m_Distance = Distance(pLat,pLon,m_AIData.Latitude,m_AIData.Longitude,'N');
             }
-            XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
-            XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
+            //XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
+            //XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
             double GndLon,GndLat,GndAlt;
-            XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
+            //XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
             GndAlt /=0.3048;
             if (m_Data.OnGround && (!DisableAltCorrection))
             {
                 m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
-                XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
+                //XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
             }
             for (int i=0; i<5 ; i++)
             {
@@ -215,7 +166,7 @@ namespace xffs2play
             m_PlaneThrottle[1] = static_cast<float>(m_AIData.ThrottleEng2/100.0);
             m_PlaneThrottle[2] = static_cast<float>(m_AIData.ThrottleEng3/100.0);
             m_PlaneThrottle[3] = static_cast<float>(m_AIData.ThrottleEng4/100.0);
-            XPLMSetDataf(m_XPPlaneX, m_PlaneX);
+            /*XPLMSetDataf(m_XPPlaneX, m_PlaneX);
             XPLMSetDataf(m_XPPlaneY, m_PlaneY);
             XPLMSetDataf(m_XPPlaneZ, m_PlaneZ);
             XPLMSetDataf(m_XPPlaneThe, -m_AIData.Pitch);
@@ -231,10 +182,10 @@ namespace xffs2play
             XPLMSetDatai(m_XPPlaneTaxiLights, m_AIData.RecoLight);
             XPLMSetDataf(m_XPPlaneYolkPitch, static_cast<float>(m_AIData.ElevatorPos));
             XPLMSetDataf(m_XPPlaneYolkRoll, static_cast<float>(m_AIData.AileronPos));
-            XPLMSetDataf(m_XPPlaneYolkYaw, static_cast<float>(m_AIData.RudderPos));
+            XPLMSetDataf(m_XPPlaneYolkYaw, static_cast<float>(m_AIData.RudderPos));*/
             if (m_CurrentAircraftPath != m_AircraftPath)
             {
-                XPLMSetAircraftModel(m_ObjectID,m_AircraftPath.c_str());
+                //XPLMSetAircraftModel(m_ObjectID,m_AircraftPath.c_str());
                 m_CurrentAircraftPath = m_AircraftPath;
             }
         }

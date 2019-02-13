@@ -34,12 +34,26 @@
 
 #include "proto/aircraftstate.pb.h"
 #include "sim/useraircraft.h"
+
+#include "XPMPPlaneRenderer.h"
+
 #include "tools/log.h"
 #include "tools/datetime.h"
 #include "aircraft.h"
+#include "tools/color.h"
 #include "tools/utils3d.h"
 
 #define XFF2_PROTOCOL 1
+
+//MARK: File Paths
+// these are under the plugins directory
+#define PATH_FLIGHT_MODELS      "Resources/FlightModels.prf"
+#define PATH_RELATED_TXT        "Resources/related.txt"
+#define PATH_LIGHTS_PNG         "Resources/lights.png"
+#define PATH_DOC8643_TXT        "Resources/Doc8643.txt"
+#define PATH_RESOURCES          "Resources"
+#define PATH_RESOURCES_CSL      "Resources/CSL"
+#define PATH_RESOURCES_SCSL     "Resources/ShippedCSL"
 
 namespace xffs2play
 {
@@ -70,8 +84,9 @@ namespace xffs2play
     };
 
     typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
-    typedef std::map<uint32_t, CAircraft*> AITab_t;
+    typedef std::map<uint32_t, CAircraft*> PeerArray;
     typedef std::pair<uint32_t, CAircraft*> PeerElement;
+    typedef std::map<uint32_t, CAircraft*>::iterator PeerIterator;
     typedef FFS2ClientList::value_type FFS2Client;
 
     class SimController : public UDPServerEventHandler
@@ -105,27 +120,22 @@ static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
         void            SendDelObjectID(uint32_t pObjectID);
         void            SendDisc();
-        void            ClearObjectAI();
-        int             GetFirstFreeAI();
-        void            RemoveAI(CAircraft* pPtr);
+        void            ClearPeers();
+        uint32_t        RemovePeer (uint32_t pObjectID);
         void            UpdateOptions();
         bool            GetOption(SimOption pOption);
 
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
         bool            m_FirstScan;
-        uint8_t         m_PlaneCount;
         AirData         m_SendData;
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
         CLogger*        m_Log;
         UDPServer       m_Server;
         FFS2ClientList  m_ArrClients;
-        AITab_t         m_ArrAI;
-        CAircraft*      m_PtrAI[20];
-        std::recursive_mutex      m_Mutex;
-        char*           m_Aircraft[21];
-        char            m_AircraftPath[21][512];
+        PeerArray       m_ArrPeer;
+        std::recursive_mutex m_Mutex;
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
 		std::vector<std::string> m_TchatArr;

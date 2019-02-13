@@ -27,6 +27,7 @@
 #include <istream>
 #include <iostream>
 #include <string>
+#include <XPMPMultiplayer.h>
 
 namespace xffs2play
 {
@@ -34,6 +35,26 @@ namespace xffs2play
 
     SimController::SimController()
     {
+        // init Multiplayer API
+        // apparently the legacy init is still necessary.
+        // Otherwise the XPMP datarefs wouldn't be registered and hence the
+        // planes' config would never change (states like flaps/gears are
+        // communicated to the model via custom datarefs,
+        // see XPMPMultiplayerObj8.cpp/obj_get_float)
+        const std::string pathRelated (LTCalcFullPluginPath(PATH_RELATED_TXT));
+        const std::string pathLights  (LTCalcFullPluginPath(PATH_LIGHTS_PNG));
+        const std::string pathDoc8643 (LTCalcFullPluginPath(PATH_DOC8643_TXT));
+        const std::string pathRes     (LTCalcFullPluginPath(PATH_RESOURCES) + dataRefs.GetDirSeparator());
+        const char* cszResult = XPMPMultiplayerInitLegacyData
+        (
+            cslPath.c_str(),                // we pass in the first found CSL dir
+            pathRelated.c_str(),
+            pathLights.c_str(),
+            pathDoc8643.c_str(),
+            dataRefs.GetDefaultAcIcaoType().c_str(),
+            &MPIntPrefsFunc, &MPFloatPrefsFunc
+        );
+        XPMPMultiplayerInit()
         XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
@@ -43,7 +64,6 @@ namespace xffs2play
         m_ObjectID=0;
         m_FirstScan=true;
         m_Options = static_cast<uint32_t>(DisplayCallSign);
-        m_PlaneCount = 1;
 		m_CallSignColor.R=255;
 		m_Server.Start();
 		m_LastTchatMessage = Now();
@@ -63,7 +83,7 @@ namespace xffs2play
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
 		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         //google::protobuf::ShutdownProtobufLibrary();
-        ClearObjectAI();
+        ClearPeers();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
 #endif
@@ -176,45 +196,13 @@ namespace xffs2play
         int /*pCounter*/)
     {
         //boost::unique_lock<boost::mutex> lock(m_mutex);
-        int PlaneCount=0;
-        XPLMCountAircraft(&PlaneCount, nullptr, nullptr);
         if (m_FirstScan)
         {
             m_FirstScan=false;
-            m_Mutex.lock();
-            for (int i=0 ; i<20 ; i++)
-            {
-                m_PtrAI[i]=nullptr;
-            }
-            m_Mutex.unlock();
             SetupCullInfo(&m_GlCamera);
         }
-        if (PlaneCount>m_PlaneCount)
-        {
-            int Index;
-            char FileName[256], AircraftPath[256];
-#ifdef XFFS_DEBUG
-            m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
-#endif
-            for (Index = m_PlaneCount; Index <= PlaneCount; Index++)
-            {
-				XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
-                strcpy(m_AircraftPath[Index-1], AircraftPath);
-                m_Aircraft[Index-1] = reinterpret_cast<char *>(m_AircraftPath[Index-1]);
-            }
-            m_Aircraft[Index-1] = nullptr;
-            if (XPLMAcquirePlanes(reinterpret_cast<char **>(&m_Aircraft), nullptr, nullptr))
-            {
-                m_Log->Log(std::to_string(Index-1)+_(" Aircraft Acquired successfully"));
-            }
-            else
-            {
-                m_Log->Log(_("Aircraft not Acquired"));
-            }
-            m_PlaneCount = PlaneCount;
-        }
         m_Mutex.lock();
-        for (auto it : m_ArrAI)
+        for (auto it : m_ArrPeer)
         {
             if (it.second != nullptr)
                 it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
@@ -256,7 +244,7 @@ namespace xffs2play
 				nullptr);
 		}
         m_Mutex.lock();
-        for (auto it : m_ArrAI)
+        for (auto it : m_ArrPeer)
         {
             if (it.second!= nullptr)
                 it.second->Draw(pPhase,m_CallSignColor);
@@ -295,7 +283,7 @@ namespace xffs2play
         {
             m_ArrClients.erase(pClient);
             m_Log->Log(_("Remove client"), LEVEL_INFO);
-            ClearObjectAI();
+            ClearPeers();
         }
     }
 
@@ -359,12 +347,12 @@ namespace xffs2play
                     uint32_t Object_ID;
 					data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
                     m_ReceivedData.ParseFromIstream(&data);
-                    for (auto it : m_ArrAI)
+                    PeerIterator it = m_ArrPeer.find(Object_ID);
+                    if (it != m_ArrPeer.end())
                     {
-                        if (it.first==Object_ID)
+                        if (it->second != nullptr)
                         {
-                            if (it.second != nullptr)
-                                it.second->FromAirData(m_ReceivedData);
+                            it->second->FromAirData(m_ReceivedData);
                             break;
                         }
                     }
@@ -395,8 +383,7 @@ namespace xffs2play
 #endif
                     //Check if callsign already exist
                     bool Exist = false;
-                    int Number = 0;
-                    for (auto it : m_ArrAI)
+                    for (auto it : m_ArrPeer)
                     {
                         if (it.second != nullptr)
                         {
@@ -407,23 +394,22 @@ namespace xffs2play
                             }
                         }
                     }
-                    Number = GetFirstFreeAI();
                     uint32_t ObjectID=0;
-                    if ((!Exist) && (Number > 0))
+                    if (!Exist)
                     {
                         ObjectID=++m_ObjectID;
 #ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(m_ObjectID), LEVEL_DEBUG);
+                        m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(ObjectID), LEVEL_DEBUG);
 #endif
-                        CAircraft* PeerData = new CAircraft(Number,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-                        m_PtrAI[Number-1]=PeerData;
-                        //PeerData->fromAirData(ReceivedData);
-                        m_ArrAI.insert(PeerElement(m_ObjectID,PeerData));
+                        m_ArrPeer.insert(PeerElement(
+                            m_ObjectID,
+                            new CAircraft(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr))
+                        ));
                     }
                     else
                     {
 #ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(Number), LEVEL_DEBUG);
+                        m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(ObjectID), LEVEL_DEBUG);
 #endif
                     }
                     SendAddObjectID(ObjectID, CallSign);
@@ -437,17 +423,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                     m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                    for (auto it : m_ArrAI)
-                    {
-                        if ((it.first==Object_ID) && (it.second != nullptr))
-                        {
-                            RemoveAI(it.second);
-                            delete it.second;
-                            m_ArrAI.erase(Object_ID);
-                            Deleted_Object_ID=Object_ID;
-                            break;
-                        }
-                    }
+                    Deleted_Object_ID = RemovePeer(Object_ID);
                     SendDelObjectID(Deleted_Object_ID);
                     break;
                 }
@@ -556,48 +532,37 @@ namespace xffs2play
     ///
     /// We clear All Object AI from X-Plane
     ///
-    void SimController::ClearObjectAI()
+    void SimController::ClearPeers()
     {
         std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        for (auto it : m_ArrAI)
+        for (auto it : m_ArrPeer)
         {
             if (it.second != nullptr)
             {
-                RemoveAI(it.second);
                 delete it.second;
             }
         }
-        m_ArrAI.clear();
-    }
-
-    ///
-    /// Return the id of the next first AI free to be handled by our plugin
-    ///
-    int SimController::GetFirstFreeAI()
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        int result = 0;
-        for (int i=0; (i<m_PlaneCount)&&(i<20) ; i++)
-        {
-            if (m_PtrAI[i]==nullptr) return i+1;
-        }
-        return result;
+        m_ArrPeer.clear();
     }
 
     ///
     /// Remove the AI from private array
     ///
-    void SimController::RemoveAI(CAircraft* pPtr)
+    uint32_t SimController::RemovePeer(uint32_t pObject_ID)
     {
         std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-		for (int i=0; i<20 ; i++)
+        uint32_t Object_deleted = 0;
+        PeerIterator it = m_ArrPeer.find(pObject_ID);
+        if (it != m_ArrPeer.end())
         {
-            if (m_PtrAI[i]==pPtr)
+            if (it->second != nullptr)
             {
-                m_PtrAI[i]=nullptr;
-                break;
+                delete it->second;
+                m_ArrPeer.erase (it);
+                Object_deleted = pObject_ID;
             }
         }
+        return Object_deleted;
     }
 
     ///
@@ -606,7 +571,7 @@ namespace xffs2play
     void SimController::UpdateOptions()
     {
         std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        for (auto it : m_ArrAI)
+        for (auto it : m_ArrPeer)
         {
 			if (it.second != nullptr)
 			{

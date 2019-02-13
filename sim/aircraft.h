@@ -23,8 +23,6 @@
 #pragma once
 
 #include <string>
-#include <XPLMPlanes.h>
-#include <XPLMDataAccess.h>
 #include <XPLMScenery.h>
 #include <XPLMDisplay.h>
 
@@ -34,6 +32,8 @@
 #include "tools/datetime.h"
 #include "tools/utils3d.h"
 #include "tools/color.h"
+
+#include "XPMPMultiplayer.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
@@ -105,7 +105,7 @@ virtual                 ~CAircraft();
         int             m_TextPhase;
         datetime        m_LastTextPhaseChange;
 
-        XPLMDataRef     m_XPPlaneX;
+        /*XPLMDataRef     m_XPPlaneX;
         XPLMDataRef     m_XPPlaneY;
         XPLMDataRef     m_XPPlaneZ;
         XPLMDataRef     m_XPPlaneThe;
@@ -124,7 +124,7 @@ virtual                 ~CAircraft();
         XPLMDataRef     m_XPPlaneYolkYaw;
 
         XPLMProbeRef    m_TerrRef;
-        XPLMProbeInfo_t m_TerrData;
+        XPLMProbeInfo_t m_TerrData;*/
         CAircraftState  m_ActualPos;
         CAircraftState  m_FuturData;
         CAircraftState  m_OldData;
