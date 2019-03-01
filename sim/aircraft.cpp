@@ -59,6 +59,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
+        m_PlaneID = XPMPCreatePlane ("BE20","","",&CAircraft::PlaneData_Callback,this);
     }
 
     ///
@@ -66,6 +67,7 @@ namespace xffs2play
     ///
     CAircraft::~CAircraft()
     {
+        XPMPDestroyPlane(m_PlaneID);
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -148,16 +150,16 @@ namespace xffs2play
                 // Update Distance
                 m_Distance = Distance(pLat,pLon,m_AIData.Latitude,m_AIData.Longitude,'N');
             }
-            //XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
-            //XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
+            /*XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
+            XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
             double GndLon,GndLat,GndAlt;
-            //XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
+            XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
             GndAlt /=0.3048;
             if (m_Data.OnGround && (!DisableAltCorrection))
             {
                 m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
-                //XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
-            }
+                XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
+            }*/
             for (int i=0; i<5 ; i++)
             {
                 m_PlaneGearDeploy[i]=static_cast<float>(m_AIData.GearPos);
@@ -166,23 +168,6 @@ namespace xffs2play
             m_PlaneThrottle[1] = static_cast<float>(m_AIData.ThrottleEng2/100.0);
             m_PlaneThrottle[2] = static_cast<float>(m_AIData.ThrottleEng3/100.0);
             m_PlaneThrottle[3] = static_cast<float>(m_AIData.ThrottleEng4/100.0);
-            /*XPLMSetDataf(m_XPPlaneX, m_PlaneX);
-            XPLMSetDataf(m_XPPlaneY, m_PlaneY);
-            XPLMSetDataf(m_XPPlaneZ, m_PlaneZ);
-            XPLMSetDataf(m_XPPlaneThe, -m_AIData.Pitch);
-            XPLMSetDataf(m_XPPlanePhi, -m_AIData.Bank);
-            XPLMSetDataf(m_XPPlanePsi, m_AIData.Heading);
-            XPLMSetDatavf(m_XPPlaneGearDeploy, m_PlaneGearDeploy, 0, 5);
-            XPLMSetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);
-            XPLMSetDataf(m_XPPlaneFlapsRatio, static_cast<float>(m_AIData.FlapsIndex/3.0));
-            XPLMSetDatai(m_XPPlaneBeaconLights, m_AIData.BeaconLight);
-            XPLMSetDatai(m_XPPlaneLandingLights, m_AIData.LandingLight);
-            XPLMSetDatai(m_XPPlaneNavLights, m_AIData.NavLight);
-            XPLMSetDatai(m_XPPlaneStrobeLights, m_AIData.StrobeLight);
-            XPLMSetDatai(m_XPPlaneTaxiLights, m_AIData.RecoLight);
-            XPLMSetDataf(m_XPPlaneYolkPitch, static_cast<float>(m_AIData.ElevatorPos));
-            XPLMSetDataf(m_XPPlaneYolkRoll, static_cast<float>(m_AIData.AileronPos));
-            XPLMSetDataf(m_XPPlaneYolkYaw, static_cast<float>(m_AIData.RudderPos));*/
             if (m_CurrentAircraftPath != m_AircraftPath)
             {
                 //XPLMSetAircraftModel(m_ObjectID,m_AircraftPath.c_str());
@@ -203,7 +188,7 @@ namespace xffs2play
             if (m_TextPhase > 2) m_TextPhase=0;
             m_LastTextPhaseChange = Now();
         }
-
+        return;
         if (m_Spawned>=1)
         {
             if (!EnableDisplayCallsign) return;
@@ -343,5 +328,69 @@ namespace xffs2play
     bool CAircraft::IsCallSign(std::string& pCallSign)
     {
         return m_CallSign==pCallSign;
+    }
+
+    XPMPPlaneCallbackResult CAircraft::PlaneData (XPMPPlaneID inPlane, XPMPPlaneDataType inDataType, void* ioData)
+    {
+        switch (inDataType)
+        {
+            case xpmpDataType_Position:
+            {
+                XPMPPlanePosition_t* Position = static_cast<XPMPPlanePosition_t*>(ioData);
+                Position->clampToGround = m_AIData.OnGround;
+                Position->elevation = m_AIData.Altitude;
+                Position->heading = m_AIData.Heading;
+                strncpy(Position->label,m_CallSign.c_str(),sizeof(Position->label)-1);
+                Position->label_color [0] = 1.0;
+                Position->label_color [1] = 0.0;
+                Position->label_color [2] = 0.0;
+                Position->label_color [3] = 0.0;
+                Position->lat = m_AIData.Latitude;
+                Position->lon = m_AIData.Longitude;
+                Position->pitch = -m_AIData.Pitch;
+                Position->roll = -m_AIData.Bank;
+                Position->offsetScale = 0.0;
+                return xpmpData_NewData;
+                break;
+            }
+            case xpmpDataType_Radar:
+            {
+                break;
+            }
+            case xpmpDataType_Surfaces:
+            {
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("CAircraft::Engine ") + std::to_string(m_PlaneThrottle[0]*2000.0) ,LEVEL_DEBUG);
+#endif // XFFS_DEBUG
+                XPMPPlaneSurfaces_t* Surface = static_cast<XPMPPlaneSurfaces_t*>(ioData);
+                Surface->flapRatio = static_cast<float>(m_AIData.FlapsIndex/3.0);
+                Surface->lights.bcnLights = m_AIData.BeaconLight;
+                Surface->lights.landLights = m_AIData.LandingLight;
+                Surface->lights.navLights = m_AIData.NavLight;
+                Surface->lights.strbLights = m_AIData.StrobeLight;
+                Surface->yokePitch = m_AIData.ElevatorPos;
+                Surface->yokeHeading = m_AIData.RudderPos;
+                Surface->yokeRoll= m_AIData.AileronPos;
+                Surface->gearPosition = m_PlaneGearDeploy[0];
+                Surface->thrust = m_PlaneThrottle[0]*2000.0;
+                return xpmpData_NewData;
+                break;
+            }
+        }
+        return xpmpData_Unavailable;
+    }
+
+    XPMPPlaneCallbackResult CAircraft::PlaneData_Callback(
+            XPMPPlaneID inPlane,
+            XPMPPlaneDataType inDataType,
+            void* ioData,
+            void* inRefcon
+        )
+    {
+        if (inRefcon != nullptr)
+        {
+            return static_cast<CAircraft*>(inRefcon)->PlaneData(inPlane, inDataType, ioData);
+        }
+        return xpmpData_Unavailable;
     }
 }

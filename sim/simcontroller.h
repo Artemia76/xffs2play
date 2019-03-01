@@ -100,6 +100,7 @@ static  void            Kill();
                         {
                             return m_UserAircraft;
                         }
+        bool            IsInit(){return m_Initialized;}
 
     protected:
         void            OnReceiveData(const ClientMessage& pMessage);
@@ -124,6 +125,10 @@ static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         uint32_t        RemovePeer (uint32_t pObjectID);
         void            UpdateOptions();
         bool            GetOption(SimOption pOption);
+        std::string     CalcFullPluginPath ( const std::string path );
+
+static  int             MPIntPrefsFunc(const char* section, const char* key, int   iDefault);
+static  float           MPFloatPrefsFunc(const char* section, const char* key, float fDefault);
 
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
@@ -141,5 +146,9 @@ static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
 		std::vector<std::string> m_TchatArr;
 		datetime		m_LastTchatMessage;
 		XPLMWindowID    m_TChatWindow;
+		bool            m_Initialized;
+		XPLMPluginID    m_PluginID;
+		std::string     m_PluginPath;
+		std::string     m_DirSeparator;
     };
 }

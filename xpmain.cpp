@@ -63,7 +63,12 @@ PLUGIN_API int XPluginEnable(void)
     g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
     XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
     XPLMSetErrorCallback(ErrorHandler);
-    SimController::Instance();
+    if (!SimController::Instance()->IsInit())
+    {
+        SimController::Kill();
+        return 0;
+    }
+
     CLogger::Instance()->Log(_("Plugin Enable"));
     return 1;
 }

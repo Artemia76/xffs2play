@@ -27,7 +27,9 @@
 #include <istream>
 #include <iostream>
 #include <string>
+#include <functional>
 #include <XPMPMultiplayer.h>
+#include <XPLMPlugin.h>
 
 namespace xffs2play
 {
@@ -35,26 +37,66 @@ namespace xffs2play
 
     SimController::SimController()
     {
+        m_Initialized =false;
+        m_DirSeparator = XPLMGetDirectorySeparator();
+        // my own plugin path
+        m_PluginID = XPLMGetMyID();
+        char aszPath[512];
+        aszPath[0] = 0;
+        XPLMGetPluginInfo(m_PluginID, NULL, aszPath, NULL, NULL);
+        m_PluginPath = aszPath;
+        // LTPluginPath is now something like "...:Resources:plugins:LiveTraffic:64:mac.xpl"
+        // we now reduce the path to the beginning of the plugin:
+        // remove the file name
+        std::string::size_type pos = m_PluginPath.rfind(m_DirSeparator);
+        m_PluginPath.erase(pos);
+        // remove the 64 subdirectory, but leave the separator at the end
+        pos = m_PluginPath.rfind(m_DirSeparator);
+        m_PluginPath.erase(pos+1);
+
         // init Multiplayer API
         // apparently the legacy init is still necessary.
         // Otherwise the XPMP datarefs wouldn't be registered and hence the
         // planes' config would never change (states like flaps/gears are
         // communicated to the model via custom datarefs,
         // see XPMPMultiplayerObj8.cpp/obj_get_float)
-        const std::string pathRelated (LTCalcFullPluginPath(PATH_RELATED_TXT));
-        const std::string pathLights  (LTCalcFullPluginPath(PATH_LIGHTS_PNG));
-        const std::string pathDoc8643 (LTCalcFullPluginPath(PATH_DOC8643_TXT));
-        const std::string pathRes     (LTCalcFullPluginPath(PATH_RESOURCES) + dataRefs.GetDirSeparator());
+        const std::string cslPath (CalcFullPluginPath(PATH_RESOURCES_CSL));
+        const std::string pathRelated (CalcFullPluginPath(PATH_RELATED_TXT));
+        const std::string pathLights  (CalcFullPluginPath(PATH_LIGHTS_PNG));
+        const std::string pathDoc8643 (CalcFullPluginPath(PATH_DOC8643_TXT));
+        const std::string pathRes = CalcFullPluginPath(PATH_RESOURCES) + m_DirSeparator;
         const char* cszResult = XPMPMultiplayerInitLegacyData
         (
             cslPath.c_str(),                // we pass in the first found CSL dir
             pathRelated.c_str(),
             pathLights.c_str(),
             pathDoc8643.c_str(),
-            dataRefs.GetDefaultAcIcaoType().c_str(),
-            &MPIntPrefsFunc, &MPFloatPrefsFunc
+            "C172",
+            &SimController::MPIntPrefsFunc,
+            &SimController::MPFloatPrefsFunc
         );
-        XPMPMultiplayerInit()
+        // Init of multiplayer library failed. Cleanup as much as possible and bail out
+        if ( cszResult[0] )
+        {
+            m_Log->Log(_("CSL Old Init Failed = ") + cszResult, LEVEL_ERROR);
+            XPMPMultiplayerCleanup();
+            return;
+        }
+
+        // yet another init function...also necessary
+        cszResult = XPMPMultiplayerInit
+        (
+            &SimController::MPIntPrefsFunc,
+            &SimController::MPFloatPrefsFunc,
+            pathRes.c_str()
+        );
+        if ( cszResult[0] )
+        {
+            m_Log->Log(_("CSL New Init Failed = ") + cszResult, LEVEL_ERROR);
+            XPMPMultiplayerCleanup();
+            return;
+
+        }
         XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
@@ -71,6 +113,16 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
+        cszResult = XPMPMultiplayerEnable();
+        if ( cszResult[0] )
+        {
+            m_Log->Log(_("XPMPMultiplayerEnable Failed = ") + cszResult, LEVEL_ERROR);
+            XPMPMultiplayerCleanup();
+            return;
+
+        }
+        XPMPHasControlOfAIAircraft();
+        m_Initialized=true;
     }
 
     SimController::~SimController()
@@ -202,7 +254,7 @@ namespace xffs2play
             SetupCullInfo(&m_GlCamera);
         }
         m_Mutex.lock();
-        for (auto it : m_ArrPeer)
+        for (auto& it : m_ArrPeer)
         {
             if (it.second != nullptr)
                 it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
@@ -244,7 +296,7 @@ namespace xffs2play
 				nullptr);
 		}
         m_Mutex.lock();
-        for (auto it : m_ArrPeer)
+        for (auto& it : m_ArrPeer)
         {
             if (it.second!= nullptr)
                 it.second->Draw(pPhase,m_CallSignColor);
@@ -379,7 +431,7 @@ namespace xffs2play
                     AIResol Aircraft;
                     Aircraft.ParseFromIstream(&data);
 #ifdef XFFS_DEBUG
-                    m_Log->Log(_("SimController : Recieve ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
+                    m_Log->Log(_("SimController : Receive ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
 #endif
                     //Check if callsign already exist
                     bool Exist = false;
@@ -401,10 +453,11 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                         m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(ObjectID), LEVEL_DEBUG);
 #endif
-                        m_ArrPeer.insert(PeerElement(
-                            m_ObjectID,
-                            new CAircraft(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr))
-                        ));
+                        m_ArrPeer[m_ObjectID] = new CAircraft(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
+#ifdef XFFS_DEBUG
+                        m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" ObjectID 1 = ")
+                                   + std::to_string(m_ArrPeer.at(m_ObjectID)->GetObjectID()), LEVEL_DEBUG);
+#endif
                     }
                     else
                     {
@@ -629,4 +682,41 @@ namespace xffs2play
 			}
 		}
 	}
+
+	int SimController::MPIntPrefsFunc(const char* section, const char* key, int   iDefault)
+	{
+	    // debug XPMP's CSL model matching if requested
+        if ( !strcmp(section,"debug") && !strcmp(key,"model_matching") )
+        { return 1; }
+
+        // How many full a/c to draw at max?
+        if ( !strcmp(section,"planes") && !strcmp(key,"max_full_count") )
+        { return 50; }
+        return iDefault;
+	}
+
+    float SimController::MPFloatPrefsFunc(const char* section, const char* key, float fDefault)
+    {
+        // Max distance for drawing full a/c (as opposed to 'lights only')?
+        if ( !strcmp(section,"planes") && !strcmp(key,"full_distance") )
+        { return 3.0; }
+        return fDefault;
+    }
+
+    // same as above, but relative to plugin directory
+    std::string SimController::CalcFullPluginPath ( const std::string path )
+    {
+        std::string ret;
+
+        // starts with DirSeparator or [windows] second char is a colon?
+        if (m_DirSeparator[0] == path[0] ||
+            (path.length() >= 2 && path[1] == ':' ) )
+            // just take the given path, it is a full path already
+            return path;
+
+        // otherwise it shall be a local path relative to the plugin's dir
+        // otherwise it is supposingly a local path relative to XP main
+        // prepend with XP system path to make it a full path:
+        return m_PluginPath + path;
+    }
 }

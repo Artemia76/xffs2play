@@ -92,13 +92,15 @@
 		<Linker>
 			<Add option="`pkg-config --libs protobuf`" />
 			<Add library="boost_system" />
-			<Add library="xplanemp" />
-			<Add directory="/mnt/devel/git/libxplanemp" />
+			<Add library="libxplanemp" />
+			<Add directory="./libxplanemp" />
 		</Linker>
 		<Unit filename="gui/mainframe.cpp" />
 		<Unit filename="gui/mainframe.h" />
 		<Unit filename="net/udpserver.cpp" />
 		<Unit filename="net/udpserver.h" />
+		<Unit filename="proto/aircraftstate.pb.cc" />
+		<Unit filename="proto/aircraftstate.pb.h" />
 		<Unit filename="proto/aircraftstate.proto" />
 		<Unit filename="sim/aircraft.cpp" />
 		<Unit filename="sim/aircraft.h" />
@@ -112,8 +114,6 @@
 		<Unit filename="tools/color.h" />
 		<Unit filename="tools/datetime.cpp" />
 		<Unit filename="tools/datetime.h" />
-		<Unit filename="tools/filepath.cpp" />
-		<Unit filename="tools/filepath.h" />
 		<Unit filename="tools/hexa.h" />
 		<Unit filename="tools/log.cpp" />
 		<Unit filename="tools/log.h" />

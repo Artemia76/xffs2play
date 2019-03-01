@@ -23,8 +23,11 @@
 #pragma once
 
 #include <string>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <XPLMScenery.h>
 #include <XPLMDisplay.h>
+#include <XPLMDataAccess.h>
 
 #include "sim/aircraftstate.h"
 #include "proto/aircraftstate.pb.h"
@@ -32,7 +35,6 @@
 #include "tools/datetime.h"
 #include "tools/utils3d.h"
 #include "tools/color.h"
-
 #include "XPMPMultiplayer.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -68,6 +70,7 @@ virtual                 ~CAircraft();
 		bool			DisableAltCorrection;
 
     private:
+        XPMPPlaneID     m_PlaneID;
         double          m_Distance;
         double          m_PlaneX;
         double          m_PlaneY;
@@ -104,27 +107,18 @@ virtual                 ~CAircraft();
         bool            m_Cull;
         int             m_TextPhase;
         datetime        m_LastTextPhaseChange;
-
-        /*XPLMDataRef     m_XPPlaneX;
-        XPLMDataRef     m_XPPlaneY;
-        XPLMDataRef     m_XPPlaneZ;
-        XPLMDataRef     m_XPPlaneThe;
-        XPLMDataRef     m_XPPlanePhi;
-        XPLMDataRef     m_XPPlanePsi;
-        XPLMDataRef     m_XPPlaneGearDeploy;
-        XPLMDataRef     m_XPPlaneThrottle;
-        XPLMDataRef     m_XPPlaneFlapsRatio;
-        XPLMDataRef     m_XPPlaneBeaconLights;
-        XPLMDataRef     m_XPPlaneLandingLights;
-        XPLMDataRef     m_XPPlaneNavLights;
-        XPLMDataRef     m_XPPlaneStrobeLights;
-        XPLMDataRef     m_XPPlaneTaxiLights;
-        XPLMDataRef     m_XPPlaneYolkPitch;
-        XPLMDataRef     m_XPPlaneYolkRoll;
-        XPLMDataRef     m_XPPlaneYolkYaw;
-
         XPLMProbeRef    m_TerrRef;
-        XPLMProbeInfo_t m_TerrData;*/
+        XPLMProbeInfo_t m_TerrData;
+
+        XPMPPlaneCallbackResult PlaneData (XPMPPlaneID inPlane, XPMPPlaneDataType inDataType, void* ioData);
+
+static  XPMPPlaneCallbackResult PlaneData_Callback(
+            XPMPPlaneID inPlane,
+            XPMPPlaneDataType inDataType,
+            void* ioData,
+            void* inRefcon
+        );
+
         CAircraftState  m_ActualPos;
         CAircraftState  m_FuturData;
         CAircraftState  m_OldData;
