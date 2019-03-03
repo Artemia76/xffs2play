@@ -48,6 +48,7 @@ namespace xffs2play
         m_AircraftPath = pAircraft.path();
         m_CGHeight=pAircraft.cgheight();
         m_Pitch=pAircraft.pitch();
+		m_Model = pAircraft.model();
         m_LastRender = Now();
         m_Log = CLogger::Instance();
 
@@ -59,7 +60,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-        m_PlaneID = XPMPCreatePlane ("BE20","","",&CAircraft::PlaneData_Callback,this);
+        m_PlaneID = XPMPCreatePlane (m_Model.c_str(),"","",&CAircraft::PlaneData_Callback,this);
     }
 
     ///
