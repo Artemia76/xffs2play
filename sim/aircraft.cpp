@@ -48,6 +48,7 @@ namespace xffs2play
         m_AircraftPath = pAircraft.path();
         m_CGHeight=pAircraft.cgheight();
         m_Pitch=pAircraft.pitch();
+		m_Model = pAircraft.model();
         m_LastRender = Now();
         m_Log = CLogger::Instance();
 
@@ -59,7 +60,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_AircraftPath ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-        m_PlaneID = XPMPCreatePlane ("BE20","","",&CAircraft::PlaneData_Callback,this);
+        m_PlaneID = XPMPCreatePlane (m_Model.c_str(),"","",&CAircraft::PlaneData_Callback,this);
     }
 
     ///
@@ -359,9 +360,6 @@ namespace xffs2play
             }
             case xpmpDataType_Surfaces:
             {
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("CAircraft::Engine ") + std::to_string(m_PlaneThrottle[0]*2000.0) ,LEVEL_DEBUG);
-#endif // XFFS_DEBUG
                 XPMPPlaneSurfaces_t* Surface = static_cast<XPMPPlaneSurfaces_t*>(ioData);
                 Surface->flapRatio = static_cast<float>(m_AIData.FlapsIndex/3.0);
                 Surface->lights.bcnLights = m_AIData.BeaconLight;
@@ -372,7 +370,7 @@ namespace xffs2play
                 Surface->yokeHeading = m_AIData.RudderPos;
                 Surface->yokeRoll= m_AIData.AileronPos;
                 Surface->gearPosition = m_PlaneGearDeploy[0];
-                Surface->thrust = m_PlaneThrottle[0]*2000.0;
+                Surface->thrust = m_PlaneThrottle[0];
                 return xpmpData_NewData;
                 break;
             }

@@ -84,6 +84,7 @@ virtual                 ~CAircraft();
         CLogger*        m_Log;
         std::string     m_CallSign;
         std::string     m_AircraftPath;
+		std::string		m_Model;
         int             m_Spawned;
         timespan        m_PredictiveTime;
         timespan        m_RemoteRefreshRate;
