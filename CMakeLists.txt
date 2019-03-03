@@ -42,38 +42,57 @@ else()
 endif()
 
 #Boost dependency
-
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME    OFF)
-
 if (APPLE OR WIN32)
   set(Boost_USE_STATIC_LIBS        ON) # only find static libs
   find_package(Boost REQUIRED COMPONENTS thread system date_time regex)
 else ()
   find_package(Boost REQUIRED COMPONENTS system)
 endif()
+if (Boost_FOUND)
+	set(Boost_USE_MULTITHREADED      ON)
+	set(Boost_USE_STATIC_RUNTIME    OFF)
 
-include_directories( ${Boost_INCLUDE_DIR} )
-
-find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR})
+	include_directories( ${Boost_INCLUDE_DIR} )
+endif ( Boost_FOUND )
 
 #opengl
-if (UNIX)
-  find_package(GLUT REQUIRED)
-  include_directories(${GLUT_INCLUDE_DIR})
-endif()
+find_package(OpenGL REQUIRED)
+if ( OpenGL_FOUND )
+	include_directories(${OPENGL_INCLUDE_DIR})
+endif ( OpenGL_FOUND )
+#glut
+find_package(GLUT REQUIRED)
+if ( GLUT_FOUND )
+	include_directories(${GLUT_INCLUDE_DIR})
+endif( GLUT_FOUND )
 
 #protobuf
 
-set(PROTOBUF_USE_STATIC_LIBS ON)
 find_package(Protobuf REQUIRED)
-include_directories(${PROTOBUF_INCLUDE_DIRS})
+if ( Protobuf_FOUND )
+	set(PROTOBUF_USE_STATIC_LIBS ON)
+	include_directories(${PROTOBUF_INCLUDE_DIRS})
+endif ( Protobuf_FOUND )
 
 add_subdirectory(proto)
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+#ZLIB
+find_package(ZLIB REQUIRED)  # sudo apt-get install zlib1g-dev
+if ( ZLIB_FOUND )
+    include_directories( ${ZLIB_INCLUDE_DIRS} )
+endif( ZLIB_FOUND )
+
+#libpng
+find_package(PNG REQUIRED)  # sudo apt-get install libpng-dev
+if ( PNG_FOUND )
+    include_directories( ${PNG_INCLUDE_DIRS} )
+endif ( PNG_FOUND )
+
+#xplanemp
+set ( XPSDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xplane_sdk/sdk/")
+add_subdirectory (libxplanemp)
+include_directories( libxplanemp/include )
 
 if( MSVC )
   message(STATUS "Compiler is Microsoft Visual Studio:")
@@ -99,6 +118,6 @@ add_xplane_plugin(XFFS2Play
                   ${TOOLS}
 				  ${MY_HEADERS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC proto ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES})
+target_link_libraries( XFFS2Play LINK_PUBLIC proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
