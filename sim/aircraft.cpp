@@ -52,9 +52,16 @@ namespace xffs2play
         m_LastRender = Now();
         m_Log = CLogger::Instance();
 
+        //Creat Terrain Probe to retrieve terrain altitude just below the AI
+        m_TerrRef = XPLMCreateProbe(xplm_ProbeY);
+        m_TerrData.structSize=sizeof(XPLMProbeInfo_t);
+        m_GlCamera=pGlCamera;
+        m_Cull = false;
         EnableDisplayCallsign = pEnableDisplayCallSign;
 		DisableAltCorrection = pDisableAltCorrection;
 
+		m_LastTextPhaseChange = Now();
+		m_GearAnimDuration = Ramp(std::chrono::milliseconds(5000));
         m_LastTextPhaseChange = Now();
         m_TextPhase=0;
 #ifdef XFFS_DEBUG
@@ -72,21 +79,6 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-    }
-
-    ///
-    /// Sync the AI Aircraft Coordinate with X-Plane situation
-    ///
-    void CAircraft::GetAircraftData(void)
-    {
-        /*m_PlaneX = XPLMGetDataf(m_XPPlaneX);
-        m_PlaneY = XPLMGetDataf(m_XPPlaneY);
-        m_PlaneZ = XPLMGetDataf(m_XPPlaneZ);
-        m_PlaneThe = XPLMGetDataf(m_XPPlaneThe);
-        m_PlanePhi = XPLMGetDataf(m_XPPlanePhi);
-        m_PlanePsi = XPLMGetDataf(m_XPPlanePsi);
-        XPLMGetDatavf(m_XPPlaneGearDeploy, m_PlaneGearDeploy, 0, 5);
-        XPLMGetDatavf(m_XPPlaneThrottle, m_PlaneThrottle, 0, 8);*/
     }
 
     ///
@@ -151,7 +143,7 @@ namespace xffs2play
                 // Update Distance
                 m_Distance = Distance(pLat,pLon,m_AIData.Latitude,m_AIData.Longitude,'N');
             }
-            /*XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
+            XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
             XPLMProbeTerrainXYZ(m_TerrRef,m_PlaneX,0,m_PlaneZ,&m_TerrData);
             double GndLon,GndLat,GndAlt;
             XPLMLocalToWorld(m_PlaneX,m_TerrData.locationY,m_PlaneZ,&GndLat,&GndLon,&GndAlt);
@@ -160,20 +152,11 @@ namespace xffs2play
             {
                 m_AIData.Altitude = GndAlt + m_CGHeight + 0.5;
                 XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,m_AIData.Altitude*0.3048,&m_PlaneX,&m_PlaneY,&m_PlaneZ);
-            }*/
-            for (int i=0; i<5 ; i++)
-            {
-                m_PlaneGearDeploy[i]=static_cast<float>(m_AIData.GearPos);
             }
-            m_PlaneThrottle[0] = static_cast<float>(m_AIData.ThrottleEng1)/100.0;
-            m_PlaneThrottle[1] = static_cast<float>(m_AIData.ThrottleEng2)/100.0;
-            m_PlaneThrottle[2] = static_cast<float>(m_AIData.ThrottleEng3)/100.0;
-            m_PlaneThrottle[3] = static_cast<float>(m_AIData.ThrottleEng4)/100.0;
-            if (m_CurrentAircraftPath != m_AircraftPath)
-            {
-                //XPLMSetAircraftModel(m_ObjectID,m_AircraftPath.c_str());
-                m_CurrentAircraftPath = m_AircraftPath;
-            }
+            if (m_AIData.StateEng1>0)
+                m_PlaneThrottle = static_cast<float>(m_AIData.ThrottleEng1)*0.009 + 0.1;
+            else
+                m_PlaneThrottle = 0.0;
         }
     }
 
@@ -189,7 +172,6 @@ namespace xffs2play
             if (m_TextPhase > 2) m_TextPhase=0;
             m_LastTextPhaseChange = Now();
         }
-        return;
         if (m_Spawned>=1)
         {
             if (!EnableDisplayCallsign) return;
@@ -369,8 +351,8 @@ namespace xffs2play
                 Surface->yokePitch = m_AIData.ElevatorPos;
                 Surface->yokeHeading = m_AIData.RudderPos;
                 Surface->yokeRoll= m_AIData.AileronPos;
-                Surface->gearPosition = m_PlaneGearDeploy[0];
-                Surface->thrust = m_PlaneThrottle[0];
+                Surface->gearPosition = m_GearAnimDuration.getStage(static_cast<double>(m_AIData.GearPos));
+                Surface->thrust = m_PlaneThrottle;
                 return xpmpData_NewData;
                 break;
             }

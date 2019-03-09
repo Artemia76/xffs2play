@@ -62,6 +62,7 @@ PLUGIN_API int XPluginEnable(void)
     g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
     g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
     XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
+    XPLMAppendMenuItem(g_menu_id, "Reload CSL Database", (void*)"Menu Item 2",1);
     XPLMSetErrorCallback(ErrorHandler);
     if (!SimController::Instance()->IsInit())
     {
@@ -122,6 +123,11 @@ void MenuHandler(void* /*pMenuRef*/, void* pItemRef)
             mainWindow=nullptr;
             XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
         }
+    }
+    if (!strcmp(reinterpret_cast<const char*>(pItemRef), "Menu Item 2"))
+    {
+        SimController::Kill();
+        SimController::Instance();
     }
 }
 

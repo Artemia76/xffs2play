@@ -35,6 +35,8 @@
 #include "tools/datetime.h"
 #include "tools/utils3d.h"
 #include "tools/color.h"
+#include "tools/ramp.h"
+
 #include "XPMPMultiplayer.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -60,7 +62,6 @@ namespace xffs2play
 		);
 
 		virtual                 ~CAircraft();
-		void            GetAircraftData(void);
 		void            SetAircraftData(float inElapsedSinceLastCall, double pLat, double pLon);
 		void            FromAirData(const AirData& pAirData);
 		bool            IsCallSign(std::string& pCallSign);
@@ -78,8 +79,7 @@ namespace xffs2play
 		float           m_PlaneThe;
 		float           m_PlanePhi;
 		float           m_PlanePsi;
-		float           m_PlaneGearDeploy[5];
-		float           m_PlaneThrottle[8];
+		float           m_PlaneThrottle;
 		int             m_ObjectID;
 		CLogger*        m_Log;
 		std::string     m_CallSign;
@@ -100,8 +100,8 @@ namespace xffs2play
 		double          m_OldFps;
 		double          m_CGHeight;
 		double          m_Pitch;
-		std::string     m_CurrentAircraftPath;
 		double          m_CoordX;
+		Ramp            m_GearAnimDuration;
 		GLdouble        m_CoordY;
 		GLdouble        m_CoordZ;
 		CullInfo_t*     m_GlCamera;

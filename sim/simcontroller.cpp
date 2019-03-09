@@ -121,6 +121,7 @@ namespace xffs2play
             return;
 
         }
+        XPMPDisableAircraftLabels();
         XPMPHasControlOfAIAircraft();
         m_Initialized=true;
     }
@@ -128,14 +129,16 @@ namespace xffs2play
     SimController::~SimController()
     {
         SendDisc();
-        m_Server.UnsubscribeEvents(this);
         m_Server.Stop();
+        m_Server.UnsubscribeEvents(this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
 		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         //google::protobuf::ShutdownProtobufLibrary();
         ClearPeers();
+        XPMPMultiplayerDisable();
+        XPMPMultiplayerCleanup();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
 #endif
@@ -296,7 +299,7 @@ namespace xffs2play
 				nullptr);
 		}
         m_Mutex.lock();
-        for (auto& it : m_ArrPeer)
+        for (auto it : m_ArrPeer)
         {
             if (it.second!= nullptr)
                 it.second->Draw(pPhase,m_CallSignColor);
@@ -485,6 +488,9 @@ namespace xffs2play
 					data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
 					data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
 					data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
+					#ifdef XFFS_DEBUG
+                    m_Log->Log(_("Receive Callsign Color Red = ") + std::to_string(m_CallSignColor.R), LEVEL_DEBUG);
+#endif
                     break;
                 }
 				case TCHAT:
@@ -572,14 +578,22 @@ namespace xffs2play
     ///
     void SimController::SendDisc()
     {
-        /*std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrClients)
         {
-            std::ostringstream  ssoutput;
-            ssoutput << static_cast<uint8_t>(DISC);
-            m_Server.SendToClient(ssoutput.str(), it.first);
-            m_Server.DisconnectClient(it.first);
-        }*/
+            try
+            {
+                std::ostringstream  ssoutput;
+                ssoutput << static_cast<uint8_t>(DISC);
+                m_Server.SendToClient(ssoutput.str(), it.first);
+                m_Server.DisconnectClient(it.first);
+            }
+            catch (const std::exception& e)
+            {
+                m_Log->Log(_("Error during send SendDisc") + _(e.what()), LEVEL_ERROR);
+                it.second.ReceiveData=false;
+            }
+        }
     }
 
     ///
@@ -643,7 +657,7 @@ namespace xffs2play
         return (m_Options & static_cast<uint32_t>(pOption)) > 0;
     }
 
-	void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon)
+	void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void*)
 	{
 		if (m_ptSimController != nullptr)
 		{
