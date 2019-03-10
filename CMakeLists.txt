@@ -41,6 +41,14 @@ else()
 	set(XP_VERSION 2)
 endif()
 
+if (APPLE)
+	find_library(corefoundation_lib CoreFoundation)
+	find_library(cfnetwork_lib CFNetwork)
+	set(frameworks
+    		${cfnetwork_lib}
+    		${corefoundation_lib})
+endif()
+
 #Boost dependency
 if (APPLE OR WIN32)
   set(Boost_USE_STATIC_LIBS        ON) # only find static libs
@@ -118,6 +126,6 @@ add_xplane_plugin(XFFS2Play
                   ${TOOLS}
 				  ${MY_HEADERS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
+target_link_libraries( XFFS2Play LINK_PUBLIC proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
