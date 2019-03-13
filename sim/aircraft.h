@@ -85,6 +85,7 @@ namespace xffs2play
 		std::string     m_CallSign;
 		std::string     m_AircraftPath;
 		std::string		m_Model;
+		std::string     m_AirLine;
 		int             m_Spawned;
 		timespan        m_PredictiveTime;
 		timespan        m_RemoteRefreshRate;

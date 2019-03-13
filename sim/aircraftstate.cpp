@@ -117,6 +117,7 @@ namespace xffs2play
         pData.set_model(Model.c_str());
         pData.set_type(Type.c_str());
         pData.set_category(Category.c_str());
+        pData.set_airline(AirLine.c_str());
         pData.set_latitude(Latitude);
         pData.set_longitude(Longitude);
         pData.set_altitude(Altitude);
@@ -126,6 +127,7 @@ namespace xffs2play
         pData.set_elevatorpos(ElevatorPos);
         pData.set_aileronpos(AileronPos);
         pData.set_rudderpos(RudderPos);
+        pData.set_spoilerpos(SpoilerPos);
         pData.set_groundaltitude(GroundAltitude);
         pData.set_iasspeed(IASSpeed);
         pData.set_squawk(Squawk);
@@ -149,6 +151,7 @@ namespace xffs2play
         pData.set_beaconlight(BeaconLight);
         pData.set_navlight(NavLight);
         pData.set_recolight(RecoLight);
+        pData.set_taxilight(TaxiLight);
         pData.set_smoke(Smoke);
         pData.set_onground(OnGround);
         pData.set_parkingbrake(ParkingBrake);
@@ -166,6 +169,7 @@ namespace xffs2play
         Model = pData.model();
         Type =  pData.type();
         Category = pData.category();
+        AirLine = pData.airline();
         Latitude = pData.latitude();
         Longitude= pData.longitude();
         Altitude = pData.altitude();
@@ -198,6 +202,7 @@ namespace xffs2play
         BeaconLight = pData.beaconlight();
         NavLight = pData.navlight();
         RecoLight = pData.recolight();
+        TaxiLight = pData.taxilight();
         Smoke = pData.smoke();
         OnGround = pData.onground();
         ParkingBrake = pData.parkingbrake();

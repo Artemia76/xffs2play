@@ -44,6 +44,7 @@ virtual void        FromAirData (const AirData& pData);
         std::string Model;
         std::string Type;
         std::string Category;
+        std::string AirLine;
         double      Latitude;
         double      Longitude;
         double      Altitude;
@@ -95,6 +96,7 @@ virtual void        FromAirData (const AirData& pData);
         int         BeaconLight;
         int         NavLight;
         int         RecoLight;
+        int         TaxiLight;
         int         Smoke;
         int         SquawkMode;
 
