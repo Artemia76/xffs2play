@@ -134,8 +134,6 @@ namespace xffs2play
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
-		XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
-        //google::protobuf::ShutdownProtobufLibrary();
         ClearPeers();
         XPMPMultiplayerDisable();
         XPMPMultiplayerCleanup();
@@ -250,7 +248,6 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
-        //boost::unique_lock<boost::mutex> lock(m_mutex);
         if (m_FirstScan)
         {
             m_FirstScan=false;
@@ -367,9 +364,6 @@ namespace xffs2play
                         m_Options = Options;
                         UpdateOptions();
                     }
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Ping with option = ") + std::to_string(Options), LEVEL_DEBUG);
-#endif
                     std::ostringstream  ssoutput;
                     ssoutput << static_cast<uint8_t>(PONG);
                     ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
@@ -381,17 +375,10 @@ namespace xffs2play
                 }
                 case PONG:
                 {
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Pong"), LEVEL_DEBUG);
-#endif
-
                     break;
                 }
                 case DATA:
                 {
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Data"), LEVEL_DEBUG);
-#endif
                     uint8_t Flag=0;
 					data.read(reinterpret_cast<char*>(&Flag),sizeof(Flag));
                     it->second.ReceiveData=static_cast<bool>(Flag);

@@ -86,7 +86,6 @@ virtual             ~CUserAircraft();
         XPLMDataRef     m_XPBeaconLight;
         XPLMDataRef     m_XPStrobeLight;
         XPLMDataRef     m_XPNavLight;
-        XPLMDataRef     m_XPRecoLight;
         XPLMDataRef     m_XPTaxiLight;
         XPLMDataRef     m_XPStateEng;
         XPLMDataRef     m_XPSmoke;

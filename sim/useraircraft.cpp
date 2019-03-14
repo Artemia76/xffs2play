@@ -89,7 +89,6 @@ namespace xffs2play
             ReadDataFromACF();
             m_Description = Description;
         }
-
         char model[41];
         XPLMGetDatab(m_XPModel, model,0,40);
         Model=model;
@@ -128,7 +127,7 @@ namespace xffs2play
         BeaconLight = static_cast<bool>(XPLMGetDatai(m_XPBeaconLight));
         StrobeLight = static_cast<bool>(XPLMGetDatai(m_XPStrobeLight));
         NavLight = static_cast<bool>(XPLMGetDatai(m_XPNavLight));
-        RecoLight = static_cast<bool>(XPLMGetDatai(m_XPRecoLight));
+        RecoLight = StrobeLight;
         TaxiLight = static_cast<bool>(XPLMGetDatai(m_XPTaxiLight));
         float plane_gear_deploy[5];
         XPLMGetDatavf(m_XPGearPos, plane_gear_deploy, 0, 5);
@@ -216,5 +215,8 @@ namespace xffs2play
             }
             if (Title.length() < 3) Title = Desc;
         }
+#ifdef XFFS_DEBUG
+                                m_Log->Log(_("End of AI scan"));
+#endif
     }
 }
