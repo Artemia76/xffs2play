@@ -2,3 +2,6 @@
 	path = xplane_sdk
 	url = https://bitbucket.org/FFS2/xplane_sdk.git
 
+[submodule "libxplanemp"]
+	path = libxplanemp
+	url = https://bitbucket.org/FFS2/libxplanemp.git
