@@ -38,6 +38,8 @@ namespace xffs2play
     SimController::SimController()
     {
         m_Initialized =false;
+        m_ClientID = 0;
+        m_LastPing = Now();
         m_DirSeparator = XPLMGetDirectorySeparator();
         // my own plugin path
         m_PluginID = XPLMGetMyID();
@@ -60,11 +62,12 @@ namespace xffs2play
         // planes' config would never change (states like flaps/gears are
         // communicated to the model via custom datarefs,
         // see XPMPMultiplayerObj8.cpp/obj_get_float)
-        const std::string cslPath (CalcFullPluginPath(PATH_RESOURCES_CSL));
-        const std::string pathRelated (CalcFullPluginPath(PATH_RELATED_TXT));
-        const std::string pathLights  (CalcFullPluginPath(PATH_LIGHTS_PNG));
-        const std::string pathDoc8643 (CalcFullPluginPath(PATH_DOC8643_TXT));
-        const std::string pathRes = CalcFullPluginPath(PATH_RESOURCES) + m_DirSeparator;
+        cslPath = CalcFullPluginPath(PATH_RESOURCES_CSL);
+        m_CSLPackagePathArr.insert(cslPath);
+        pathRelated = CalcFullPluginPath(PATH_RELATED_TXT);
+        pathLights = CalcFullPluginPath(PATH_LIGHTS_PNG);
+        pathDoc8643 = CalcFullPluginPath(PATH_DOC8643_TXT);
+        pathRes = CalcFullPluginPath(PATH_RESOURCES) + m_DirSeparator;
         const char* cszResult = XPMPMultiplayerInitLegacyData
         (
             cslPath.c_str(),                // we pass in the first found CSL dir
@@ -102,35 +105,22 @@ namespace xffs2play
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
         m_Log = CLogger::Instance();
-        m_Server.SubscribeEvents(this);
         m_ObjectID=0;
         m_FirstScan=true;
         m_Options = static_cast<uint32_t>(DisplayCallSign);
 		m_CallSignColor.R=255;
-		m_Server.Start();
 		m_LastTchatMessage = Now();
 		m_TChatWindow = nullptr;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
-        cszResult = XPMPMultiplayerEnable();
-        if ( cszResult[0] )
-        {
-            m_Log->Log(_("XPMPMultiplayerEnable Failed = ") + cszResult, LEVEL_ERROR);
-            XPMPMultiplayerCleanup();
-            return;
-
-        }
         XPMPDisableAircraftLabels();
-        XPMPHasControlOfAIAircraft();
         m_Initialized=true;
     }
 
     SimController::~SimController()
     {
         SendDisc();
-        m_Server.Stop();
-        m_Server.UnsubscribeEvents(this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
@@ -191,32 +181,29 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         m_UserAircraft.Update();
         m_UserAircraft.ToAirData(m_SendData);
-        for (auto it : m_ArrClients)
+        if (m_ClientID!=0)
         {
-            // Client want data
-            if (it.second.ReceiveData)
+            try
             {
-                try
-                {
-                    std::ostringstream  ssoutput;
-                    ssoutput << static_cast<uint8_t>(DATA_SEND);
-                    m_SendData.SerializeToOstream(&ssoutput);
-                    m_Server.SendToClient(ssoutput.str(), it.first);
-                }
-                catch (const std::exception& e)
-                {
-                    m_Log->Log(_("Error during send data") + _(e.what()), LEVEL_ERROR);
-                    it.second.ReceiveData=false;
-                }
+                std::ostringstream  ssoutput;
+                ssoutput << static_cast<uint8_t>(DATA_SEND);
+                m_SendData.SerializeToOstream(&ssoutput);
+                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+            }
+            catch (const std::exception& e)
+            {
+                m_Log->Log(_("Error during send data") + _(e.what()), LEVEL_ERROR);
+                ClearPeers();
+                m_ClientID=0;
             }
             //Check Ping Timeout
-            if (timespan(Now() - it.second.LastPing).count() > 10000)
+            if (timespan(Now() - m_LastPing).count() > 10000)
             {
+                ClearPeers();
                 m_Log->Log(_("Client Timeout"), LEVEL_INFO);
-                m_Server.DisconnectClient(it.first);
+                m_ClientID=0;
             }
         }
         return 0.2;
@@ -252,14 +239,20 @@ namespace xffs2play
         {
             m_FirstScan=false;
             SetupCullInfo(&m_GlCamera);
+            XPMPMultiplayerEnable();
+            if (XPMPHasControlOfAIAircraft())
+            {
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("XPMP have control of multiplayer aircraft"), LEVEL_DEBUG);
+#endif
+            }
         }
-        m_Mutex.lock();
         for (auto& it : m_ArrPeer)
         {
             if (it.second != nullptr)
                 it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
         }
-        m_Mutex.unlock();
+        OnReceiveData();
         return -1;
     }
 
@@ -295,220 +288,210 @@ namespace xffs2play
 				nullptr,
 				nullptr);
 		}
-        m_Mutex.lock();
         for (auto it : m_ArrPeer)
         {
             if (it.second!= nullptr)
                 it.second->Draw(pPhase,m_CallSignColor);
         }
-        m_Mutex.unlock();
         return 1;
-    }
-
-    ///
-    /// This callaback is called when we receive
-    /// a new connexion from UDP Server
-    /// We register it on private array
-    ///
-    void SimController::OnAddClient(const uint32_t pClient)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        if (m_ArrClients.find(pClient)==m_ArrClients.end())
-        {
-            FFS2ClientData new_client;
-            new_client.Id = pClient;
-            new_client.LastPing = Now();
-            new_client.ReceiveData = false;
-            m_ArrClients.insert(FFS2Client(pClient, new_client));
-            m_Log->Log(_("Add client"), LEVEL_INFO);
-        }
-    }
-
-    ///
-    /// This callback is called when an UDP client is disconnected
-    /// We take profit to delete it from our private array
-    ///
-    void SimController::OnRemoveClient(const uint32_t pClient)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        if (m_ArrClients.find(pClient)!=m_ArrClients.end())
-        {
-            m_ArrClients.erase(pClient);
-            m_Log->Log(_("Remove client"), LEVEL_INFO);
-            ClearPeers();
-        }
     }
 
     ///
     /// This callback is called when we receive data on UDP Server
     ///
-	void SimController::OnReceiveData(const ClientMessage& pMessage)
+	void SimController::OnReceiveData()
 	{
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        //Select good client
-        std::map<uint32_t, FFS2ClientData>::iterator it = m_ArrClients.find(pMessage.second);
-        if (it != m_ArrClients.end())
+	    if (!m_Server.HasMessages()) return;
+	    ClientMessage ReceivedMessage = m_Server.PopMessage();
+		std::istringstream data(ReceivedMessage.first);
+        uint8_t Code;
+        data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
+        switch ((FFS2Proto)Code)
         {
-			std::istringstream data(pMessage.first);
-            uint8_t Code;
-			data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
-            switch ((FFS2Proto)Code)
+            case PING:
             {
-                case PING:
+                m_LastPing = Now();
+                m_ClientID = ReceivedMessage.second;
+                uint32_t Options;
+                data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
+                if (m_Options != Options)
                 {
-                    it->second.LastPing = Now();
-                    uint32_t Options;
-					data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
-                    if (m_Options != Options)
+                    m_Options = Options;
+                    UpdateOptions();
+                }
+                std::ostringstream  ssoutput;
+                ssoutput << static_cast<uint8_t>(PONG);
+                ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
+                ssoutput << static_cast<uint8_t>(APP_MAJOR);
+                ssoutput << static_cast<uint8_t>(APP_MINOR);
+                ssoutput << static_cast<uint8_t>(APP_BUILD);
+                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+                break;
+            }
+            case PONG:
+            {
+                break;
+            }
+            case DATA:
+            {
+                uint8_t Flag=0;
+                data.read(reinterpret_cast<char*>(&Flag),sizeof(Flag));
+                break;
+            }
+            case DATA_SEND:
+            {
+                uint32_t Object_ID;
+                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
+                m_ReceivedData.ParseFromIstream(&data);
+                PeerIterator it = m_ArrPeer.find(Object_ID);
+                if (it != m_ArrPeer.end())
+                {
+                    if (it->second != nullptr)
                     {
-                        m_Options = Options;
-                        UpdateOptions();
+                        it->second->FromAirData(m_ReceivedData);
+                        break;
                     }
-                    std::ostringstream  ssoutput;
-                    ssoutput << static_cast<uint8_t>(PONG);
-                    ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
-                    ssoutput << static_cast<uint8_t>(APP_MAJOR);
-                    ssoutput << static_cast<uint8_t>(APP_MINOR);
-                    ssoutput << static_cast<uint8_t>(APP_BUILD);
-                    m_Server.SendToClient(ssoutput.str(), pMessage.second);
-                    break;
                 }
-                case PONG:
+                break;
+            }
+            case DISC:
+            {
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
+#endif
+                ClearPeers();
+                m_ClientID=0;
+                break;
+            }
+            case ADD_PEER:
+            {
+                std::string CallSign;
+                uint8_t Len;
+                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
+                char* Buff = new char [Len+1];
+                data.read(Buff, Len);
+                Buff[Len]='\0';
+                CallSign = Buff;
+                delete[] Buff;
+                AIResol Aircraft;
+                Aircraft.ParseFromIstream(&data);
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("SimController : Receive ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
+#endif
+                //Check if callsign already exist
+                bool Exist = false;
+                for (auto it : m_ArrPeer)
                 {
-                    break;
-                }
-                case DATA:
-                {
-                    uint8_t Flag=0;
-					data.read(reinterpret_cast<char*>(&Flag),sizeof(Flag));
-                    it->second.ReceiveData=static_cast<bool>(Flag);
-                    break;
-                }
-                case DATA_SEND:
-                {
-                    uint32_t Object_ID;
-					data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                    m_ReceivedData.ParseFromIstream(&data);
-                    PeerIterator it = m_ArrPeer.find(Object_ID);
-                    if (it != m_ArrPeer.end())
+                    if (it.second != nullptr)
                     {
-                        if (it->second != nullptr)
+                        if (it.second->IsCallSign(CallSign))
                         {
-                            it->second->FromAirData(m_ReceivedData);
+                            Exist = true;
                             break;
                         }
                     }
-                    break;
                 }
-                case DISC:
+                uint32_t ObjectID=0;
+                if (!Exist)
+                {
+                    ObjectID=++m_ObjectID;
+#ifdef XFFS_DEBUG
+                    m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(ObjectID), LEVEL_DEBUG);
+#endif
+                    m_ArrPeer[m_ObjectID] = new CAircraft(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
+#ifdef XFFS_DEBUG
+                    m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" ObjectID 1 = ")
+                               + std::to_string(m_ArrPeer.at(m_ObjectID)->GetObjectID()), LEVEL_DEBUG);
+#endif
+                }
+                else
                 {
 #ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
+                    m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(ObjectID), LEVEL_DEBUG);
 #endif
-                    m_Server.DisconnectClient(pMessage.second);
-                    break;
                 }
-                case ADD_PEER:
-                {
-                    std::string CallSign;
-                    uint8_t Len;
-					data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-                    char* Buff = new char [Len+1];
-					data.read(Buff, Len);
-                    Buff[Len]='\0';
-                    CallSign = Buff;
-                    delete[] Buff;
-                    AIResol Aircraft;
-                    Aircraft.ParseFromIstream(&data);
+                SendAddObjectID(ObjectID, CallSign);
+                break;
+            }
+            case DEL_PEER:
+            {
+                uint32_t Object_ID;
+                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
+                uint32_t Deleted_Object_ID = 0;
 #ifdef XFFS_DEBUG
-                    m_Log->Log(_("SimController : Receive ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
+                m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                    //Check if callsign already exist
-                    bool Exist = false;
-                    for (auto it : m_ArrPeer)
+                Deleted_Object_ID = RemovePeer(Object_ID);
+                SendDelObjectID(Deleted_Object_ID);
+                break;
+            }
+            case CALLSIGN_COLOR:
+            {
+                data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
+                data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
+                data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
+                #ifdef XFFS_DEBUG
+                m_Log->Log(_("Receive Callsign Color Red = ") + std::to_string(m_CallSignColor.R), LEVEL_DEBUG);
+#endif
+                break;
+            }
+            case TCHAT:
+            {
+                std::string Message;
+                uint8_t Len=0;
+                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
+                char* Buff = new char[Len + 1];
+                data.read(Buff, Len);
+                Buff[Len] = '\0';
+                Message = Buff;
+                delete[] Buff;
+                m_TchatArr.push_back(Message);
+
+                while (m_TchatArr.size() > 5) m_TchatArr.erase(m_TchatArr.begin());
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Receive Message = ") + Message + _(" Binary : ") + string_to_hex(ReceivedMessage.first), LEVEL_DEBUG);
+#endif
+                m_LastTchatMessage = Now();
+                break;
+            }
+            case CSL_PATH:
+            {
+                StringArray Paths;
+                Paths.ParseFromIstream(&data);
+                for (int i=0; i<Paths.string_size();i++)
+                {
+                    if (m_CSLPackagePathArr.find(Paths.string(i)) == m_CSLPackagePathArr.end())
                     {
-                        if (it.second != nullptr)
+                        m_CSLPackagePathArr.insert(Paths.string(i));
+                        const char* cszResult = XPMPLoadCSLPackage(Paths.string(i).c_str(), pathRelated.c_str(), pathDoc8643.c_str());
+                        if ( cszResult[0] )
                         {
-                            if (it.second->IsCallSign(CallSign))
-                            {
-                                Exist = true;
-                                break;
-                            }
+                            m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
+                        }
+                        else
+                        {
+                            m_Log->Log(_("XPMPLoadCSLPackage Sucess : ") + Paths.string(i), LEVEL_ERROR);
                         }
                     }
-                    uint32_t ObjectID=0;
-                    if (!Exist)
-                    {
-                        ObjectID=++m_ObjectID;
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Add Peer ObjectID = ") + std::to_string(ObjectID), LEVEL_DEBUG);
-#endif
-                        m_ArrPeer[m_ObjectID] = new CAircraft(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" ObjectID 1 = ")
-                                   + std::to_string(m_ArrPeer.at(m_ObjectID)->GetObjectID()), LEVEL_DEBUG);
-#endif
-                    }
-                    else
-                    {
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Failed to add Peer : Number = ") + std::to_string(ObjectID), LEVEL_DEBUG);
-#endif
-                    }
-                    SendAddObjectID(ObjectID, CallSign);
-                    break;
                 }
-                case DEL_PEER:
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Receive CSL PATH = "), LEVEL_DEBUG);
+                for (std::string path : m_CSLPackagePathArr)
                 {
-                    uint32_t Object_ID;
-					data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                    uint32_t Deleted_Object_ID = 0;
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
-#endif
-                    Deleted_Object_ID = RemovePeer(Object_ID);
-                    SendDelObjectID(Deleted_Object_ID);
-                    break;
+                    m_Log->Log(_("PATH = ") + path, LEVEL_DEBUG);
                 }
-                case CALLSIGN_COLOR:
-                {
-					data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
-					data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
-					data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
-					#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Callsign Color Red = ") + std::to_string(m_CallSignColor.R), LEVEL_DEBUG);
 #endif
-                    break;
-                }
-				case TCHAT:
-				{
-					std::string Message;
-					uint8_t Len=0;
-					data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-					char* Buff = new char[Len + 1];
-					data.read(Buff, Len);
-					Buff[Len] = '\0';
-					Message = Buff;
-					delete[] Buff;
-					m_TchatArr.push_back(Message);
-
-					while (m_TchatArr.size() > 5) m_TchatArr.erase(m_TchatArr.begin());
-#ifdef XFFS_DEBUG
-					m_Log->Log(_("Receive Message = ") + Message + _(" Binary : ") + string_to_hex(pMessage.first), LEVEL_DEBUG);
-#endif
-					m_LastTchatMessage = Now();
-					break;
-				}
-                default:
-                {
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("Receive Unknown code"), LEVEL_DEBUG);
-#endif
-                    break;
-                }
+                break;
             }
-            it->second.LastPing = Now();
+            default:
+            {
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Receive Unknown code"), LEVEL_DEBUG);
+#endif
+                break;
+            }
         }
+        m_LastPing = Now();
     }
 
     ///
@@ -516,8 +499,7 @@ namespace xffs2play
     ///
     void SimController::SendAddObjectID(uint32_t pObjectID,std::string& pCallSign)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        for (auto it : m_ArrClients)
+        if (m_ClientID != 0)
         {
             try
             {
@@ -527,12 +509,12 @@ namespace xffs2play
                 ssoutput << len;
                 ssoutput.write(pCallSign.c_str(),len);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), it.first);
+                m_Server.SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
                 m_Log->Log(_("Error during send ADD_PEER") + _(e.what()), LEVEL_ERROR);
-                it.second.ReceiveData=false;
+                m_ClientID=0;
             }
         }
     }
@@ -542,20 +524,19 @@ namespace xffs2play
     ///
     void SimController::SendDelObjectID(uint32_t pObjectID)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        for (auto it : m_ArrClients)
+        if (m_ClientID != 0)
         {
             try
             {
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DEL_PEER);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), it.first);
+                m_Server.SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
                 m_Log->Log(_("Error during send DEL_PEER") + _(e.what()), LEVEL_ERROR);
-                it.second.ReceiveData=false;
+                m_ClientID=0;
             }
         }
     }
@@ -565,21 +546,19 @@ namespace xffs2play
     ///
     void SimController::SendDisc()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-        for (auto it : m_ArrClients)
+        if (m_ClientID != 0)
         {
             try
             {
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DISC);
-                m_Server.SendToClient(ssoutput.str(), it.first);
-                m_Server.DisconnectClient(it.first);
+                m_Server.SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
                 m_Log->Log(_("Error during send SendDisc") + _(e.what()), LEVEL_ERROR);
-                it.second.ReceiveData=false;
             }
+            m_ClientID = 0;
         }
     }
 
@@ -588,7 +567,6 @@ namespace xffs2play
     ///
     void SimController::ClearPeers()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrPeer)
         {
             if (it.second != nullptr)
@@ -604,7 +582,6 @@ namespace xffs2play
     ///
     uint32_t SimController::RemovePeer(uint32_t pObject_ID)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         uint32_t Object_deleted = 0;
         PeerIterator it = m_ArrPeer.find(pObject_ID);
         if (it != m_ArrPeer.end())
@@ -624,7 +601,6 @@ namespace xffs2play
     ///
     void SimController::UpdateOptions()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         for (auto it : m_ArrPeer)
         {
 			if (it.second != nullptr)
@@ -640,10 +616,12 @@ namespace xffs2play
     ///
     bool SimController::GetOption(SimOption pOption)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
         return (m_Options & static_cast<uint32_t>(pOption)) > 0;
     }
 
+    ///
+    /// Draw a Temporary window with current Tchatting
+    ///
 	void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void*)
 	{
 		if (m_ptSimController != nullptr)

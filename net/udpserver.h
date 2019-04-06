@@ -21,102 +21,72 @@
 ****************************************************************************/
 
 #pragma once
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
 
-#include "tools/log.h"
+#include "lockedqueue.h"
+
+#include <boost/asio.hpp>
+
 #include <array>
 #include <map>
 #include <thread>
 #include <atomic>
 
-namespace xffs2play
+#include "tools/log.h"
+#include "net/iudpserver.h"
+
+
+namespace xffs2play {
+
+using boost::asio::ip::udp;
+
+typedef std::map<uint32_t, udp::endpoint> ClientList;
+typedef ClientList::value_type Client;
+
+class UDPServer : public IUDPServer
 {
+public:
+    explicit UDPServer(unsigned short pLocalPort=47500);
+    virtual ~UDPServer();
 
-    using boost::asio::ip::udp;
+    bool HasMessages() override;
+    ClientMessage PopMessage() override;
+    void SendToClient(const std::string& pMessage, uint32_t pClientID) override;
+    void SendToAllExcept(const std::string& pMessage, uint32_t pClientID);
+    void SendToAll(const std::string& pMessage);
+    size_t GetClientCount() override;
+    uint32_t GetClientIdByIndex(size_t pIndex) override;
 
+    std::vector<std::function<void(uint32_t)>> clientDisconnectedHandlers;
 
-    typedef std::map<uint32_t, udp::endpoint> ClientList;
-    typedef ClientList::value_type Client;
-    typedef std::pair<std::string, uint32_t> ClientMessage;
+private:
 
-    class UDPServer;
+    boost::asio::io_service m_IoService;
+    udp::socket m_Socket;
+    udp::endpoint m_ServerEndpoint;
+    udp::endpoint m_RemoteEndpoint;
+    std::array<char,4096> m_RecvBuffer;
+    std::thread m_ServiceThread;
+    CLogger* m_Log;
 
-    class UDPServerEventHandler
-    {
+    // Low-level network functions
+    void start_receive ();
+    void handle_remote_error (const std::error_code pError, const udp::endpoint pRemoteEndpoint);
+    void handle_receive (const std::error_code& pError, std::size_t pBytesTransferred);
+    void handle_send (std::string /*pMessage*/, const std::error_code& /*pError*/, std::size_t /*pBytesTransferred*/) {}
+    void run_service ();
 
-friend  class       UDPServer;
+    // Client management
+    int32_t get_or_create_client_id(udp::endpoint pEndpoint);
+    void on_client_disconnected(int32_t pId);
 
-    protected:
-virtual void        OnReceiveData(const ClientMessage& /*pMessage*/){}
-virtual void        OnAddClient(uint32_t /*pClient*/){}
-virtual void        OnRemoveClient(uint32_t /*pClient*/){}
-    };
+    void send(const std::string& pMessage, udp::endpoint pTarget);
 
-    class UDPServer
-    {
-        friend class UDPServerEventHandler;
-    public:
-                                            UDPServer();
-virtual                                     ~UDPServer();
-    private:
-        bool                                m_Initialized;
-        boost::asio::io_service             m_IoService;
-        udp::socket*                        m_Socket;
-        udp::endpoint                       m_ServerEndpoint;
-        udp::endpoint                       m_RemoteEndpoint;
-        std::array<char,4096>               m_RecvBuffer;
-        std::thread*                        m_ServiceThread;
-        CLogger*                            m_Log;
-        std::vector<UDPServerEventHandler*> m_ArrSubscribers;
+    // Incoming messages queue
+    LockedQueue<ClientMessage> incomingMessages;
 
-        // Low-level network functions
-        void                                StartReceive ();
+    // Clients of the server
+    ClientList m_Clients;
+    std::atomic_int32_t m_NextClientID;
+};
 
-        void                                HandleRemoteError (
-                                                const boost::system::error_code pError,
-                                                const udp::endpoint pRemoteEndpoint
-                                            );
-
-        void                                HandleReceive (
-                                                const boost::system::error_code& pError,
-                                                std::size_t pBytesTransferred
-                                            );
-
-        void                                RunService ();
-
-        // Client management
-        int32_t                             GetOrCreateClientId(udp::endpoint pEndpoint);
-
-        void                                Send(
-                                                const std::string& pMessage,
-                                                udp::endpoint pTarget
-                                            );
-		void								HandleSend(const boost::system::error_code& /*error*/);
-        void                                SendReceiveToSubscribers(const ClientMessage& pMessage);
-        void                                SendAddClientToSubscribers(const uint32_t pClient);
-        void                                SendRemoveClientToSubscribers(const uint32_t pClient);
-
-        // Clients of the server
-        ClientList                          m_Clients;
-        std::atomic<std::uint32_t>          m_NextClientID;
-
-    public:
-        void                                SubscribeEvents(UDPServerEventHandler* pSubscriber);
-        void                                UnsubscribeEvents(UDPServerEventHandler* pSubscriber);
-
-        void                                Start(unsigned short local_port=47500);
-        void                                Stop();
-
-        void                                SendToClient(
-                                                const std::string& pMessage,
-                                                uint32_t pClientID
-                                            );
-
-        void                                SendToAll(const std::string& pMessage);
-
-        size_t                              GetClientCount();
-        uint32_t                            GetClientIdByIndex(size_t pIndex);
-        void                                DisconnectClient(int32_t pId);
-    };
 }

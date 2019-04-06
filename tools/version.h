@@ -28,7 +28,7 @@
 
 #define APP_MAJOR                   2
 #define APP_MINOR                   0
-#define APP_BUILD                   2
+#define APP_BUILD                   3
 
 #define VER_FILEVERSION             APP_MAJOR,APP_MINOR,APP_BUILD,0
 #define VER_FILEVERSION_STR         STR(APP_MAJOR) "." STR(APP_MINOR) "." STR(APP_BUILD) ".0\0"
@@ -39,7 +39,7 @@
 #define VER_COMPANY_STR             "FFS2"
 #define VER_FILEDESCRIPTION_STR     "Multiplayer Plugin"
 #define VER_INTERNALNAME_STR        "XFFS2Play"
-#define VER_LEGALCOPYRIGHT_STR      "Copyright © 2017 FFSimulateur2.fr"
+#define VER_LEGALCOPYRIGHT_STR      "Copyright © 2017-2019 FFSimulateur2.fr"
 #define VER_LEGALTRADEMARKS1_STR    "All Rights Reserved"
 #define VER_LEGALTRADEMARKS2_STR    VER_LEGALTRADEMARKS1_STR
 #define VER_PRODNAME_STR            "XFFS2Play"

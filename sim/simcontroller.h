@@ -74,7 +74,8 @@ namespace xffs2play
         ADD_PEER = 0x05, // Add Peer
         DEL_PEER = 0x06, // Remove Peer
         CALLSIGN_COLOR = 0x07, // Change CallSign Color
-		TCHAT = 0x08 //Receive Tchat Text
+		TCHAT = 0x08, //Receive Tchat Text
+		CSL_PATH = 0x09 //Reveive CSL Package Paths
     };
 
     enum SimOption : unsigned int
@@ -83,13 +84,11 @@ namespace xffs2play
 		DisableAltCorr = 0x02
     };
 
-    typedef std::map<uint32_t, FFS2ClientData> FFS2ClientList;
     typedef std::map<uint32_t, CAircraft*> PeerArray;
     typedef std::pair<uint32_t, CAircraft*> PeerElement;
     typedef std::map<uint32_t, CAircraft*>::iterator PeerIterator;
-    typedef FFS2ClientList::value_type FFS2Client;
 
-    class SimController : public UDPServerEventHandler
+    class SimController
     {
 
     public:
@@ -103,9 +102,7 @@ static  void            Kill();
         bool            IsInit(){return m_Initialized;}
 
     protected:
-        void            OnReceiveData(const ClientMessage& pMessage);
-        void            OnAddClient(uint32_t pClient);
-        void            OnRemoveClient(uint32_t pClient);
+        void            OnReceiveData();
 
     private:
                         SimController ();
@@ -132,23 +129,29 @@ static  float           MPFloatPrefsFunc(const char* section, const char* key, f
 
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
+        uint32_t        m_ClientID;
         bool            m_FirstScan;
         AirData         m_SendData;
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
         CLogger*        m_Log;
         UDPServer       m_Server;
-        FFS2ClientList  m_ArrClients;
         PeerArray       m_ArrPeer;
-        std::recursive_mutex m_Mutex;
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
 		std::vector<std::string> m_TchatArr;
+		std::set<std::string> m_CSLPackagePathArr;
 		datetime		m_LastTchatMessage;
 		XPLMWindowID    m_TChatWindow;
 		bool            m_Initialized;
 		XPLMPluginID    m_PluginID;
 		std::string     m_PluginPath;
 		std::string     m_DirSeparator;
+		datetime        m_LastPing;
+		std::string cslPath;
+        std::string pathRelated;
+        std::string pathLights;
+        std::string pathDoc8643;
+        std::string pathRes;
     };
 }

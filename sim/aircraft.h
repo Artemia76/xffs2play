@@ -102,7 +102,9 @@ namespace xffs2play
 		double          m_CGHeight;
 		double          m_Pitch;
 		double          m_CoordX;
-		Ramp            m_GearAnimDuration;
+		Ramp            m_GearAnim;
+		Ramp            m_FlapsAnim;
+		Ramp            m_SpoilersAnim;
 		GLdouble        m_CoordY;
 		GLdouble        m_CoordZ;
 		CullInfo_t*     m_GlCamera;

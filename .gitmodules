@@ -4,4 +4,4 @@
 
 [submodule "libxplanemp"]
 	path = libxplanemp
-	url = https://github.com/TwinFan/libxplanemp.git
+	url = https://bitbucket.org/FFS2/libxplanemp.git

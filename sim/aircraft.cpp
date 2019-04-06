@@ -62,13 +62,20 @@ namespace xffs2play
 		DisableAltCorrection = pDisableAltCorrection;
 
 		m_LastTextPhaseChange = Now();
-		m_GearAnimDuration = Ramp(std::chrono::milliseconds(5000));
+		m_GearAnim = Ramp(milliseconds(5000));
+		m_FlapsAnim = Ramp(milliseconds(5000));
+		m_SpoilersAnim = Ramp(milliseconds(5000));
+
         m_LastTextPhaseChange = Now();
         m_TextPhase=0;
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_Model,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
         m_PlaneID = XPMPCreatePlane (m_Model.c_str(),m_AirLine.c_str(),"",&CAircraft::PlaneData_Callback,this);
+        char ICAO[10];
+        char Livery[256];
+        XPMPGetPlaneICAOAndLivery (m_PlaneID,ICAO,Livery);
+         m_Log->Log(_("CAircraft::creation ICAO = ")+ std::string(ICAO) + _(" Livery= ") + std::string(Livery),LEVEL_DEBUG);
     }
 
     ///
@@ -345,7 +352,6 @@ namespace xffs2play
             case xpmpDataType_Surfaces:
             {
                 XPMPPlaneSurfaces_t* Surface = static_cast<XPMPPlaneSurfaces_t*>(ioData);
-                Surface->flapRatio = static_cast<float>(m_AIData.FlapsIndex/3.0);
                 Surface->lights.bcnLights = m_AIData.BeaconLight;
                 Surface->lights.landLights = m_AIData.LandingLight;
                 Surface->lights.navLights = m_AIData.NavLight;
@@ -354,8 +360,9 @@ namespace xffs2play
                 Surface->yokePitch = m_AIData.ElevatorPos;
                 Surface->yokeHeading = m_AIData.RudderPos;
                 Surface->yokeRoll= m_AIData.AileronPos;
-                Surface->spoilerRatio = static_cast<float>(m_AIData.SpoilerPos) / 100.0;
-                Surface->gearPosition = m_GearAnimDuration.getStage(static_cast<double>(m_AIData.GearPos));
+                Surface->flapRatio = static_cast<float>(m_FlapsAnim.getStage(static_cast<double>(m_AIData.FlapsIndex)/3.0));
+                Surface->spoilerRatio = static_cast<float>(m_SpoilersAnim.getStage(static_cast<double>(m_AIData.SpoilerPos) / 100.0));
+                Surface->gearPosition = static_cast<float>(m_GearAnim.getStage(static_cast<double>(m_AIData.GearPos)));
                 Surface->thrust = m_PlaneThrottle;
                 return xpmpData_NewData;
                 break;
