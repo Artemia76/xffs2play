@@ -71,7 +71,7 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::creation ref base = ")+ m_Model,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
-        m_PlaneID = XPMPCreatePlane (m_Model.c_str(),m_AirLine.c_str(),"",&CAircraft::PlaneData_Callback,this);
+        m_PlaneID = XPMPCreatePlane (m_Model.c_str(),m_AirLine.c_str(),"0",&CAircraft::PlaneData_Callback,this);
         char ICAO[10];
         char Livery[256];
         XPMPGetPlaneICAOAndLivery (m_PlaneID,ICAO,Livery);
@@ -347,6 +347,10 @@ namespace xffs2play
             }
             case xpmpDataType_Radar:
             {
+                XPMPPlaneRadar_t* Radar = static_cast<XPMPPlaneRadar_t*>(ioData);
+                Radar->code = m_AIData.Squawk;
+                Radar->mode = m_AIData.SquawkMode;
+                return xpmpData_NewData;
                 break;
             }
             case xpmpDataType_Surfaces:

@@ -246,6 +246,7 @@ namespace xffs2play
                 m_Log->Log(_("XPMP have control of multiplayer aircraft"), LEVEL_DEBUG);
 #endif
             }
+            XPMPLoadPlanesIfNecessary();
         }
         for (auto& it : m_ArrPeer)
         {
@@ -460,17 +461,17 @@ namespace xffs2play
                 Paths.ParseFromIstream(&data);
                 for (int i=0; i<Paths.string_size();i++)
                 {
-                    if (m_CSLPackagePathArr.find(Paths.string(i)) == m_CSLPackagePathArr.end())
+                    std::string Path = Paths.string(i);
+                    if (m_CSLPackagePathArr.find(Path) == m_CSLPackagePathArr.end())
                     {
-                        m_CSLPackagePathArr.insert(Paths.string(i));
-                        const char* cszResult = XPMPLoadCSLPackage(Paths.string(i).c_str(), pathRelated.c_str(), pathDoc8643.c_str());
+                        m_CSLPackagePathArr.insert(Path);
+                        cslPath = Path + _("/CSL");
+                        pathRelated = Path + _("/related.txt");
+                        pathDoc8643 = Path + _("/Doc8643.txt");
+                        const char* cszResult = XPMPLoadCSLPackage(cslPath.c_str(), pathRelated.c_str(), pathDoc8643.c_str());
                         if ( cszResult[0] )
                         {
                             m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
-                        }
-                        else
-                        {
-                            m_Log->Log(_("XPMPLoadCSLPackage Sucess : ") + Paths.string(i), LEVEL_ERROR);
                         }
                     }
                 }
