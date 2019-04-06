@@ -69,10 +69,12 @@ if ( OpenGL_FOUND )
 	include_directories(${OPENGL_INCLUDE_DIR})
 endif ( OpenGL_FOUND )
 #glut
-find_package(GLUT REQUIRED)
-if ( GLUT_FOUND )
-	include_directories(${GLUT_INCLUDE_DIR})
-endif( GLUT_FOUND )
+if (UNIX)
+	find_package(GLUT REQUIRED)
+	if ( GLUT_FOUND )
+		include_directories(${GLUT_INCLUDE_DIR})
+	endif( GLUT_FOUND )
+endif()
 
 #protobuf
 
