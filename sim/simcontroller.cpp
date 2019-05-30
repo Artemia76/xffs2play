@@ -115,6 +115,7 @@ namespace xffs2play
         m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
 #endif
         XPMPDisableAircraftLabels();
+		XPMPMultiplayerEnable();
         m_Initialized=true;
     }
 
@@ -239,7 +240,6 @@ namespace xffs2play
         {
             m_FirstScan=false;
             SetupCullInfo(&m_GlCamera);
-            XPMPMultiplayerEnable();
             if (XPMPHasControlOfAIAircraft())
             {
 #ifdef XFFS_DEBUG
