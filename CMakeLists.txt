@@ -97,6 +97,7 @@ endif( ZLIB_FOUND )
 find_package(PNG REQUIRED)  # sudo apt-get install libpng-dev
 if ( PNG_FOUND )
     include_directories( ${PNG_INCLUDE_DIRS} )
+#    target_link_libraries( XFFS2Play ${PNG_LIBRARIES} )
 endif ( PNG_FOUND )
 
 #xplanemp
@@ -126,8 +127,8 @@ add_xplane_plugin(XFFS2Play
                   ${NET}
                   ${SIM}
                   ${TOOLS}
-				  ${MY_HEADERS})
+                  ${MY_HEADERS})
 
-target_link_libraries( XFFS2Play LINK_PUBLIC proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
+target_link_libraries( XFFS2Play proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
