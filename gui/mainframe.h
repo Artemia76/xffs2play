@@ -27,7 +27,6 @@
 #include <XPLMDisplay.h>
 #include <XPLMGraphics.h>
 #include <XPLMDataAccess.h>
-#include <XPLMScenery.h>
 
 #include "sim/simcontroller.h"
 #include "tools/log.h"
@@ -106,8 +105,6 @@ static  XPLMCursorStatus    HandleCursorCallback(
         XPLMDataRef         m_PlaneX = NULL;
         XPLMDataRef         m_PlaneY = NULL;
         XPLMDataRef         m_PlaneZ = NULL;
-        XPLMProbeRef        m_Terrain = NULL;
-        XPLMProbeInfo_t     m_TerrData;
         int                 m_GlobalDesktopBounds[4];
         SimController*      m_SC;
         std::string         m_LastMessage;

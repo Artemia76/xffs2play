@@ -21,6 +21,8 @@
 ****************************************************************************/
 
 #include "udpserver.h"
+#include "tools/version.h"
+#include "net/proto.h"
 
 namespace xffs2play
 {
@@ -105,7 +107,25 @@ void UDPServer::handle_receive(const std::error_code& pError, std::size_t pBytes
                 get_or_create_client_id(m_RemoteEndpoint)
             );
             if (!message.first.empty())
+            {
                 incomingMessages.push(message);
+                std::istringstream data(message.first);
+                uint8_t Code;
+                data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
+                switch ((FFS2Proto)Code)
+                {
+                    case PING:
+                    {
+                        std::ostringstream  ssoutput;
+                        ssoutput << static_cast<uint8_t>(PONG);
+                        ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
+                        ssoutput << static_cast<uint8_t>(APP_MAJOR);
+                        ssoutput << static_cast<uint8_t>(APP_MINOR);
+                        ssoutput << static_cast<uint8_t>(APP_BUILD);
+                        SendToClient(ssoutput.str(), message.second);
+                    }
+                }
+            }
         }
         catch (std::exception ex)
         {

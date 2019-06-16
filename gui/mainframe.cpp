@@ -105,8 +105,6 @@ namespace xffs2play
         m_PlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
         m_PlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
         m_PlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
-        m_Terrain = XPLMCreateProbe(xplm_ProbeY);
-        m_TerrData.structSize=sizeof(XPLMProbeInfo_t);
     }
 
     ///
@@ -114,7 +112,6 @@ namespace xffs2play
     ///
     MainFrame::~MainFrame()
     {
-        XPLMDestroyProbe(m_Terrain);
         XPLMDestroyWindow(m_Window);
         m_Window = nullptr;
 #ifdef XFFS_DEBUG
@@ -154,11 +151,6 @@ namespace xffs2play
         float X=XPLMGetDataf(m_PlaneX);
         float Y=XPLMGetDataf(m_PlaneY);
         float Z=XPLMGetDataf(m_PlaneZ);
-        XPLMProbeResult result = XPLMProbeTerrainXYZ(m_Terrain,X,0,Z,&m_TerrData);
-        if (result != xplm_ProbeHitTerrain)
-        {
-            m_Log->Log(_("Terrain Probe fail = ")+std::to_string(result), LEVEL_DEBUG);
-        }
         XPLMGetWindowGeometry(m_Window, &m_Left, &m_Top, &m_Right, &m_Bottom);
 
         // We now use an XPLMGraphics routine to draw a translucent dark
@@ -171,7 +163,7 @@ namespace xffs2play
         XPLMDrawString(color, m_Left + 5, m_Top - 40,(char*)(std::string("X=") + std::to_string(X)).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 60, (char*)(std::string("Y=") + std::to_string(Y)).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 80, (char*)(std::string("Z=") + std::to_string(Z)).c_str(), nullptr, xplmFont_Basic);
-        XPLMDrawString(color, m_Left + 5, m_Top - 100, (char*)(std::string("MeshY=") + std::to_string(m_TerrData.locationY)).c_str(), NULL, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 100, (char*)(std::string("Mode=") + m_SC->GetMode()).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 120, (char*)(std::string("Log=") + m_LastMessage).c_str(), nullptr, xplmFont_Basic);
     }
 

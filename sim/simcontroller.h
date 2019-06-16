@@ -39,11 +39,10 @@
 
 #include "tools/log.h"
 #include "tools/datetime.h"
-#include "aircraft.h"
+#include "aircraftAI.h"
+#include "aircraftCSL.h"
 #include "tools/color.h"
 #include "tools/utils3d.h"
-
-#define XFF2_PROTOCOL 1
 
 //MARK: File Paths
 // these are under the plugins directory
@@ -64,24 +63,13 @@ namespace xffs2play
         bool        ReceiveData;
     };
 
-    enum FFS2Proto
-    {
-        PING = 0x00, // Ping receive
-        PONG = 0x01, // Pong With protocol Version
-        DATA = 0x02, // Ask start or stop receive data
-        DATA_SEND = 0x03, // Contain data of user plane
-        DISC = 0x04, // Disconnect client
-        ADD_PEER = 0x05, // Add Peer
-        DEL_PEER = 0x06, // Remove Peer
-        CALLSIGN_COLOR = 0x07, // Change CallSign Color
-		TCHAT = 0x08, //Receive Tchat Text
-		CSL_PATH = 0x09 //Reveive CSL Package Paths
-    };
-
     enum SimOption : unsigned int
     {
         DisplayCallSign = 0x01,
-		DisableAltCorr = 0x02
+		DisableAltCorr = 0x02,
+        DisableTChat = 0x04,
+        UseCSL = 0x08,
+        UseAI = 0x10
     };
 
     typedef std::map<uint32_t, CAircraft*> PeerArray;
@@ -100,6 +88,7 @@ static  void            Kill();
                             return m_UserAircraft;
                         }
         bool            IsInit(){return m_Initialized;}
+        std::string     GetMode();
 
     protected:
         void            OnReceiveData();
@@ -120,6 +109,7 @@ static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         void            SendDisc();
         void            ClearPeers();
         uint32_t        RemovePeer (uint32_t pObjectID);
+        int             GetFirstFreeAI();
         void            UpdateOptions();
         bool            GetOption(SimOption pOption);
         std::string     CalcFullPluginPath ( const std::string path );
@@ -127,10 +117,15 @@ static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
 static  int             MPIntPrefsFunc(const char* section, const char* key, int   iDefault);
 static  float           MPFloatPrefsFunc(const char* section, const char* key, float fDefault);
 
+        void            InitAI();
+        void            InitCSL();
+
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
         uint32_t        m_ClientID;
         bool            m_FirstScan;
+        bool            m_Use_CSL;
+        bool            m_Use_AI;
         AirData         m_SendData;
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
@@ -140,7 +135,6 @@ static  float           MPFloatPrefsFunc(const char* section, const char* key, f
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
 		std::vector<std::string> m_TchatArr;
-		std::set<std::string> m_CSLPackagePathArr;
 		datetime		m_LastTchatMessage;
 		XPLMWindowID    m_TChatWindow;
 		bool            m_Initialized;
@@ -148,10 +142,18 @@ static  float           MPFloatPrefsFunc(const char* section, const char* key, f
 		std::string     m_PluginPath;
 		std::string     m_DirSeparator;
 		datetime        m_LastPing;
-		std::string cslPath;
-        std::string pathRelated;
-        std::string pathLights;
-        std::string pathDoc8643;
-        std::string pathRes;
+        
+        //Specific to CSL Usage
+        std::set<std::string> m_CSLPackagePathArr;
+		std::string     cslPath;
+        std::string     pathRelated;
+        std::string     pathLights;
+        std::string     pathDoc8643;
+        std::string     pathRes;
+        
+        //Specific to AI Usage
+        uint8_t         m_PlaneCount;
+        char*           m_Aircraft[21];
+        char            m_AircraftPath[21][512];
     };
 }

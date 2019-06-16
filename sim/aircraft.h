@@ -37,8 +37,6 @@
 #include "tools/color.h"
 #include "tools/ramp.h"
 
-#include "XPMPMultiplayer.h"
-
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
 #include <OpenGL/glu.h> // Header File For The GLu32 Library
@@ -62,7 +60,7 @@ namespace xffs2play
 		);
 
 		virtual                 ~CAircraft();
-		void            SetAircraftData(float inElapsedSinceLastCall, double pLat, double pLon);
+        virtual	void    SetAircraftData(float inElapsedSinceLastCall, double pLat, double pLon);
 		void            FromAirData(const AirData& pAirData);
 		bool            IsCallSign(std::string& pCallSign);
 		void            Draw(XPLMDrawingPhase pPhase, const Color& pColor);
@@ -70,8 +68,7 @@ namespace xffs2play
 		bool            EnableDisplayCallsign;
 		bool			DisableAltCorrection;
 
-	private:
-		XPMPPlaneID     m_PlaneID;
+	protected:
 		double          m_Distance;
 		double          m_PlaneX;
 		double          m_PlaneY;
@@ -113,15 +110,6 @@ namespace xffs2play
 		datetime        m_LastTextPhaseChange;
 		XPLMProbeRef    m_TerrRef;
 		XPLMProbeInfo_t m_TerrData;
-
-		XPMPPlaneCallbackResult PlaneData(XPMPPlaneID inPlane, XPMPPlaneDataType inDataType, void* ioData);
-
-		static  XPMPPlaneCallbackResult PlaneData_Callback(
-			XPMPPlaneID inPlane,
-			XPMPPlaneDataType inDataType,
-			void* ioData,
-			void* inRefcon
-		);
 
 		CAircraftState  m_ActualPos;
 		CAircraftState  m_FuturData;

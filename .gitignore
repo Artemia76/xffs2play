@@ -12,7 +12,7 @@
 *.depend
 *.save
 *.xpl
-
+*.code-workspace
 # Build results
 
 [Dd]ebug/

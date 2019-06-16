@@ -28,7 +28,7 @@
 
 #define APP_MAJOR                   2
 #define APP_MINOR                   0
-#define APP_BUILD                   4
+#define APP_BUILD                   5
 
 #define VER_FILEVERSION             APP_MAJOR,APP_MINOR,APP_BUILD,0
 #define VER_FILEVERSION_STR         STR(APP_MAJOR) "." STR(APP_MINOR) "." STR(APP_BUILD) ".0\0"
