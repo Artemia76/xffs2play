@@ -103,8 +103,8 @@ namespace xffs2play
             case xpmpDataType_Radar:
             {
                 XPMPPlaneRadar_t* Radar = static_cast<XPMPPlaneRadar_t*>(ioData);
-                Radar->code = m_AIData.Squawk;
-                Radar->mode = m_AIData.SquawkMode;
+                Radar->code = static_cast<long>(m_AIData.Squawk);
+                Radar->mode = static_cast<XPMPTransponderMode>(m_AIData.SquawkMode);
                 return xpmpData_NewData;
                 break;
             }

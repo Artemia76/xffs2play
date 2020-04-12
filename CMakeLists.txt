@@ -14,8 +14,6 @@ endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
-
 file(GLOB GUI gui/*.c*)
 file(GLOB NET net/*.c*)
 file(GLOB SIM sim/*.c*)
@@ -100,10 +98,10 @@ if ( PNG_FOUND )
 #    target_link_libraries( XFFS2Play ${PNG_LIBRARIES} )
 endif ( PNG_FOUND )
 
-#xplanemp
+#XPMP2
 set ( XPSDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xplane_sdk/sdk/")
-add_subdirectory (libxplanemp)
-include_directories( libxplanemp/include )
+add_subdirectory (XPMP2)
+include_directories( XPMP2/inc )
 
 if( MSVC )
   message(STATUS "Compiler is Microsoft Visual Studio:")
@@ -129,6 +127,6 @@ add_xplane_plugin(XFFS2Play
                   ${TOOLS}
                   ${MY_HEADERS})
 
-target_link_libraries( XFFS2Play proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
+target_link_libraries( XFFS2Play proto XPMP2 ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
 
 install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)

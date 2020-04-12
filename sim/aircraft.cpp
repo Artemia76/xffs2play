@@ -175,7 +175,7 @@ namespace xffs2play
             if (!EnableDisplayCallsign) return;
             switch(pPhase)
             {
-                case xplm_Phase_LastScene:
+                case xplm_Phase_Modern3D:
                 {
                     XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&m_CoordX,&m_CoordY,&m_CoordZ);
                     m_Cull = SphereIsVisible(m_GlCamera,m_CoordX,m_CoordY,m_CoordZ,1.0);

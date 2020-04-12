@@ -59,7 +59,7 @@ namespace xffs2play
         pos = m_PluginPath.rfind(m_DirSeparator);
         m_PluginPath.erase(pos+1);
         XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
-        XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
+        XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
         m_Log = CLogger::Instance();
@@ -80,7 +80,7 @@ namespace xffs2play
         SendDisc();
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
-        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
+        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
         ClearPeers();
         if (m_Use_CSL)
         {
@@ -330,7 +330,7 @@ namespace xffs2play
     ///
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
-        if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
+        if (pPhase == xplm_Phase_Modern3D) SetupCullInfo(&m_GlCamera);
 		if (m_TChatWindow == nullptr)
 		{
 			int Width, Height;
