@@ -38,9 +38,14 @@ namespace xffs2play
 
     SimController::SimController()
     {
+        m_Initialized =false;
+        m_Server =  nullptr;
+        m_Log = CLogger::Instance();
+#ifdef XFFS_DEBUG
+        m_Log->Log(_("Start Call SimController Constructor"), LEVEL_DEBUG);
+#endif
         m_Use_CSL =false;
         m_Use_AI=false;
-        m_Initialized =false;
         m_ClientID = 0;
         m_LastPing = Now();
         m_DirSeparator = XPLMGetDirectorySeparator();
@@ -62,15 +67,23 @@ namespace xffs2play
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
-        m_Log = CLogger::Instance();
         m_ObjectID=0;
         m_FirstScan=true;
         m_Options = static_cast<uint32_t>(DisplayCallSign);
-		m_CallSignColor.R=255;
-		m_LastTchatMessage = Now();
-		m_TChatWindow = nullptr;
+        m_CallSignColor.R=255;
+        m_LastTchatMessage = Now();
+        m_TChatWindow = nullptr;
+        try
+        {
+            m_Server = new UDPServer(47500);
+        }
+        catch (std::exception & ex)
+        {
+            m_Log->Log(_("Failed to start UDP Server : ") + ex.what(), LEVEL_ERROR);
+            m_Server = nullptr;
+        }
 #ifdef XFFS_DEBUG
-        m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
+        m_Log->Log(_("End of Call SimController Constructor"), LEVEL_DEBUG);
 #endif
         m_Initialized=true;
     }
@@ -78,6 +91,7 @@ namespace xffs2play
     SimController::~SimController()
     {
         SendDisc();
+        if (m_Server != nullptr) delete m_Server;
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
@@ -138,36 +152,17 @@ namespace xffs2play
         // planes' config would never change (states like flaps/gears are
         // communicated to the model via custom datarefs,
         // see XPMPMultiplayerObj8.cpp/obj_get_float)
-        cslPath = CalcFullPluginPath(PATH_RESOURCES_CSL);
+        std::string cslPath = CalcFullPluginPath(PATH_RESOURCES);
         m_CSLPackagePathArr.insert(cslPath);
-        pathRelated = CalcFullPluginPath(PATH_RELATED_TXT);
-        pathLights = CalcFullPluginPath(PATH_LIGHTS_PNG);
-        pathDoc8643 = CalcFullPluginPath(PATH_DOC8643_TXT);
-        pathRes = CalcFullPluginPath(PATH_RESOURCES) + m_DirSeparator;
-        const char* cszResult = XPMPMultiplayerInitLegacyData
+#ifdef XFFS_DEBUG
+        m_Log->Log(_("Path to CSL Ressource : ") + cslPath, LEVEL_DEBUG);
+#endif
+        const char* cszResult = XPMPMultiplayerInit
         (
+            VER_PRODNAME_STR,
             cslPath.c_str(),                // we pass in the first found CSL dir
-            pathRelated.c_str(),
-            pathLights.c_str(),
-            pathDoc8643.c_str(),
-            "C172",
             &SimController::MPIntPrefsFunc,
-            &SimController::MPFloatPrefsFunc
-        );
-        // Init of multiplayer library failed. Cleanup as much as possible and bail out
-        if ( cszResult[0] )
-        {
-            m_Log->Log(_("CSL Old Init Failed = ") + cszResult, LEVEL_ERROR);
-            XPMPMultiplayerCleanup();
-            return;
-        }
-
-        // yet another init function...also necessary
-        cszResult = XPMPMultiplayerInit
-        (
-            &SimController::MPIntPrefsFunc,
-            &SimController::MPFloatPrefsFunc,
-            pathRes.c_str()
+            "C172"
         );
         if ( cszResult[0] )
         {
@@ -185,7 +180,6 @@ namespace xffs2play
             m_Log->Log(_("XPMP have control of multiplayer aircraft"), LEVEL_DEBUG);
 #endif
         }
-        XPMPLoadPlanesIfNecessary();
         m_Use_CSL=true;
     }
     
@@ -223,7 +217,7 @@ namespace xffs2play
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DATA_SEND);
                 m_SendData.SerializeToOstream(&ssoutput);
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
@@ -241,7 +235,7 @@ namespace xffs2play
         }
         return 0.2;
     }
-
+    
     ///
     /// Static CallBack for Animation Loop
     ///
@@ -331,18 +325,18 @@ namespace xffs2play
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
         if (pPhase == xplm_Phase_Modern3D) SetupCullInfo(&m_GlCamera);
-		if (m_TChatWindow == nullptr)
-		{
-			int Width, Height;
-			XPLMGetScreenSize(&Width, &Height);
-			m_TChatWindow = XPLMCreateWindow(
-				50, Height - 50, Width - 50, Height - 250,
-				1,
-				&SimController::TChatDrawWindowCallback,
-				nullptr,
-				nullptr,
-				nullptr);
-		}
+        if (m_TChatWindow == nullptr)
+        {
+            int Width, Height;
+            XPLMGetScreenSize(&Width, &Height);
+            m_TChatWindow = XPLMCreateWindow(
+                50, Height - 50, Width - 50, Height - 250,
+                1,
+                &SimController::TChatDrawWindowCallback,
+                nullptr,
+                nullptr,
+                nullptr);
+        }
         if (m_Use_AI || m_Use_CSL)
         {
             for (auto it : m_ArrPeer)
@@ -357,12 +351,13 @@ namespace xffs2play
     ///
     /// This callback is called when we receive data on UDP Server
     ///
-	void SimController::OnReceiveData()
-	{
-	    if (!m_Server.HasMessages()) return;
+    void SimController::OnReceiveData()
+    {
+        if (m_Server == nullptr) return;
+        if (!m_Server->HasMessages()) return;
         // Send Pong Response in UDP Thread to avoid FFS2Play timeout while X-Plane Loading or In menus
-	    ClientMessage ReceivedMessage = m_Server.PopMessage();
-		std::istringstream data(ReceivedMessage.first);
+        ClientMessage ReceivedMessage = m_Server->PopMessage();
+        std::istringstream data(ReceivedMessage.first);
         uint8_t Code;
         data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
         switch ((FFS2Proto)Code)
@@ -530,10 +525,7 @@ namespace xffs2play
                     if (m_CSLPackagePathArr.find(Path) == m_CSLPackagePathArr.end())
                     {
                         m_CSLPackagePathArr.insert(Path);
-                        cslPath = Path + _("/CSL");
-                        pathRelated = Path + _("/related.txt");
-                        pathDoc8643 = Path + _("/Doc8643.txt");
-                        const char* cszResult = XPMPLoadCSLPackage(cslPath.c_str(), pathRelated.c_str(), pathDoc8643.c_str());
+                        const char* cszResult = XPMPLoadCSLPackage(Path.c_str());
                         if ( cszResult[0] )
                         {
                             m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
@@ -575,7 +567,7 @@ namespace xffs2play
                 ssoutput << len;
                 ssoutput.write(pCallSign.c_str(),len);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
@@ -597,7 +589,7 @@ namespace xffs2play
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DEL_PEER);
                 ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
@@ -618,7 +610,7 @@ namespace xffs2play
             {
                 std::ostringstream  ssoutput;
                 ssoutput << static_cast<uint8_t>(DISC);
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
+                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
             }
             catch (const std::exception& e)
             {
@@ -709,49 +701,49 @@ namespace xffs2play
     ///
     /// Draw a Temporary window with current Tchatting
     ///
-	void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void*)
-	{
-		if (m_ptSimController != nullptr)
-		{
-			if ((Now() - m_ptSimController->m_LastTchatMessage).count() > 10000) return;
-			int Width, Height;
-			XPLMGetScreenSize(&Width, &Height);
-			XPLMSetGraphicsState(
-				0 /* no fog */,
-				0 /* 0 texture units */,
-				0 /* no lighting */,
-				0 /* no alpha testing */,
-				1 /* do alpha blend */,
-				1 /* do depth testing */,
-				0 /* no depth writing */
-			);
+    void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void*)
+    {
+        if (m_ptSimController != nullptr)
+        {
+            if ((Now() - m_ptSimController->m_LastTchatMessage).count() > 10000) return;
+            int Width, Height;
+            XPLMGetScreenSize(&Width, &Height);
+            XPLMSetGraphicsState(
+                0 , // no fog
+                0 , // 0 texture units
+                0 , // no lighting
+                0 , // no alpha testing
+                1 , // do alpha blend
+                1 , // do depth testing
+                0 // no depth writing
+            );
 
-			float color[] = { 1.0, 1.0, 1.0 };/* RGB White */
-			int Left = 50;
-			int Top = Height - 50;
-			int Right = Width - 50;
-			int Bottom = Height - 120;
-			int Row =0;
-			XPLMSetWindowGeometry(pWindowID, Left, Top, Right, Bottom);
+            float color[] = { 1.0, 1.0, 1.0 }; //RGB White
+            int Left = 50;
+            int Top = Height - 50;
+            int Right = Width - 50;
+            int Bottom = Height - 120;
+            int Row =0;
+            XPLMSetWindowGeometry(pWindowID, Left, Top, Right, Bottom);
 
-			// We now use an XPLMGraphics routine to draw a translucent dark
-			// rectangle that is our window's shape
-			XPLMDrawTranslucentDarkBox(Left, Top, Right, Bottom);
+            // We now use an XPLMGraphics routine to draw a translucent dark
+            // rectangle that is our window's shape
+            XPLMDrawTranslucentDarkBox(Left, Top, Right, Bottom);
 
-			// Finally we draw the text into the window, also using XPLMGraphics
-			// routines.  The NULL indicates no word wrapping.
-			Row = 0;
-			for (std::string Message : m_ptSimController->m_TchatArr)
-			{
-				Row += 10;
-				XPLMDrawString(color, Left + 5, Top - Row, (char*)(Message.c_str()), nullptr, xplmFont_Basic);
-			}
-		}
-	}
+            // Finally we draw the text into the window, also using XPLMGraphics
+            // routines.  The NULL indicates no word wrapping.
+            Row = 0;
+            for (std::string Message : m_ptSimController->m_TchatArr)
+            {
+                Row += 10;
+                XPLMDrawString(color, Left + 5, Top - Row, (char*)(Message.c_str()), nullptr, xplmFont_Basic);
+            }
+        }
+    }
 
-	int SimController::MPIntPrefsFunc(const char* section, const char* key, int   iDefault)
-	{
-	    // debug XPMP's CSL model matching if requested
+    int SimController::MPIntPrefsFunc(const char* section, const char* key, int   iDefault)
+    {
+        // debug XPMP's CSL model matching if requested
         if ( !strcmp(section,"debug") && !strcmp(key,"model_matching") )
         { return 1; }
 
@@ -759,7 +751,7 @@ namespace xffs2play
         if ( !strcmp(section,"planes") && !strcmp(key,"max_full_count") )
         { return 50; }
         return iDefault;
-	}
+    }
 
     float SimController::MPFloatPrefsFunc(const char* section, const char* key, float fDefault)
     {

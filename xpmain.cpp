@@ -70,7 +70,7 @@ PLUGIN_API int XPluginEnable(void)
         return 0;
     }
 
-    CLogger::Instance()->Log(_("Plugin Enable"));
+    CLogger::Instance()->Log(_("Plugin Enable"), LEVEL_INFO);
     return 1;
 }
 
@@ -88,7 +88,7 @@ PLUGIN_API int XPluginStart(
     strcpy(pName, VER_PRODNAME_STR);
     strcpy(pSig, VER_COMPANYDOMAIN_STR);
     strcpy(pDesc, VER_FILEDESCRIPTION_STR);
-    CLogger::Instance()->Log(_("Plugin loaded"));
+    CLogger::Instance()->Log(_("Plugin loaded"), LEVEL_INFO);
 	mainWindow = nullptr;
     return 1;
 }

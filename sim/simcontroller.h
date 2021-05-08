@@ -46,13 +46,7 @@
 
 //MARK: File Paths
 // these are under the plugins directory
-#define PATH_FLIGHT_MODELS      "Resources/FlightModels.prf"
-#define PATH_RELATED_TXT        "Resources/related.txt"
-#define PATH_LIGHTS_PNG         "Resources/lights.png"
-#define PATH_DOC8643_TXT        "Resources/Doc8643.txt"
 #define PATH_RESOURCES          "Resources"
-#define PATH_RESOURCES_CSL      "Resources/CSL"
-#define PATH_RESOURCES_SCSL     "Resources/ShippedCSL"
 
 namespace xffs2play
 {
@@ -102,7 +96,7 @@ static  float           LoopNetworkCallback(float,float,int,void*);
 static  float           LoopUpdateCallback(float, float, int, void*);
         float           LoopUpdate (float, float, int);
 static  int             DrawCallback (XPLMDrawingPhase, int, void*);
-static	void			TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
+static	void            TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         int             Draw (XPLMDrawingPhase, int);
         void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
         void            SendDelObjectID(uint32_t pObjectID);
@@ -130,26 +124,21 @@ static  float           MPFloatPrefsFunc(const char* section, const char* key, f
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
         CLogger*        m_Log;
-        UDPServer       m_Server;
+        UDPServer*      m_Server;
         PeerArray       m_ArrPeer;
         CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
-		std::vector<std::string> m_TchatArr;
-		datetime		m_LastTchatMessage;
-		XPLMWindowID    m_TChatWindow;
-		bool            m_Initialized;
-		XPLMPluginID    m_PluginID;
-		std::string     m_PluginPath;
-		std::string     m_DirSeparator;
-		datetime        m_LastPing;
+        std::vector<std::string> m_TchatArr;
+        datetime        m_LastTchatMessage;
+        XPLMWindowID    m_TChatWindow;
+        bool            m_Initialized;
+        XPLMPluginID    m_PluginID;
+        std::string     m_PluginPath;
+        std::string     m_DirSeparator;
+        datetime        m_LastPing;
         
         //Specific to CSL Usage
         std::set<std::string> m_CSLPackagePathArr;
-		std::string     cslPath;
-        std::string     pathRelated;
-        std::string     pathLights;
-        std::string     pathDoc8643;
-        std::string     pathRes;
         
         //Specific to AI Usage
         uint8_t         m_PlaneCount;

@@ -3,9 +3,9 @@ project(XFFS2Play CXX)
 cmake_minimum_required(VERSION 2.8)
 
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 17)
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
 
 if (UNIX)
