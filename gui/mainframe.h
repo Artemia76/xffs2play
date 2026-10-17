@@ -32,12 +32,6 @@
 #include "tools/log.h"
 
 
-#ifdef __APPLE__
-	#include <OpenGL/gl.h>
-#else
-	#include <GL/gl.h>
-#endif
-
 namespace xffs2play
 {
     class MainFrame : public CLoggerEventHandler

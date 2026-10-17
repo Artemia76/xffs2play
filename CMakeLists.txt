@@ -35,7 +35,6 @@ endif()
 find_package(Threads REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
-find_package(OpenGL REQUIRED)
 
 # XPMP2 and the X-Plane SDK it ships
 set(XPlaneSDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/XPMP2/lib/SDK")
@@ -63,10 +62,6 @@ add_library(XFFS2Play MODULE
     net/udpserver.h
     sim/aircraft.cpp
     sim/aircraft.h
-    sim/aircraftAI.cpp
-    sim/aircraftAI.h
-    sim/aircraftCSL.cpp
-    sim/aircraftCSL.h
     sim/aircraftstate.cpp
     sim/aircraftstate.h
     sim/simcontroller.cpp
@@ -84,7 +79,7 @@ add_library(XFFS2Play MODULE
     tools/ramp.h
     tools/simple_file_parser.cpp
     tools/simple_file_parser.h
-    tools/utils3d.h
+    tools/geo.h
     "${PROJECT_BINARY_DIR}/gen/tools/version.h")
 
 target_include_directories(XFFS2Play PRIVATE
@@ -96,7 +91,6 @@ target_link_libraries(XFFS2Play PRIVATE
     xffs2play_proto
     XPMP2
     asio::asio
-    OpenGL::GL
     Threads::Threads)
 
 target_compile_definitions(XFFS2Play PRIVATE
@@ -134,3 +128,6 @@ install(TARGETS XFFS2Play
         LIBRARY DESTINATION xffs2play/64
         RUNTIME DESTINATION xffs2play/64)
 install(DIRECTORY Resources/ DESTINATION xffs2play/Resources)
+# Supplemental files required by XPMP2 (Doc8643, related, map icons, contrails...)
+install(DIRECTORY XPMP2/Resources/ DESTINATION xffs2play/Resources
+        PATTERN "XPMP2.example.prf" EXCLUDE)

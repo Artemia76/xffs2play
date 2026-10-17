@@ -1,14 +1,14 @@
 /****************************************************************************
 **
-** Copyright (C) 2017 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/ffs2play
+** Copyright (C) 2018 FSFranceSimulateur team.
+** Contact: https://github.com/Artemia76/xffs2play
 **
-** FFS2Play is free software; you can redistribute it and/or modify
+** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 3 of the License, or
 ** (at your option) any later version.
 **
-** FFS2Play is distributed in the hope that it will be useful,
+** XFFS2Play is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ** GNU General Public License for more details.
@@ -22,97 +22,82 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
-#include <XPLMScenery.h>
-#include <XPLMDisplay.h>
+
 #include <XPLMDataAccess.h>
+#include <XPLMGraphics.h>
+#include <XPLMScenery.h>
+#include <XPMPAircraft.h>
 
-#include "sim/aircraftstate.h"
 #include "proto/aircraftstate.pb.h"
-#include "tools/log.h"
-#include "tools/datetime.h"
-#include "tools/utils3d.h"
+#include "sim/aircraftstate.h"
 #include "tools/color.h"
+#include "tools/datetime.h"
+#include "tools/log.h"
 #include "tools/ramp.h"
-
-#if defined(__APPLE__) && defined(__MACH__)
-#include <OpenGL/gl.h>  // Header File For The OpenGL32 Library
-#include <OpenGL/glu.h> // Header File For The GLu32 Library
-#else
-#include <GL/gl.h>  // Header File For The OpenGL32 Library
-#include <GL/glu.h> // Header File For The GLu32 Library
-#endif
 
 namespace xffs2play
 {
-	class CAircraft
-	{
-	public:
-		CAircraft(
-			int pObjectID,
-			std::string pCallSign,
-			const AIResol& pAircraft,
-			CullInfo_t* pGl_camera,
-			bool pEnableDisplayCallSign = true,
-			bool pDisableAltCorr = false
-		);
+    ///
+    /// Remote aircraft of a FFS2Play peer, rendered by XPMP2.
+    /// Network updates (FromAirData) feed an interpolation that XPMP2
+    /// applies on every flight loop (UpdatePosition).
+    ///
+    class CAircraft : public XPMP2::Aircraft
+    {
+    public:
+                        CAircraft(uint32_t pObjectID, const std::string& pCallSign, const AIResol& pAircraft);
+                        ~CAircraft() override;
 
-		virtual                 ~CAircraft();
-        virtual	void    SetAircraftData(float inElapsedSinceLastCall, double pLat, double pLon);
-		void            FromAirData(const AirData& pAirData);
-		bool            IsCallSign(const std::string& pCallSign) const;
-		void            Draw(XPLMDrawingPhase pPhase, const Color& pColor);
-		int				GetObjectID() { return m_ObjectID; }
-		bool            EnableDisplayCallsign;
-		bool			DisableAltCorrection;
+        void            FromAirData(const AirData& pAirData);
+        void            SetLabelColor(const Color& pColor);
+        const std::string& GetCallSign() const { return m_CallSign; }
+        uint32_t        GetObjectID() const { return m_ObjectID; }
 
-	protected:
-		double          m_Distance;
-		double          m_PlaneX;
-		double          m_PlaneY;
-		double          m_PlaneZ;
-		float           m_PlaneThe;
-		float           m_PlanePhi;
-		float           m_PlanePsi;
-		float           m_PlaneThrottle;
-		int             m_ObjectID;
-		CLogger*        m_Log;
-		std::string     m_CallSign;
-		std::string     m_AircraftPath;
-		std::string		m_Model;
-		std::string     m_AirLine;
-		int             m_Spawned;
-		timespan        m_PredictiveTime;
-		timespan        m_RemoteRefreshRate;
-		timespan        m_RefreshRate;
-		datetime        m_LastData;
-		datetime        m_LastRender;
-		double          m_DeltaAltitude;
-		double          m_DeltaLongitude;
-		double          m_DeltaLatitude;
-		double          m_DeltaHeading;
-		double          m_DeltaPitch;
-		double          m_DeltaBank;
-		double          m_OldFps;
-		double          m_CGHeight;
-		double          m_Pitch;
-		double          m_CoordX;
-		Ramp            m_GearAnim;
-		Ramp            m_FlapsAnim;
-		Ramp            m_SpoilersAnim;
-		GLdouble        m_CoordY;
-		GLdouble        m_CoordZ;
-		CullInfo_t*     m_GlCamera;
-		bool            m_Cull;
-		int             m_TextPhase;
-		datetime        m_LastTextPhaseChange;
-		XPLMProbeRef    m_TerrRef;
-		XPLMProbeInfo_t m_TerrData;
+        bool            DisableAltCorrection = false;
 
-		CAircraftState  m_ActualPos;
-		CAircraftState  m_FuturData;
-		CAircraftState  m_OldData;
-		CAircraftState  m_Data;
-		CAircraftState  m_AIData;
-	};
+    protected:
+        void            UpdatePosition(float pElapsedSinceLastCall, int pFlCounter) override;
+
+    private:
+        /// Without data for this long, the aircraft is frozen instead of extrapolated
+        static constexpr milliseconds STALE_DATA_TIMEOUT{5000};
+
+        void            Interpolate(float pElapsedSinceLastCall);
+        double          GroundCorrectedAltitude();
+        void            UpdateLabel();
+
+        uint32_t        m_ObjectID;
+        std::string     m_CallSign;
+        double          m_CGHeight;
+        CLogger*        m_Log;
+        int             m_Spawned = 0;
+        timespan        m_PredictiveTime{0};
+        timespan        m_RemoteRefreshRate{0};
+        datetime        m_LastData;
+        datetime        m_LastRender;
+        double          m_DeltaAltitude = 0;
+        double          m_DeltaLongitude = 0;
+        double          m_DeltaLatitude = 0;
+        double          m_DeltaHeading = 0;
+        double          m_DeltaPitch = 0;
+        double          m_DeltaBank = 0;
+        double          m_Distance = 0;
+        Ramp            m_GearAnim;
+        Ramp            m_FlapsAnim;
+        Ramp            m_SpoilersAnim;
+        XPLMProbeRef    m_TerrRef;
+        XPLMProbeInfo_t m_TerrData;
+
+        CAircraftState  m_ActualPos;
+        CAircraftState  m_FuturData;
+        CAircraftState  m_OldData;
+        CAircraftState  m_Data;
+        CAircraftState  m_AIData;
+
+        // User aircraft position, for the distance shown in the label
+        static XPLMDataRef s_UserLatitude;
+        static XPLMDataRef s_UserLongitude;
+    };
 }
