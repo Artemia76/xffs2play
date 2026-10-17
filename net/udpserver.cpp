@@ -58,7 +58,7 @@ UDPServer::~UDPServer()
 ///
 void UDPServer::start_receive()
 {
-    m_Socket.async_receive_from(boost::asio::buffer(m_RecvBuffer),
+    m_Socket.async_receive_from(asio::buffer(m_RecvBuffer),
                                     m_RemoteEndpoint,
                                     [this](std::error_code ec,std::size_t bytes_recvd)
                                         { this->handle_receive(ec, bytes_recvd); }
@@ -152,7 +152,7 @@ void UDPServer::handle_receive(const std::error_code& pError, std::size_t pBytes
 ///
 void UDPServer::send(const std::string& pMessage, udp::endpoint pTargetEndpoint)
 {
-    m_Socket.send_to(boost::asio::buffer(pMessage), pTargetEndpoint);
+    m_Socket.send_to(asio::buffer(pMessage), pTargetEndpoint);
 }
 
 ///

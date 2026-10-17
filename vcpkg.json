@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "xffs2play",
+  "version": "2.1.0",
+  "description": "X-Plane plugin linking X-Plane to the FFS2Play multiplayer client",
+  "homepage": "https://github.com/Artemia76/xffs2play",
+  "license": "GPL-3.0-or-later",
+  "dependencies": [
+    "asio",
+    "protobuf"
+  ]
+}

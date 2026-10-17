@@ -64,7 +64,9 @@ namespace xffs2play
         pos = m_PluginPath.rfind(m_DirSeparator);
         m_PluginPath.erase(pos+1);
         XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
+#ifndef XPLM400 // 3D drawing phase removed from SDK 4; labels move to XPMP2
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
+#endif
         XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
         XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
         m_ObjectID=0;
@@ -94,7 +96,9 @@ namespace xffs2play
         if (m_Server != nullptr) delete m_Server;
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
+#ifndef XPLM400 // 3D drawing phase removed from SDK 4; labels move to XPMP2
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
+#endif
         ClearPeers();
         if (m_Use_CSL)
         {
@@ -324,7 +328,9 @@ namespace xffs2play
     ///
     int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
     {
+#ifndef XPLM400 // 3D drawing phase removed from SDK 4; labels move to XPMP2
         if (pPhase == xplm_Phase_Modern3D) SetupCullInfo(&m_GlCamera);
+#endif
         if (m_TChatWindow == nullptr)
         {
             int Width, Height;

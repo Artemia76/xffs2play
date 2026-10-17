@@ -175,12 +175,14 @@ namespace xffs2play
             if (!EnableDisplayCallsign) return;
             switch(pPhase)
             {
+#ifndef XPLM400 // 3D drawing phase removed from SDK 4; labels move to XPMP2
                 case xplm_Phase_Modern3D:
                 {
                     XPLMWorldToLocal(m_AIData.Latitude,m_AIData.Longitude,(m_AIData.Altitude+(m_CGHeight*2))*0.3048,&m_CoordX,&m_CoordY,&m_CoordZ);
                     m_Cull = SphereIsVisible(m_GlCamera,m_CoordX,m_CoordY,m_CoordZ,1.0);
                     break;
                 }
+#endif
                 case xplm_Phase_Window:
                 {
                     if (m_Cull && (m_TextPhase>0))

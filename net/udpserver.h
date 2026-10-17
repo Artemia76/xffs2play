@@ -24,7 +24,7 @@
 
 #include "lockedqueue.h"
 
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 #include <array>
 #include <map>
@@ -37,7 +37,7 @@
 
 namespace xffs2play {
 
-using boost::asio::ip::udp;
+using asio::ip::udp;
 
 typedef std::map<uint32_t, udp::endpoint> ClientList;
 typedef ClientList::value_type Client;
@@ -60,7 +60,7 @@ public:
 
 private:
 
-    boost::asio::io_service m_IoService;
+    asio::io_context m_IoService;
     udp::socket m_Socket;
     udp::endpoint m_ServerEndpoint;
     udp::endpoint m_RemoteEndpoint;

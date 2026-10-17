@@ -23,8 +23,6 @@
 #pragma once
 
 #include <string>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include <XPLMScenery.h>
 #include <XPLMDisplay.h>
 #include <XPLMDataAccess.h>
