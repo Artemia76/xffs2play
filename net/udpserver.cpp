@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2018 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/xffs2play
+** Contact: https://github.com/Artemia76/xffs2play
 **
 ** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,247 +20,204 @@
 ** be met: https://www.gnu.org/licenses/gpl-3.0.html.
 ****************************************************************************/
 
-#include "udpserver.h"
-#include "tools/version.h"
+#include "net/udpserver.h"
 #include "net/proto.h"
+#include "tools/version.h"
+
+#include <memory>
+#include <sstream>
 
 namespace xffs2play
 {
 
 ///
-/// UDP Server Constructor
+/// Open the socket (throws std::system_error if the port is not available)
+/// and start the network thread
 ///
-UDPServer::UDPServer(unsigned short pLocalPort) :
-    m_Socket(m_IoService, udp::endpoint(udp::v4(), pLocalPort)),
-    m_ServiceThread(&UDPServer::run_service,this),
-    m_NextClientID(0L)
+UDPServer::UDPServer(unsigned short pLocalPort, const std::string& pBindAddress) :
+    m_Log(CLogger::Instance()),
+    m_WorkGuard(asio::make_work_guard(m_IoContext)),
+    m_Socket(m_IoContext, udp::endpoint(asio::ip::make_address(pBindAddress), pLocalPort)),
+    m_IncomingMessages(MAX_QUEUED_MESSAGES)
 {
-    m_Log = CLogger::Instance();
 #ifdef XFFS_DEBUG
     m_Log->Log(_("Call UDPServer Constructor"), LEVEL_DEBUG);
+#endif
+    StartReceive();
+    m_ServiceThread = std::thread(&UDPServer::Run, this);
+}
+
+///
+/// Stop the network thread before any member is destroyed.
+/// Pending sends (e.g. DISC) complete first: only the receive is cancelled,
+/// then io_context::run() returns once it runs out of work.
+///
+UDPServer::~UDPServer()
+{
+    asio::post(m_IoContext, [this]()
+    {
+        std::error_code ec;
+        m_Socket.cancel(ec);
+    });
+    m_WorkGuard.reset();
+    if (m_ServiceThread.joinable()) m_ServiceThread.join();
+#ifdef XFFS_DEBUG
+    m_Log->Log(_("Call UDPServer Destructor"), LEVEL_DEBUG);
 #endif
 }
 
 ///
-/// Private Destructor for SingleTon UDP Server
+/// Network thread main loop
 ///
-UDPServer::~UDPServer()
+void UDPServer::Run()
 {
-    m_IoService.stop();
-    m_ServiceThread.join();
-#ifdef XFFS_DEBUG
-    m_Log->Log(_("Call UDPServer Destructor"),LEVEL_DEBUG);
-#endif // XFFS_DEBUG
-}
-
-///
-/// Start Listening to specified port
-///
-void UDPServer::start_receive()
-{
-    m_Socket.async_receive_from(asio::buffer(m_RecvBuffer),
-                                    m_RemoteEndpoint,
-                                    [this](std::error_code ec,std::size_t bytes_recvd)
-                                        { this->handle_receive(ec, bytes_recvd); }
-                                    );
-}
-
-void UDPServer::on_client_disconnected(int32_t pId)
-{
-    for (auto& handler : clientDisconnectedHandlers)
-        if (handler)
-            handler(pId);
-}
-
-///
-/// Handle Remote Error
-///
-void UDPServer::handle_remote_error(const std::error_code /*pErrorCode*/, const udp::endpoint pRemoteEndpoint)
-{
-    bool found = false;
-    int32_t id;
-    for (const auto& client : m_Clients)
-        if (client.second == pRemoteEndpoint) {
-            found = true;
-            id = client.first;
-            break;
-        }
-    if (found == false)
-        return;
-
-    m_Clients.erase(id);
-    on_client_disconnected(id);
-}
-
-///
-/// Process Received Data and start a new receive waiting
-///
-void UDPServer::handle_receive(const std::error_code& pError, std::size_t pBytesTransferred)
-{
-    if (!pError)
+    while (!m_IoContext.stopped())
     {
         try
         {
-            auto message = ClientMessage(
-                std::string(m_RecvBuffer.data(),
-                m_RecvBuffer.data() + pBytesTransferred),
-                get_or_create_client_id(m_RemoteEndpoint)
-            );
-            if (!message.first.empty())
+            m_IoContext.run();
+        }
+        catch (const std::exception& e)
+        {
+            m_Log->Log(_("UDPServer: network exception: ") + e.what(), LEVEL_ERROR);
+        }
+    }
+}
+
+///
+/// Wait for the next datagram
+///
+void UDPServer::StartReceive()
+{
+    m_Socket.async_receive_from(asio::buffer(m_RecvBuffer), m_RemoteEndpoint,
+        [this](const std::error_code& pError, std::size_t pBytesTransferred)
+        {
+            HandleReceive(pError, pBytesTransferred);
+        });
+}
+
+///
+/// Queue the received datagram for the X-Plane thread, answer PING at once
+///
+void UDPServer::HandleReceive(const std::error_code& pError, std::size_t pBytesTransferred)
+{
+    if (pError == asio::error::operation_aborted) return;
+    if (!pError)
+    {
+        if (pBytesTransferred > 0)
+        {
+            ClientMessage message(std::string(m_RecvBuffer.data(), pBytesTransferred),
+                                  GetOrCreateClientId(m_RemoteEndpoint));
+            if (static_cast<uint8_t>(message.first[0]) == PING)
             {
-                incomingMessages.push(message);
-                std::istringstream data(message.first);
-                uint8_t Code;
-                data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
-                switch ((FFS2Proto)Code)
-                {
-                    case PING:
-                    {
-                        std::ostringstream  ssoutput;
-                        ssoutput << static_cast<uint8_t>(PONG);
-                        ssoutput << static_cast<uint8_t>(XFF2_PROTOCOL);
-                        ssoutput << static_cast<uint8_t>(APP_MAJOR);
-                        ssoutput << static_cast<uint8_t>(APP_MINOR);
-                        ssoutput << static_cast<uint8_t>(APP_BUILD);
-                        SendToClient(ssoutput.str(), message.second);
-                    }
-                }
+                std::string pong;
+                pong += static_cast<char>(PONG);
+                pong += static_cast<char>(XFF2_PROTOCOL);
+                pong += static_cast<char>(APP_MAJOR);
+                pong += static_cast<char>(APP_MINOR);
+                pong += static_cast<char>(APP_BUILD);
+                Send(pong, m_RemoteEndpoint);
             }
-        }
-        catch (std::exception ex)
-        {
-            m_Log->Log(_("handle_receive: Error parsing incoming message:") + ex.what(), LEVEL_ERROR);
-        }
-        catch (...)
-        {
-            m_Log->Log(_("handle_receive: Unknown error while parsing incoming message"), LEVEL_ERROR);
+            if (!m_IncomingMessages.push(std::move(message)))
+            {
+                m_Log->Log(_("UDPServer: incoming queue full, datagram dropped"), LEVEL_WARNING);
+            }
         }
     }
     else
     {
-        std::stringstream Mess;
-        Mess << _("handle_receive: error: ") <<  pError.message() << _(" while receiving from address ") << m_RemoteEndpoint;
-        m_Log->Log(Mess.str(),LEVEL_ERROR);
-        handle_remote_error(pError, m_RemoteEndpoint);
+        // On Windows an ICMP "port unreachable" from a vanished client surfaces here
+        std::ostringstream Mess;
+        Mess << _("UDPServer: receive error: ") << pError.message() << _(" from ") << m_RemoteEndpoint;
+        m_Log->Log(Mess.str(), LEVEL_ERROR);
+        RemoveClient(m_RemoteEndpoint);
     }
-
-    start_receive();
+    StartReceive();
 }
 
 ///
-/// Send Data to Endpoint Target
+/// Return the client id of an endpoint, registering it if needed.
+/// The oldest client is forgotten when the table is full.
 ///
-void UDPServer::send(const std::string& pMessage, udp::endpoint pTargetEndpoint)
+uint32_t UDPServer::GetOrCreateClientId(const udp::endpoint& pEndpoint)
 {
-    m_Socket.send_to(asio::buffer(pMessage), pTargetEndpoint);
-}
-
-///
-/// Main Loop Thread Listener
-///
-void UDPServer::run_service()
-{
-    start_receive();
-#ifdef XFFS_DEBUG
-    m_Log->Log(_("UDPServer::run_service"),LEVEL_DEBUG);
-#endif // XFFS_DEBUG
-    while (!m_IoService.stopped())
-    {
-        try
-        {
-            m_IoService.run();
-        }
-        catch (const std::exception& e)
-        {
-            m_Log->Log(_("Server: Network exception: ") + e.what(), LEVEL_ERROR);
-        }
-        catch (...)
-        {
-            m_Log->Log(_("Server: Network exception: unknown"),LEVEL_ERROR);
-        }
-#ifdef XFFS_DEBUG
-        m_Log->Log(_("Server network thread stopped"),LEVEL_DEBUG);
-#endif // XFFS_DEBUG
-    }
-}
-
-///
-/// Return Client ID from Endpoint connexion
-/// If client not exist, we create a new one
-///
-int32_t UDPServer::get_or_create_client_id(udp::endpoint pEndpoint)
-{
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
     for (const auto& client : m_Clients)
-        if (client.second == pEndpoint)
-            return client.first;
+    {
+        if (client.second == pEndpoint) return client.first;
+    }
+    if (m_Clients.size() >= MAX_CLIENTS) m_Clients.erase(m_Clients.begin());
+    if (++m_NextClientID == 0) ++m_NextClientID;  // 0 means "no client"
+    m_Clients.emplace(m_NextClientID, pEndpoint);
+    return m_NextClientID;
+}
 
-    auto id = ++m_NextClientID;
-    m_Clients.insert(Client(id, pEndpoint));
-    return id;
+void UDPServer::RemoveClient(const udp::endpoint& pEndpoint)
+{
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
+    for (auto it = m_Clients.begin(); it != m_Clients.end(); ++it)
+    {
+        if (it->second == pEndpoint)
+        {
+            m_Clients.erase(it);
+            return;
+        }
+    }
 }
 
 ///
-/// Send a message to client
+/// Send a datagram from the network thread; errors are logged, never thrown
+///
+void UDPServer::Send(const std::string& pMessage, const udp::endpoint& pTarget)
+{
+    auto buffer = std::make_shared<std::string>(pMessage);
+    asio::post(m_IoContext, [this, buffer, pTarget]()
+    {
+        m_Socket.async_send_to(asio::buffer(*buffer), pTarget,
+            [this, buffer](const std::error_code& pError, std::size_t)
+            {
+                if (pError && pError != asio::error::operation_aborted)
+                {
+                    m_Log->Log(_("UDPServer: send error: ") + pError.message(), LEVEL_ERROR);
+                }
+            });
+    });
+}
+
+///
+/// Send a message to one client
 ///
 void UDPServer::SendToClient(const std::string& pMessage, uint32_t pClientID)
 {
-    try
+    udp::endpoint target;
     {
-        send(pMessage, m_Clients.at(pClientID));
+        std::lock_guard<std::mutex> lock(m_ClientsMutex);
+        auto it = m_Clients.find(pClientID);
+        if (it == m_Clients.end())
+        {
+            m_Log->Log(_("SendToClient: unknown client ID ") + std::to_string(pClientID), LEVEL_ERROR);
+            return;
+        }
+        target = it->second;
     }
-    catch (std::out_of_range)
-    {
-        m_Log->Log(_("SendToClient : Unknown client ID ") + std::to_string(pClientID),LEVEL_ERROR);
-    }
+    Send(pMessage, target);
 }
 
 ///
-/// Send a message to all clients
-///
-void UDPServer::SendToAllExcept(const std::string& pMessage, uint32_t pClientID)
-{
-    for (auto client : m_Clients)
-        if (client.first != pClientID)
-            send(pMessage, client.second);
-}
-
-
-///
-/// Send a message to all clients
+/// Send a message to every known client
 ///
 void UDPServer::SendToAll(const std::string& pMessage)
 {
-    for (auto client : m_Clients)
-        send(pMessage, client.second);
+    std::lock_guard<std::mutex> lock(m_ClientsMutex);
+    for (const auto& client : m_Clients) Send(pMessage, client.second);
 }
 
 ///
-/// Return number of client registered
+/// Get the oldest received datagram; false if none is waiting
 ///
-size_t UDPServer::GetClientCount()
+bool UDPServer::PopMessage(ClientMessage& pMessage)
 {
-    return m_Clients.size();
-}
-
-///
-/// Return client ID by index
-///
-uint32_t UDPServer::GetClientIdByIndex(size_t pIndex)
-{
-    auto it = m_Clients.begin();
-    for (int i = 0; i < pIndex; i++)
-        ++it;
-    return it->first;
-}
-
-ClientMessage UDPServer::PopMessage()
-{
-    return incomingMessages.pop();
-}
-
-bool UDPServer::HasMessages()
-{
-    return !incomingMessages.empty();
+    return m_IncomingMessages.try_pop(pMessage);
 }
 
 }

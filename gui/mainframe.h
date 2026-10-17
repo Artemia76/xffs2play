@@ -45,6 +45,7 @@ namespace xffs2play
     public:
 static  MainFrame*          Instance();
 static  void                Kill();
+static  bool                Exists();
 
     protected:
         void                OnLogMessage(const std::string& pMessage);
@@ -106,7 +107,6 @@ static  XPLMCursorStatus    HandleCursorCallback(
         XPLMDataRef         m_PlaneY = NULL;
         XPLMDataRef         m_PlaneZ = NULL;
         int                 m_GlobalDesktopBounds[4];
-        SimController*      m_SC;
         std::string         m_LastMessage;
         CLogger*            m_Log;
     };

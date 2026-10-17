@@ -24,8 +24,11 @@
 
 #include "net/udpserver.h"
 
-#include <vector>
+#include <map>
 #include <mutex>
+#include <set>
+#include <string>
+#include <vector>
 
 #include <XPLMDataAccess.h>
 #include <XPLMProcessing.h>
@@ -82,6 +85,7 @@ static  void            Kill();
                             return m_UserAircraft;
                         }
         bool            IsInit(){return m_Initialized;}
+        void            ReloadCSL();
         std::string     GetMode();
 
     protected:

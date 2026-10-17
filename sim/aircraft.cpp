@@ -73,6 +73,7 @@ namespace xffs2play
     ///
     CAircraft::~CAircraft()
     {
+        XPLMDestroyProbe(m_TerrRef);
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraft::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG
@@ -211,14 +212,13 @@ namespace xffs2play
                                 Text << std::fixed <<  m_Distance << " NM" ;
                                 break;
                         }
-                        char* text = strdup(Text.str().c_str());
-                        int text_width = XPLMMeasureString(xplmFont_Proportional, text, strlen(text));
-                        XPLMDrawString(CallSignColor,x - (text_width/2),y,text,nullptr,xplmFont_Proportional);
+                        std::string text = Text.str();
+                        int text_width = static_cast<int>(XPLMMeasureString(xplmFont_Proportional, text.c_str(), static_cast<int>(text.size())));
+                        XPLMDrawString(CallSignColor, static_cast<int>(x) - (text_width/2), static_cast<int>(y), &text[0], nullptr, xplmFont_Proportional);
                         glMatrixMode(GL_PROJECTION);
                         glPopMatrix();
                         glMatrixMode(GL_MODELVIEW);
                         glPopMatrix();
-                        delete[] text;
                     }
                     break;
                 }

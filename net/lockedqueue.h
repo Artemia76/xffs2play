@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2019 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/xffs2play
+** Copyright (C) 2018 FSFranceSimulateur team.
+** Contact: https://github.com/Artemia76/xffs2play
 **
 ** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,40 +22,44 @@
 
 #pragma once
 
+#include <cstddef>
 #include <mutex>
 #include <queue>
-#include <list>
+#include <utility>
 
 namespace xffs2play {
 
-// Simple mutex-guarded queue
-template<typename _T> class LockedQueue
+///
+/// Bounded mutex-guarded queue, one producer thread and one consumer thread
+///
+template<typename T> class LockedQueue
 {
-	private:
-		std::mutex mutex;
-		std::queue<_T> queue;
-	public:
-		void push(_T value)
-		{
-			std::unique_lock<std::mutex> lock(mutex);
-			queue.push(value);
-		};
+public:
+    explicit LockedQueue(size_t pMaxSize) : m_MaxSize(pMaxSize) {}
 
-		// Get top message in the queue
-		// Note: not exception-safe (will lose the message)
-		_T pop()
-		{
-			std::unique_lock<std::mutex> lock(mutex);
-			_T value;
-			std::swap(value, queue.front());
-			queue.pop();
-			return value;
-		};
+    /// Add a value; false (value dropped) if the queue is full
+    bool push(T pValue)
+    {
+        std::lock_guard<std::mutex> lock(m_Mutex);
+        if (m_Queue.size() >= m_MaxSize) return false;
+        m_Queue.push(std::move(pValue));
+        return true;
+    }
 
-		bool empty() {
-			std::unique_lock<std::mutex> lock(mutex);
-			return queue.empty();
-		}
+    /// Take the oldest value; false if the queue is empty
+    bool try_pop(T& pValue)
+    {
+        std::lock_guard<std::mutex> lock(m_Mutex);
+        if (m_Queue.empty()) return false;
+        pValue = std::move(m_Queue.front());
+        m_Queue.pop();
+        return true;
+    }
+
+private:
+    std::mutex      m_Mutex;
+    std::queue<T>   m_Queue;
+    size_t          m_MaxSize;
 };
 
 }

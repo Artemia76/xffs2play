@@ -94,7 +94,6 @@ namespace xffs2play
         XPLMSetDataf(m_XPPlaneX, 0);
         XPLMSetDataf(m_XPPlaneY, -1000);
         XPLMSetDataf(m_XPPlaneZ, 0);
-        XPLMDestroyProbe(m_TerrRef);
 #ifdef XFFS_DEBUG
         m_Log->Log(_("CAircraftAI::destruction of plane ") + std::to_string(m_ObjectID) ,LEVEL_DEBUG);
 #endif // XFFS_DEBUG

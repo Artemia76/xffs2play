@@ -56,7 +56,6 @@ add_library(XFFS2Play MODULE
     xpmain.h
     gui/mainframe.cpp
     gui/mainframe.h
-    net/iudpserver.h
     net/lockedqueue.h
     net/proto.h
     net/udpserver.cpp

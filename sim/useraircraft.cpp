@@ -74,27 +74,32 @@ namespace xffs2play
     }
 
     ///
+    /// Read a byte array dataref as a string; the result is always terminated
+    ///
+    std::string CUserAircraft::ReadString(XPLMDataRef pDataRef, int pMaxLength)
+    {
+        std::string buffer(static_cast<size_t>(pMaxLength), char(0));
+        int copied = XPLMGetDatab(pDataRef, &buffer[0], 0, pMaxLength);
+        if (copied < 0) copied = 0;
+        buffer.resize(static_cast<size_t>(copied));
+        return buffer.substr(0, buffer.find(char(0)));
+    }
+
+    ///
     /// Read Player Aicraft data from X-Plane
     ///
     void CUserAircraft::Update()
     {
         TimeStamp = Now();
-        char description[261] ;
-        std::string Description;
-        XPLMGetDatab(m_XPDescription, description,0,260);
-        Description=description;
+        std::string Description = ReadString(m_XPDescription, 260);
         // If Descirption change
         if (m_Description.compare(Description) != 0)
         {
             ReadDataFromACF();
             m_Description = Description;
         }
-        char model[41];
-        XPLMGetDatab(m_XPModel, model,0,40);
-        Model=model;
-        char type[501];
-        XPLMGetDatab(m_XPType, type,0,500);
-        Type=type;
+        Model = ReadString(m_XPModel, 40);
+        Type = ReadString(m_XPType, 500);
         Altitude = XPLMGetDatad(m_XPAltitude) * M_2_FEET;//Convert to feet
         GroundAltitude = Altitude - (XPLMGetDataf(m_XPGroundAltitude) * M_2_FEET);
         Heading = XPLMGetDataf(m_XPHeading);
@@ -150,7 +155,8 @@ namespace xffs2play
     {
         int PlaneCount=0;
         std::string Desc;
-        char FileName[256], AircraftPath[256];
+        // XPLMGetNthAircraftModel requires 256 and 512 bytes
+        char FileName[256], AircraftPath[512];
         XPLMCountAircraft(&PlaneCount, 0, 0);
         Title="";
         Desc="";

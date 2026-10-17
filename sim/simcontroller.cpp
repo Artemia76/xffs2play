@@ -46,6 +46,7 @@ namespace xffs2play
 #endif
         m_Use_CSL =false;
         m_Use_AI=false;
+        m_PlaneCount=0;
         m_ClientID = 0;
         m_LastPing = Now();
         m_DirSeparator = XPLMGetDirectorySeparator();
@@ -79,7 +80,7 @@ namespace xffs2play
         {
             m_Server = new UDPServer(47500);
         }
-        catch (std::exception & ex)
+        catch (const std::exception& ex)
         {
             m_Log->Log(_("Failed to start UDP Server : ") + ex.what(), LEVEL_ERROR);
             m_Server = nullptr;
@@ -87,19 +88,28 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
         m_Log->Log(_("End of Call SimController Constructor"), LEVEL_DEBUG);
 #endif
-        m_Initialized=true;
+        m_Initialized = (m_Server != nullptr);
     }
 
     SimController::~SimController()
     {
         SendDisc();
-        if (m_Server != nullptr) delete m_Server;
+        // Let the network thread send DISC before it stops
+        delete m_Server;
+        m_Server = nullptr;
         XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
         XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
 #ifndef XPLM400 // 3D drawing phase removed from SDK 4; labels move to XPMP2
         XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Modern3D, 0, this);
 #endif
+        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
+        if (m_TChatWindow != nullptr)
+        {
+            XPLMDestroyWindow(m_TChatWindow);
+            m_TChatWindow = nullptr;
+        }
         ClearPeers();
+        if (m_Use_AI) XPLMReleasePlanes();
         if (m_Use_CSL)
         {
             XPMPMultiplayerDisable();
@@ -278,11 +288,13 @@ namespace xffs2play
             if (PlaneCount>m_PlaneCount)
             {
                 int Index;
-                char FileName[256], AircraftPath[256];
+                // XPLMGetNthAircraftModel requires 256 and 512 bytes
+                char FileName[256], AircraftPath[512];
     #ifdef XFFS_DEBUG
                 m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
     #endif
-                for (Index = m_PlaneCount; Index <= PlaneCount; Index++)
+                // m_Aircraft holds at most 20 paths plus the terminating nullptr
+                for (Index = m_PlaneCount; (Index < PlaneCount) && (Index <= 20); Index++)
                 {
                     XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
                     strcpy(m_AircraftPath[Index-1], AircraftPath);
@@ -360,9 +372,9 @@ namespace xffs2play
     void SimController::OnReceiveData()
     {
         if (m_Server == nullptr) return;
-        if (!m_Server->HasMessages()) return;
-        // Send Pong Response in UDP Thread to avoid FFS2Play timeout while X-Plane Loading or In menus
-        ClientMessage ReceivedMessage = m_Server->PopMessage();
+        // PONG is sent by the UDP thread to avoid FFS2Play timeout while X-Plane is loading or in menus
+        ClientMessage ReceivedMessage;
+        if (!m_Server->PopMessage(ReceivedMessage)) return;
         std::istringstream data(ReceivedMessage.first);
         uint8_t Code;
         data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
@@ -784,6 +796,20 @@ namespace xffs2play
         return m_PluginPath + path;
     }
     
+    ///
+    /// Load again every known CSL package (menu "Reload CSL Database")
+    ///
+    void SimController::ReloadCSL()
+    {
+        if (!m_Use_CSL) return;
+        for (const std::string& path : m_CSLPackagePathArr)
+        {
+            const char* cszResult = XPMPLoadCSLPackage(path.c_str());
+            if (cszResult[0]) m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
+        }
+        m_Log->Log(_("CSL packages reloaded"), LEVEL_INFO);
+    }
+
     std::string SimController::GetMode()
     {
         if (m_Use_AI) return _("AI Aircrafts");
