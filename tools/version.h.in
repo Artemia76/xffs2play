@@ -44,5 +44,6 @@
 #define VER_LEGALCOPYRIGHT_STR      "Copyright (C) 2017-2026 FFSimulateur2.fr"
 #define VER_PRODNAME_STR            "XFFS2Play"
 
-#define VER_COMPANYDOMAIN_STR       "ffsimulateur2.fr"
+// Plugin signature, unique among X-Plane plugins
+#define VER_COMPANYDOMAIN_STR       "fr.ffsimulateur2.xffs2play"
 #endif

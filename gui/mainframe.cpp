@@ -159,9 +159,9 @@ namespace xffs2play
         );
 
         float color[] = { 1.0, 1.0, 1.0 };/* RGB White */
-        float X=XPLMGetDataf(m_PlaneX);
-        float Y=XPLMGetDataf(m_PlaneY);
-        float Z=XPLMGetDataf(m_PlaneZ);
+        double X=XPLMGetDatad(m_PlaneX);
+        double Y=XPLMGetDatad(m_PlaneY);
+        double Z=XPLMGetDatad(m_PlaneZ);
         XPLMGetWindowGeometry(m_Window, &m_Left, &m_Top, &m_Right, &m_Bottom);
 
         // We now use an XPLMGraphics routine to draw a translucent dark

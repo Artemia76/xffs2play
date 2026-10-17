@@ -175,7 +175,9 @@ namespace xffs2play
 #ifdef XFFS_DEBUG
                 m_Log->Log(_("Loading ACF OK"), LEVEL_DEBUG);
 #endif
-                while (!parser.eof())
+                // The three keys sit in the header: stop reading the (large) file once found
+                int Found = 0;
+                while (!parser.eof() && (Found < 3))
                 {
                     if (parser.get_next_line())
                     {
@@ -183,6 +185,7 @@ namespace xffs2play
                         {
                             if (parser.get_token(1)=="acf/_name")
                             {
+                                ++Found;
                                 Title = parser.get_token(2);
                                 for (int i=3; i<parser.get_num_tokens();i++)
                                 {
@@ -195,6 +198,7 @@ namespace xffs2play
                             }
                             if (parser.get_token(1)=="acf/_is_helicopter")
                             {
+                                ++Found;
                                 if (parser.get_token_uint(2) >0)
                                 {
                                     Category = "Helicopter";
@@ -206,6 +210,7 @@ namespace xffs2play
                             }
                             if (parser.get_token(1)=="acf/_descrip")
                             {
+                                ++Found;
                                 Desc = parser.get_token(2);
                                 for (int i=3; i<parser.get_num_tokens();i++)
                                 {
@@ -222,7 +227,7 @@ namespace xffs2play
             if (Title.length() < 3) Title = Desc;
         }
 #ifdef XFFS_DEBUG
-                                m_Log->Log(_("End of AI scan"));
+                                m_Log->Log(_("End of ACF scan"), LEVEL_DEBUG);
 #endif
     }
 }

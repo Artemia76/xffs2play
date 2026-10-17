@@ -47,6 +47,7 @@ namespace xffs2play
     ///
     CLogger::~CLogger()
     {
+        XPLMUnregisterFlightLoopCallback(&CLogger::LoopCallback, this);
     }
 
     CLogger* CLogger::Instance()
