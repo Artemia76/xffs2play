@@ -35,7 +35,7 @@ namespace xffs2play
     CAircraft::CAircraft(
         int pObjectID,
         std::string pCallSign,
-        AIResol& pAircraft,
+        const AIResol& pAircraft,
         CullInfo_t* pGlCamera,
         bool pEnableDisplayCallSign,
 		bool pDisableAltCorrection
@@ -124,9 +124,11 @@ namespace xffs2play
             m_AIData.RecoLight = m_Data.RecoLight;
             m_AIData.TaxiLight = m_Data.TaxiLight;
             m_AIData.Smoke = m_Data.Smoke;
-            if ((m_Spawned>=2) && (interFPS > 0))
+            // Without data for 5 s the aircraft is frozen instead of extrapolated forever
+            const auto InterpolSpan = duration_cast<milliseconds>(m_FuturData.TimeStamp - m_ActualPos.TimeStamp).count();
+            if ((m_Spawned>=2) && (interFPS > 0) && (InterpolSpan > 0) && (curr_time - m_LastData < milliseconds(5000)))
             {
-                double CoefInterpol = interFPS / static_cast<double>(duration_cast<milliseconds>(m_FuturData.TimeStamp - m_ActualPos.TimeStamp).count());
+                double CoefInterpol = interFPS / static_cast<double>(InterpolSpan);
                 m_AIData.Altitude += m_DeltaAltitude * CoefInterpol;
                 m_AIData.Latitude += m_DeltaLatitude * CoefInterpol;
                 m_AIData.Longitude += m_DeltaLongitude * CoefInterpol;
@@ -299,8 +301,8 @@ namespace xffs2play
                 m_DeltaBank = m_FuturData.Bank - m_ActualPos.Bank;
                 if (m_DeltaBank < -180) m_DeltaBank += 360;
                 if (m_DeltaBank >= 180) m_DeltaBank -= 360;
+                m_Spawned = 2;
             }
-            m_Spawned = 2;
             m_ActualPos.Pitch = m_AIData.Pitch;
         }
     }
@@ -308,7 +310,7 @@ namespace xffs2play
     ///
     /// Return true if the callsign is ours
     ///
-    bool CAircraft::IsCallSign(std::string& pCallSign)
+    bool CAircraft::IsCallSign(const std::string& pCallSign) const
     {
         return m_CallSign==pCallSign;
     }

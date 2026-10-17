@@ -51,7 +51,7 @@ namespace xffs2play
 		CAircraft(
 			int pObjectID,
 			std::string pCallSign,
-			AIResol& pAircraft,
+			const AIResol& pAircraft,
 			CullInfo_t* pGl_camera,
 			bool pEnableDisplayCallSign = true,
 			bool pDisableAltCorr = false
@@ -60,7 +60,7 @@ namespace xffs2play
 		virtual                 ~CAircraft();
         virtual	void    SetAircraftData(float inElapsedSinceLastCall, double pLat, double pLon);
 		void            FromAirData(const AirData& pAirData);
-		bool            IsCallSign(std::string& pCallSign);
+		bool            IsCallSign(const std::string& pCallSign) const;
 		void            Draw(XPLMDrawingPhase pPhase, const Color& pColor);
 		int				GetObjectID() { return m_ObjectID; }
 		bool            EnableDisplayCallsign;

@@ -35,7 +35,7 @@ namespace xffs2play
     CAircraftCSL::CAircraftCSL(
         int pObjectID,
         std::string pCallSign,
-        AIResol& pAircraft,
+        const AIResol& pAircraft,
         CullInfo_t* pGlCamera,
         bool pEnableDisplayCallSign,
 		bool pDisableAltCorrection

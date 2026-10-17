@@ -21,6 +21,7 @@
 ****************************************************************************/
 
 #include "sim/simcontroller.h"
+#include "net/framereader.h"
 #include "net/proto.h"
 #include "tools/version.h"
 #include "tools/hexa.h"
@@ -48,6 +49,8 @@ namespace xffs2play
         m_Use_AI=false;
         m_PlaneCount=0;
         m_ClientID = 0;
+        m_SendUserData = true;
+        m_InvalidFrames = 0;
         m_LastPing = Now();
         m_DirSeparator = XPLMGetDirectorySeparator();
         // my own plugin path
@@ -222,23 +225,21 @@ namespace xffs2play
         float /*pElapsedTimeSinceLastFlightLoop*/,
         int /*pCounter*/)
     {
-        m_UserAircraft.Update();
-        m_UserAircraft.ToAirData(m_SendData);
-        if (m_ClientID!=0)
+        if (m_InvalidFrames > 0)
         {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DATA_SEND);
-                m_SendData.SerializeToOstream(&ssoutput);
-                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send data") + _(e.what()), LEVEL_ERROR);
-                ClearPeers();
-                m_ClientID=0;
-            }
+            m_Log->Log(std::to_string(m_InvalidFrames) + _(" invalid frame(s) ignored"), LEVEL_WARNING);
+            m_InvalidFrames = 0;
+        }
+        m_UserAircraft.Update();
+        if ((m_ClientID != 0) && m_SendUserData && (m_Server != nullptr))
+        {
+            m_UserAircraft.ToAirData(m_SendData);
+            std::string Frame(1, static_cast<char>(DATA_SEND));
+            Frame += m_SendData.SerializeAsString();
+            m_Server->SendToClient(Frame, m_ClientID);
+        }
+        if (m_ClientID != 0)
+        {
             //Check Ping Timeout
             if (timespan(Now() - m_LastPing).count() > 10000)
             {
@@ -367,232 +368,211 @@ namespace xffs2play
     }
 
     ///
-    /// This callback is called when we receive data on UDP Server
+    /// Process the datagrams received since the last flight loop.
+    /// At most MAX_MESSAGES_PER_LOOP per loop, the rest waits for the next one.
     ///
     void SimController::OnReceiveData()
     {
         if (m_Server == nullptr) return;
-        // PONG is sent by the UDP thread to avoid FFS2Play timeout while X-Plane is loading or in menus
         ClientMessage ReceivedMessage;
-        if (!m_Server->PopMessage(ReceivedMessage)) return;
-        std::istringstream data(ReceivedMessage.first);
-        uint8_t Code;
-        data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
-        switch ((FFS2Proto)Code)
+        for (int i = 0; (i < MAX_MESSAGES_PER_LOOP) && m_Server->PopMessage(ReceivedMessage); ++i)
+        {
+            if (!ProcessMessage(ReceivedMessage))
+            {
+                ++m_InvalidFrames;
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Invalid frame: ") + string_to_hex(ReceivedMessage.first.substr(0, 64)), LEVEL_DEBUG);
+#endif
+                continue;
+            }
+            if ((m_ClientID != 0) && (ReceivedMessage.second == m_ClientID)) m_LastPing = Now();
+        }
+    }
+
+    ///
+    /// Decode and apply one frame (docs/contracts/xplane-link.md in ffs2-suite).
+    /// Returns false, without any side effect, for a truncated or malformed frame.
+    ///
+    bool SimController::ProcessMessage(const ClientMessage& pMessage)
+    {
+        FrameReader frame(pMessage.first);
+        uint8_t Code = 0;
+        if (!frame.u8(Code)) return false;
+        switch (static_cast<FFS2Proto>(Code))
         {
             case PING:
             {
-                m_LastPing = Now();
-                m_ClientID = ReceivedMessage.second;
-                uint32_t Options;
-                data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
+                uint32_t Options = 0;
+                if (!frame.u32le(Options)) return false;
+                if (m_ClientID != pMessage.second)
+                {
+                    m_Log->Log(_("Client connected"), LEVEL_INFO);
+                    m_SendUserData = true;
+                }
+                m_ClientID = pMessage.second;
                 if (m_Options != Options)
                 {
                     m_Options = Options;
                     UpdateOptions();
                 }
-                break;
+                return true;
             }
             case PONG:
-            {
-                break;
-            }
+                return true;
             case DATA:
             {
-                uint8_t Flag=0;
-                data.read(reinterpret_cast<char*>(&Flag),sizeof(Flag));
-                break;
+                uint8_t Flag = 0;
+                if (!frame.u8(Flag)) return false;
+                m_SendUserData = (Flag != 0);
+                return true;
             }
             case DATA_SEND:
             {
-                uint32_t Object_ID;
-                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                m_ReceivedData.ParseFromIstream(&data);
+                uint32_t Object_ID = 0;
+                if (!frame.u32le(Object_ID) || !frame.proto(m_ReceivedData)) return false;
                 PeerIterator it = m_ArrPeer.find(Object_ID);
-                if (it != m_ArrPeer.end())
-                {
-                    if (it->second != nullptr)
-                    {
-                        it->second->FromAirData(m_ReceivedData);
-                        break;
-                    }
-                }
-                break;
+                if ((it != m_ArrPeer.end()) && (it->second != nullptr)) it->second->FromAirData(m_ReceivedData);
+                return true;
             }
             case DISC:
             {
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
-#endif
+                m_Log->Log(_("Client disconnected"), LEVEL_INFO);
                 ClearPeers();
-                m_ClientID=0;
-                break;
+                m_ClientID = 0;
+                return true;
             }
             case ADD_PEER:
             {
-                if ((!m_Use_CSL) && (!m_Use_AI)) break;
                 std::string CallSign;
-                uint8_t Len;
-                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-                char* Buff = new char [Len+1];
-                data.read(Buff, Len);
-                Buff[Len]='\0';
-                CallSign = Buff;
-                delete[] Buff;
                 AIResol Aircraft;
-                Aircraft.ParseFromIstream(&data);
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("SimController : Receive ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
-#endif
-                //Check if callsign already exist
-                for (auto it : m_ArrPeer)
-                {
-                    if (it.second != nullptr)
-                    {
-                        if (it.second->IsCallSign(CallSign))
-                        {
-                            RemovePeer(it.first);
-                            break;
-                        }
-                    }
-                }
-                uint32_t ObjectID=0;
-                if (m_Use_CSL)
-                {
-                    ObjectID=++m_ObjectID;
-                    m_ArrPeer[ObjectID] = new CAircraftCSL(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" Add CSL Peer ObjectID = ")
-                               + std::to_string(m_ArrPeer[ObjectID]->GetObjectID()), LEVEL_DEBUG);
-#endif
-                }
-                else if (m_Use_AI)
-                {
-                    ObjectID=GetFirstFreeAI();
-                    if (ObjectID > 0)
-                    {
-                        m_ArrPeer[ObjectID] = new CAircraftAI(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" Add AI Peer ObjectID = ")
-                               + std::to_string(m_ArrPeer[ObjectID]->GetObjectID()), LEVEL_DEBUG);
-#endif
-                    }
-                    else
-                    {
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Cannot add peer object, because all AI available are used"), LEVEL_DEBUG);
-#endif
-                        break;
-                    }
-                }
-                SendAddObjectID(ObjectID, CallSign);
-                break;
+                if (!frame.str8(CallSign) || !frame.proto(Aircraft)) return false;
+                AddPeer(CallSign, Aircraft);
+                return true;
             }
             case DEL_PEER:
             {
-                if ((!m_Use_CSL) && (!m_Use_AI)) break;
-                uint32_t Object_ID;
-                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                uint32_t Deleted_Object_ID = 0;
+                uint32_t Object_ID = 0;
+                if (!frame.u32le(Object_ID)) return false;
 #ifdef XFFS_DEBUG
                 m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                Deleted_Object_ID = RemovePeer(Object_ID);
-                SendDelObjectID(Deleted_Object_ID);
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Object Deleted = ") + std::to_string(Deleted_Object_ID), LEVEL_DEBUG);
-#endif
-                break;
+                SendDelObjectID(RemovePeer(Object_ID));
+                return true;
             }
             case CALLSIGN_COLOR:
             {
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
-                #ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Callsign Color Red = ") + std::to_string(m_CallSignColor.R), LEVEL_DEBUG);
-#endif
-                break;
+                uint8_t R = 0, G = 0, B = 0;
+                if (!frame.u8(R) || !frame.u8(G) || !frame.u8(B)) return false;
+                m_CallSignColor.R = R;
+                m_CallSignColor.G = G;
+                m_CallSignColor.B = B;
+                return true;
             }
             case TCHAT:
             {
                 std::string Message;
-                uint8_t Len=0;
-                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-                char* Buff = new char[Len + 1];
-                data.read(Buff, Len);
-                Buff[Len] = '\0';
-                Message = Buff;
-                delete[] Buff;
+                if (!frame.str8(Message)) return false;
+                if (GetOption(DisableTChat)) return true;
                 m_TchatArr.push_back(Message);
-
                 while (m_TchatArr.size() > 5) m_TchatArr.erase(m_TchatArr.begin());
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Message = ") + Message + _(" Binary : ") + string_to_hex(ReceivedMessage.first), LEVEL_DEBUG);
-#endif
                 m_LastTchatMessage = Now();
-                break;
+                return true;
             }
             case CSL_PATH:
             {
                 StringArray Paths;
-                Paths.ParseFromIstream(&data);
-                for (int i=0; i<Paths.string_size();i++)
+                if (!frame.proto(Paths)) return false;
+                for (const std::string& Path : Paths.string())
                 {
-                    std::string Path = Paths.string(i);
-                    if (m_CSLPackagePathArr.find(Path) == m_CSLPackagePathArr.end())
+                    if (m_CSLPackagePathArr.insert(Path).second && m_Use_CSL)
                     {
-                        m_CSLPackagePathArr.insert(Path);
                         const char* cszResult = XPMPLoadCSLPackage(Path.c_str());
-                        if ( cszResult[0] )
-                        {
-                            m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
-                        }
+                        if (cszResult[0]) m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
                     }
                 }
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive CSL PATH = "), LEVEL_DEBUG);
-                for (std::string path : m_CSLPackagePathArr)
-                {
-                    m_Log->Log(_("PATH = ") + path, LEVEL_DEBUG);
-                }
-#endif
-                break;
+                return true;
             }
-            default:
-            {
+        }
+        // Unknown code: ignored, as required by the contract
 #ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Unknown code"), LEVEL_DEBUG);
+        m_Log->Log(_("Receive Unknown code ") + std::to_string(Code), LEVEL_DEBUG);
 #endif
+        return true;
+    }
+
+    ///
+    /// Create the aircraft of a peer and give its object ID (0 on failure) to the client.
+    /// A callsign already present replaces the previous aircraft, whose ID is released (DEL_PEER).
+    ///
+    void SimController::AddPeer(const std::string& pCallSign, const AIResol& pAircraft)
+    {
+#ifdef XFFS_DEBUG
+        m_Log->Log(_("SimController : Receive ADD_PEER ") + pCallSign + _(" model = ") + pAircraft.model(), LEVEL_DEBUG);
+#endif
+        for (auto& it : m_ArrPeer)
+        {
+            if ((it.second != nullptr) && it.second->IsCallSign(pCallSign))
+            {
+                SendDelObjectID(RemovePeer(it.first));
                 break;
             }
         }
-        m_LastPing = Now();
+        uint32_t ObjectID = 0;
+        try
+        {
+            if (m_Use_CSL)
+            {
+                ObjectID = ++m_ObjectID;
+                m_ArrPeer[ObjectID] = new CAircraftCSL(ObjectID, pCallSign, pAircraft, &m_GlCamera,
+                                                       GetOption(DisplayCallSign), GetOption(DisableAltCorr));
+            }
+            else if (m_Use_AI)
+            {
+                ObjectID = static_cast<uint32_t>(GetFirstFreeAI());
+                if (ObjectID > 0)
+                {
+                    m_ArrPeer[ObjectID] = new CAircraftAI(ObjectID, pCallSign, pAircraft, &m_GlCamera,
+                                                          GetOption(DisplayCallSign), GetOption(DisableAltCorr));
+                }
+                else
+                {
+                    m_Log->Log(_("Cannot add ") + pCallSign + _(": all AI aircraft are in use"), LEVEL_WARNING);
+                }
+            }
+            else
+            {
+                m_Log->Log(_("Cannot add ") + pCallSign + _(": no rendering mode selected yet"), LEVEL_WARNING);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            m_Log->Log(_("Cannot add ") + pCallSign + _(": ") + e.what(), LEVEL_ERROR);
+            m_ArrPeer.erase(ObjectID);
+            ObjectID = 0;
+        }
+        SendAddObjectID(ObjectID, pCallSign);
     }
 
     ///
     /// We send to the client, the Object ID of new AI Object created
     ///
-    void SimController::SendAddObjectID(uint32_t pObjectID,std::string& pCallSign)
+    void SimController::SendAddObjectID(uint32_t pObjectID, const std::string& pCallSign)
     {
-        if (m_ClientID != 0)
-        {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(ADD_PEER);
-                uint8_t len = static_cast<uint8_t>(pCallSign.length());
-                ssoutput << len;
-                ssoutput.write(pCallSign.c_str(),len);
-                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send ADD_PEER") + _(e.what()), LEVEL_ERROR);
-                m_ClientID=0;
-            }
-        }
+        if ((m_ClientID == 0) || (m_Server == nullptr)) return;
+        const std::string CallSign = pCallSign.substr(0, 255);
+        std::string Frame(1, static_cast<char>(ADD_PEER));
+        Frame += static_cast<char>(CallSign.size());
+        Frame += CallSign;
+        AppendU32LE(Frame, pObjectID);
+        m_Server->SendToClient(Frame, m_ClientID);
+    }
+
+    ///
+    /// Append a little endian unsigned 32 bits value
+    ///
+    void SimController::AppendU32LE(std::string& pFrame, uint32_t pValue)
+    {
+        for (int i = 0; i < 4; ++i) pFrame += static_cast<char>((pValue >> (8 * i)) & 0xFF);
     }
 
     ///
@@ -600,21 +580,10 @@ namespace xffs2play
     ///
     void SimController::SendDelObjectID(uint32_t pObjectID)
     {
-        if (m_ClientID != 0)
-        {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DEL_PEER);
-                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send DEL_PEER") + _(e.what()), LEVEL_ERROR);
-                m_ClientID=0;
-            }
-        }
+        if ((m_ClientID == 0) || (m_Server == nullptr)) return;
+        std::string Frame(1, static_cast<char>(DEL_PEER));
+        AppendU32LE(Frame, pObjectID);
+        m_Server->SendToClient(Frame, m_ClientID);
     }
 
     ///
@@ -622,20 +591,11 @@ namespace xffs2play
     ///
     void SimController::SendDisc()
     {
-        if (m_ClientID != 0)
+        if ((m_ClientID != 0) && (m_Server != nullptr))
         {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DISC);
-                if (m_Server != nullptr) m_Server->SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send SendDisc") + _(e.what()), LEVEL_ERROR);
-            }
-            m_ClientID = 0;
+            m_Server->SendToClient(std::string(1, static_cast<char>(DISC)), m_ClientID);
         }
+        m_ClientID = 0;
     }
 
     ///

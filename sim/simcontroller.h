@@ -102,7 +102,10 @@ static  float           LoopUpdateCallback(float, float, int, void*);
 static  int             DrawCallback (XPLMDrawingPhase, int, void*);
 static	void            TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
         int             Draw (XPLMDrawingPhase, int);
-        void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
+        bool            ProcessMessage(const ClientMessage& pMessage);
+        void            AddPeer(const std::string& pCallSign, const AIResol& pAircraft);
+        void            SendAddObjectID(uint32_t pObjectID, const std::string& pCallSign);
+static  void            AppendU32LE(std::string& pFrame, uint32_t pValue);
         void            SendDelObjectID(uint32_t pObjectID);
         void            SendDisc();
         void            ClearPeers();
@@ -121,6 +124,9 @@ static  float           MPFloatPrefsFunc(const char* section, const char* key, f
         uint32_t        m_ObjectID;
         uint32_t        m_Options;
         uint32_t        m_ClientID;
+        bool            m_SendUserData;     // DATA flag from the client
+        unsigned int    m_InvalidFrames;    // reported in the log every network loop
+static  constexpr int   MAX_MESSAGES_PER_LOOP = 500;
         bool            m_FirstScan;
         bool            m_Use_CSL;
         bool            m_Use_AI;

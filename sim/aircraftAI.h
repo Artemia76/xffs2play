@@ -32,7 +32,7 @@ namespace xffs2play
 		CAircraftAI(
 			int pObjectID,
 			std::string pCallSign,
-			AIResol& pAircraft,
+			const AIResol& pAircraft,
 			CullInfo_t* pGl_camera,
 			bool pEnableDisplayCallSign = true,
 			bool pDisableAltCorr = false
