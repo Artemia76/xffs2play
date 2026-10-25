@@ -1,7 +1,3 @@
-[submodule "xplane_sdk"]
-	path = xplane_sdk
-	url = https://bitbucket.org/FFS2/xplane_sdk.git
-
-[submodule "libxplanemp"]
-	path = libxplanemp
-	url = https://bitbucket.org/FFS2/libxplanemp.git
+[submodule "XPMP2"]
+	path = XPMP2
+	url = https://github.com/TwinFan/XPMP2.git

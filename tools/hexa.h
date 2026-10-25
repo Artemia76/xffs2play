@@ -27,7 +27,7 @@
 
 namespace xffs2play
 {
-	std::string string_to_hex(const std::string& input)
+	inline std::string string_to_hex(const std::string& input)
 	{
 		static const char* const lut = "0123456789ABCDEF";
 		size_t len = input.length();
@@ -43,7 +43,7 @@ namespace xffs2play
 		return output;
 	}
 
-	std::string hex_to_string(const std::string& input)
+	inline std::string hex_to_string(const std::string& input)
 	{
 		static const char* const lut = "0123456789ABCDEF";
 		size_t len = input.length();
@@ -61,7 +61,7 @@ namespace xffs2play
 			const char* q = std::lower_bound(lut, lut + 16, b);
 			if (*q != b) throw std::invalid_argument("not a hex digit");
 
-			output.push_back(((p - lut) << 4) | (q - lut));
+			output.push_back(static_cast<char>(((p - lut) << 4) | (q - lut)));
 		}
 		return output;
 	}

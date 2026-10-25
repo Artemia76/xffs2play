@@ -1,60 +1,98 @@
-# XFFS2PLAY
+# XFFS2Play
 
-XFFS2Play is an X-Plane Plugin to enable connectivity to FFS2Play mesh network.
+[![Build](https://github.com/Artemia76/xffs2play/actions/workflows/build.yml/badge.svg)](https://github.com/Artemia76/xffs2play/actions/workflows/build.yml)
 
-It planned to work together with FFS2Play and FFSTracker
+*Français plus bas.*
 
-XFFS2Play is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or
-(at your option) any later version.
+XFFS2Play is the X-Plane 11 / 12 plugin of [FFS2Play](https://github.com/Artemia76/ffs2play), the multiplayer client of
+[FFSimulateur2](https://www.ffsimulateur2.fr). It links X-Plane to the FFS2Play client running on the same computer:
 
-XFFS2Play is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+- sends the position and state of your aircraft to FFS2Play;
+- renders the aircraft of the other FFS2Play pilots with CSL models
+  ([XPMP2](https://github.com/TwinFan/XPMP2)), with labels and as TCAS / AI targets;
+- shows the FFS2Play chat messages over the 3D view.
 
-The license is as published by the Free Software
-Foundation and appearing in the file LICENSE.GPL3
-included in the packaging of this software. Please review the following
-information to ensure the GNU General Public License requirements will
-be met: https://www.gnu.org/licenses/gpl-3.0.html.
+## Installation
 
-This repository use a submodule git wich embedd X-Plane SDK.
+1. Download `xffs2play.zip` from the [latest release](https://github.com/Artemia76/xffs2play/releases).
+2. Extract it into `X-Plane 12/Resources/plugins/` so that you get `Resources/plugins/xffs2play/64/win.xpl`
+   (`lin.xpl`, `mac.xpl`) and `Resources/plugins/xffs2play/Resources/`.
+3. Start FFS2Play, select X-Plane, then start X-Plane.
 
+No CSL model is included. Install a CSL package (e.g. [X-CSL](https://csl.x-air.ru) with X-CSL-Updater, or the
+Bluebell packages): FFS2Play finds the usual folders under X-Plane and lets you add others in its P2P settings,
+then gives them to the plugin. When updating from an older version, `Resources/plugins/xffs2play/Resources/CSL`
+can be deleted.
 
-To build XFFS2Play plugin, before install dependencies :
+Until FFS2Play connects, the plugin stays idle: it loads no CSL and leaves the TCAS targets to other plugins
+(LiveTraffic…).
 
-1. Build on Linux
-	1. Ubuntu and derivates
+The plugin listens on UDP `127.0.0.1:47500`: FFS2Play and X-Plane must run on the same computer.
 
-		On a terminal:
+## Building
 
-			sudo apt-get install libprotobuf-dev protobuf-compiler libboost-system-dev build-essential cmake pkg-config freeglut3-dev
+Requirements: CMake ≥ 3.23, a C++17 compiler (Visual Studio 2022+, GCC 9+, Xcode 14+) and
+[vcpkg](https://github.com/microsoft/vcpkg) (`VCPKG_ROOT` set). Protobuf and Asio come from vcpkg;
+XPMP2, which also provides the X-Plane SDK, is a git submodule.
 
-	2. Arch Linux and derivates
+```sh
+git clone --recursive https://github.com/Artemia76/xffs2play.git
+cd xffs2play
+cmake --preset windows-msvc            # or: linux, macos-arm64, macos-x64
+cmake --build --preset windows-msvc
+cmake --install build/windows-msvc --config Release --prefix "<X-Plane>/Resources/plugins"
+```
 
-		On a terminal:
+The first configure builds protobuf and abseil (about 20 minutes); they are cached afterwards.
+Add `-DXFFS_DEBUG=ON` to write verbose messages to X-Plane's `Log.txt`.
+The release workflow (`.github/workflows/build.yml`) builds the three platforms and merges both macOS
+architectures into a universal `mac.xpl`.
 
-			sudo yaourt -S base-devel gdb protobuf boost boost-libs cmake
+## Protocol
 
-	3. Gentoo / Calculate Linux
+The local UDP protocol between FFS2Play and the plugin, and the shared protobuf messages
+(`proto/aircraftstate.proto`), are part of the FFS2Play suite contracts. Any change must keep older FFS2Play
+clients working: add protobuf fields, never renumber them.
 
-		On a terminal as root:
+## License
 
-			emerge protobuf boost cmake
+GPL-3.0-or-later, see [LICENSE.GPLv3](LICENSE.GPLv3). Third-party components: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-	4. Final build
+---
 
-		On this git base folder:
+# XFFS2Play (français)
 
-			git submodule init
-			git submodule update --recursive
-			mkdir build && cd build
-			cmake -DCMAKE_INSTALL_PREFIX:PATH=/home/user/X-Plane\ 11 ..
-			make -j3
-			make install
+XFFS2Play est le plugin X-Plane 11 / 12 de [FFS2Play](https://github.com/Artemia76/ffs2play), le client multijoueur de
+[FFSimulateur2](https://www.ffsimulateur2.fr). Il relie X-Plane au client FFS2Play lancé sur le même PC :
 
-2. Build on Windows
+- il envoie la position et l'état de votre avion à FFS2Play ;
+- il affiche les avions des autres pilotes FFS2Play avec des modèles CSL
+  ([XPMP2](https://github.com/TwinFan/XPMP2)), avec étiquettes, et comme cibles TCAS / IA ;
+- il affiche les messages du tchat FFS2Play au-dessus de la vue 3D.
 
-	Coming...
+## Installation
+
+1. Télécharger `xffs2play.zip` depuis la [dernière version](https://github.com/Artemia76/xffs2play/releases).
+2. Le décompresser dans `X-Plane 12/Resources/plugins/` pour obtenir `Resources/plugins/xffs2play/64/win.xpl`
+   (`lin.xpl`, `mac.xpl`) et `Resources/plugins/xffs2play/Resources/`.
+3. Lancer FFS2Play, choisir X-Plane, puis lancer X-Plane.
+
+Aucun modèle CSL n'est fourni. Installer un paquet CSL (par exemple [X-CSL](https://csl.x-air.ru) avec
+X-CSL-Updater, ou les paquets Bluebell) : FFS2Play trouve les dossiers habituels sous X-Plane et permet d'en ajouter
+d'autres dans ses réglages P2P, puis les transmet au plugin. Lors d'une mise à jour depuis une ancienne version,
+`Resources/plugins/xffs2play/Resources/CSL` peut être supprimé.
+
+Tant que FFS2Play n'est pas connecté, le plugin reste en veille : il ne charge aucun CSL et laisse les cibles TCAS
+aux autres plugins (LiveTraffic…).
+
+Le plugin écoute en UDP sur `127.0.0.1:47500` : FFS2Play et X-Plane doivent tourner sur le même PC.
+
+## Compilation
+
+Prérequis : CMake ≥ 3.23, un compilateur C++17 (Visual Studio 2022+, GCC 9+, Xcode 14+) et
+[vcpkg](https://github.com/microsoft/vcpkg) (variable `VCPKG_ROOT`). Protobuf et Asio viennent de vcpkg ;
+XPMP2, qui fournit aussi le SDK X-Plane, est un sous-module git. Commandes : voir la section anglaise ci-dessus.
+
+## Licence
+
+GPL-3.0 ou ultérieure, voir [LICENSE.GPLv3](LICENSE.GPLv3). Composants tiers : [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

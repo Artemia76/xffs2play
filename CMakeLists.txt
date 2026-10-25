@@ -1,134 +1,133 @@
-# Necessary CMake
-project(XFFS2Play CXX)
-cmake_minimum_required(VERSION 2.8)
+# XFFS2Play - X-Plane plugin linking X-Plane to the FFS2Play multiplayer client
+#
+# Dependencies come from vcpkg (see vcpkg.json and CMakePresets.json);
+# XPMP2 is a git submodule and also provides the X-Plane SDK (XPMP2/lib/SDK).
+#
+#   cmake --preset windows-msvc
+#   cmake --build --preset windows-msvc
+#   cmake --install build/windows-msvc --config Release --prefix "<X-Plane>/Resources/plugins"
 
-if(NOT CMAKE_VERSION VERSION_LESS 3.1)
-    set(CMAKE_CXX_STANDARD 11)
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif()
+cmake_minimum_required(VERSION 3.23)
 
-if (UNIX)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunused-parameter")
-endif()
+project(XFFS2Play
+        VERSION 2.1.0
+        DESCRIPTION "X-Plane plugin linking X-Plane to the FFS2Play multiplayer client"
+        HOMEPAGE_URL "https://github.com/Artemia76/xffs2play"
+        LANGUAGES CXX)
 
+option(XFFS_DEBUG "Write verbose debug messages to X-Plane's Log.txt" OFF)
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
-
-file(GLOB GUI gui/*.c*)
-file(GLOB NET net/*.c*)
-file(GLOB SIM sim/*.c*)
-file(GLOB TOOLS tools/*.c*)
-
-file(GLOB_RECURSE MY_HEADERS "*.h*")
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-set(DEBUG_MODE OFF CACHE BOOL "Check this to enable Debug information in plugin logs")
-
-if(DEBUG_MODE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXFFS_DEBUG=1")
-endif(DEBUG_MODE)
-
-set(XPLANE_VERSION 11 CACHE STRING "Choose version of targetted X-Plane")
-
-set_property(CACHE XPLANE_VERSION PROPERTY STRINGS 10 11)
-
-if(XPLANE_VERSION EQUAL "11")
-	set(XP_VERSION 3)
-else()
-	set(XP_VERSION 2)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+if(APPLE)
+    # Minimum system requirement of X-Plane 12
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 endif()
 
-if (APPLE)
-	find_library(corefoundation_lib CoreFoundation)
-	find_library(cfnetwork_lib CFNetwork)
-	set(frameworks
-    		${cfnetwork_lib}
-    		${corefoundation_lib})
-endif()
+################################################################################
+# Dependencies
+################################################################################
 
-#Boost dependency
-if (APPLE OR WIN32)
-  set(Boost_USE_STATIC_LIBS        ON) # only find static libs
-  find_package(Boost REQUIRED COMPONENTS thread system date_time regex)
-else ()
-  find_package(Boost REQUIRED COMPONENTS system)
-endif()
-if (Boost_FOUND)
-	set(Boost_USE_MULTITHREADED      ON)
-	set(Boost_USE_STATIC_RUNTIME    OFF)
+find_package(Threads REQUIRED)
+find_package(asio CONFIG REQUIRED)
+find_package(protobuf CONFIG REQUIRED)
 
-	include_directories( ${Boost_INCLUDE_DIR} )
-endif ( Boost_FOUND )
-
-#opengl
-find_package(OpenGL REQUIRED)
-if ( OpenGL_FOUND )
-	include_directories(${OPENGL_INCLUDE_DIR})
-endif ( OpenGL_FOUND )
-#glut
-if (UNIX)
-	find_package(GLUT REQUIRED)
-	if ( GLUT_FOUND )
-		include_directories(${GLUT_INCLUDE_DIR})
-	endif( GLUT_FOUND )
-endif()
-
-#protobuf
-
-find_package(Protobuf REQUIRED)
-if ( Protobuf_FOUND )
-	set(PROTOBUF_USE_STATIC_LIBS ON)
-	include_directories(${PROTOBUF_INCLUDE_DIRS})
-endif ( Protobuf_FOUND )
+# XPMP2 and the X-Plane SDK it ships
+set(XPlaneSDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/XPMP2/lib/SDK")
+add_subdirectory(XPMP2 EXCLUDE_FROM_ALL)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/XPMP2/cmake")
+find_package(XPlaneSDK REQUIRED OPTIONAL_COMPONENTS XPLM)
 
 add_subdirectory(proto)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-#ZLIB
-find_package(ZLIB REQUIRED)  # sudo apt-get install zlib1g-dev
-if ( ZLIB_FOUND )
-    include_directories( ${ZLIB_INCLUDE_DIRS} )
-endif( ZLIB_FOUND )
+################################################################################
+# Plugin
+################################################################################
 
-#libpng
-find_package(PNG REQUIRED)  # sudo apt-get install libpng-dev
-if ( PNG_FOUND )
-    include_directories( ${PNG_INCLUDE_DIRS} )
-#    target_link_libraries( XFFS2Play ${PNG_LIBRARIES} )
-endif ( PNG_FOUND )
+configure_file(tools/version.h.in "${PROJECT_BINARY_DIR}/gen/tools/version.h" @ONLY)
 
-#xplanemp
-set ( XPSDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xplane_sdk/sdk/")
-add_subdirectory (libxplanemp)
-include_directories( libxplanemp/include )
+add_library(XFFS2Play MODULE
+    xpmain.cpp
+    xpmain.h
+    gui/mainframe.cpp
+    gui/mainframe.h
+    net/lockedqueue.h
+    net/framereader.h
+    net/proto.h
+    net/udpserver.cpp
+    net/udpserver.h
+    sim/aircraft.cpp
+    sim/aircraft.h
+    sim/aircraftstate.cpp
+    sim/aircraftstate.h
+    sim/simcontroller.cpp
+    sim/simcontroller.h
+    sim/useraircraft.cpp
+    sim/useraircraft.h
+    tools/color.cpp
+    tools/color.h
+    tools/datetime.cpp
+    tools/datetime.h
+    tools/hexa.h
+    tools/log.cpp
+    tools/log.h
+    tools/ramp.cpp
+    tools/ramp.h
+    tools/simple_file_parser.cpp
+    tools/simple_file_parser.h
+    tools/geo.h
+    "${PROJECT_BINARY_DIR}/gen/tools/version.h")
 
-if( MSVC )
-  message(STATUS "Compiler is Microsoft Visual Studio:")
-  message(STATUS "  _MSVC_VER is ${MSVC_VERSION} (${ARCH_COMPILER})")
+target_include_directories(XFFS2Play PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${PROJECT_BINARY_DIR}/gen"
+    ${XPlaneSDK_INCLUDE_DIRS})
 
-  # globally diable the idiotic min and max macros that cause havoc everywhere
-  message(STATUS "  Adding NOMINMAX to compiler defines")
-  add_definitions( -DNOMINMAX )
+target_link_libraries(XFFS2Play PRIVATE
+    xffs2play_proto
+    XPMP2
+    asio::asio
+    Threads::Threads)
 
-  message(STATUS "  Adding WIN32_LEAN_AND_MEAN to compiler defines")
-  add_definitions( -DWIN32_LEAN_AND_MEAN )
-endif( MSVC )
+target_compile_definitions(XFFS2Play PRIVATE
+    ASIO_NO_DEPRECATED
+    $<$<BOOL:${XFFS_DEBUG}>:XFFS_DEBUG=1>)
 
+# X-Plane loads <plugin>/64/{win,lin,mac}.xpl
+set_target_properties(XFFS2Play PROPERTIES PREFIX "" SUFFIX ".xpl")
 
-add_subdirectory(xplane_sdk/ bin/)
+if(WIN32)
+    set_target_properties(XFFS2Play PROPERTIES OUTPUT_NAME "win")
+    target_compile_definitions(XFFS2Play PRIVATE
+        WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS _WIN32_WINNT=0x0601)
+    target_link_libraries(XFFS2Play PRIVATE XPlaneSDK::XPLM ws2_32 wsock32 iphlpapi)
+elseif(APPLE)
+    set_target_properties(XFFS2Play PROPERTIES OUTPUT_NAME "mac")
+    target_link_libraries(XFFS2Play PRIVATE XPlaneSDK::XPLM "-framework CoreFoundation")
+else()
+    set_target_properties(XFFS2Play PROPERTIES OUTPUT_NAME "lin")
+    # XPLM symbols are resolved by X-Plane at load time; bundle the C++ runtime for portability
+    target_link_options(XFFS2Play PRIVATE -static-libstdc++ -static-libgcc)
+endif()
 
-add_xplane_plugin(XFFS2Play
-                  ${XP_VERSION}
-                  xpmain.cpp
-                  ${GUI}
-                  ${NET}
-                  ${SIM}
-                  ${TOOLS}
-                  ${MY_HEADERS})
+if(MSVC)
+    target_compile_options(XFFS2Play PRIVATE /W4 /utf-8 /permissive- /Zc:__cplusplus)
+else()
+    target_compile_options(XFFS2Play PRIVATE -Wall -Wextra)
+endif()
 
-target_link_libraries( XFFS2Play proto xplanemp ${Boost_LIBRARIES} ${PROTOBUF_LIBRARY} ${OPENGL_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${frameworks})
+################################################################################
+# Installation: <prefix>/xffs2play/{64/<os>.xpl, Resources/...}
+################################################################################
 
-install(TARGETS XFFS2Play DESTINATION Resources/plugins/xffs2play/64)
+install(TARGETS XFFS2Play
+        LIBRARY DESTINATION xffs2play/64
+        RUNTIME DESTINATION xffs2play/64)
+# Only the files required by XPMP2 (Doc8643, related, map icons, contrails...): no CSL is bundled,
+# FFS2Play gives the CSL packages (CSL_PATH)
+install(DIRECTORY XPMP2/Resources/ DESTINATION xffs2play/Resources
+        PATTERN "XPMP2.example.prf" EXCLUDE)

@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2018 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/xffs2play
+** Contact: https://github.com/Artemia76/xffs2play
 **
 ** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,789 +21,561 @@
 ****************************************************************************/
 
 #include "sim/simcontroller.h"
-#include "net/proto.h"
-#include "tools/version.h"
-#include "tools/hexa.h"
-#include "tools/simple_file_parser.h"
-#include <istream>
-#include <iostream>
-#include <string>
-#include <functional>
-#include <XPMPMultiplayer.h>
+
+#include <cstring>
+
+#include <XPLMGraphics.h>
 #include <XPLMPlugin.h>
+#include <XPLMUtilities.h>
+#include <XPMPMultiplayer.h>
+
+#include "net/framereader.h"
+#include "net/proto.h"
+#include "tools/hexa.h"
+#include "tools/version.h"
 
 namespace xffs2play
 {
-    SimController* SimController::m_ptSimController=nullptr;
+    SimController* SimController::m_ptSimController = nullptr;
 
-    SimController::SimController()
+    ///
+    /// Start the UDP link and the multiplayer engine; IsInit() tells whether both work
+    ///
+    SimController::SimController() :
+        m_Log(CLogger::Instance()),
+        m_LastPing(Now()),
+        m_LastTchatMessage(Now())
     {
-        m_Use_CSL =false;
-        m_Use_AI=false;
-        m_Initialized =false;
-        m_ClientID = 0;
-        m_LastPing = Now();
-        m_DirSeparator = XPLMGetDirectorySeparator();
-        // my own plugin path
-        m_PluginID = XPLMGetMyID();
-        char aszPath[512];
-        aszPath[0] = 0;
-        XPLMGetPluginInfo(m_PluginID, NULL, aszPath, NULL, NULL);
-        m_PluginPath = aszPath;
-        // LTPluginPath is now something like "...:Resources:plugins:LiveTraffic:64:mac.xpl"
-        // we now reduce the path to the beginning of the plugin:
-        // remove the file name
-        std::string::size_type pos = m_PluginPath.rfind(m_DirSeparator);
-        m_PluginPath.erase(pos);
-        // remove the 64 subdirectory, but leave the separator at the end
-        pos = m_PluginPath.rfind(m_DirSeparator);
-        m_PluginPath.erase(pos+1);
-        XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
-        XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
-        XPLMRegisterDrawCallback(&SimController::DrawCallback, xplm_Phase_Window, 0, this);
-        XPLMRegisterFlightLoopCallback(&SimController::LoopUpdateCallback, -1, this);
-        m_Log = CLogger::Instance();
-        m_ObjectID=0;
-        m_FirstScan=true;
-        m_Options = static_cast<uint32_t>(DisplayCallSign);
-		m_CallSignColor.R=255;
-		m_LastTchatMessage = Now();
-		m_TChatWindow = nullptr;
 #ifdef XFFS_DEBUG
-        m_Log->Log(_("Call SimController Constructor"), LEVEL_DEBUG);
+        m_Log->Log(_("Start Call SimController Constructor"), LEVEL_DEBUG);
 #endif
-        m_Initialized=true;
+        m_CallSignColor.R = 255;
+
+        // Plugin path is ".../plugins/xffs2play/64/win.xpl": keep ".../plugins/xffs2play/"
+        char aszPath[512] = { 0 };
+        XPLMGetPluginInfo(XPLMGetMyID(), nullptr, aszPath, nullptr, nullptr);
+        const std::string separator = XPLMGetDirectorySeparator();
+        m_PluginPath = aszPath;
+        for (int i = 0; i < 2; ++i)
+        {
+            const std::string::size_type pos = m_PluginPath.rfind(separator);
+            if (pos != std::string::npos) m_PluginPath.erase(pos);
+        }
+        m_PluginPath += separator;
+
+        try
+        {
+            m_Server = std::make_unique<UDPServer>(47500);
+        }
+        catch (const std::exception& ex)
+        {
+            m_Log->Log(_("Failed to start UDP Server : ") + ex.what(), LEVEL_ERROR);
+        }
+        m_MultiplayerReady = InitMultiplayer();
+        CreateTChatWindow();
+        XPLMRegisterFlightLoopCallback(&SimController::LoopNetworkCallback, 0.2f, this);
+        XPLMRegisterFlightLoopCallback(&SimController::LoopReceiveCallback, -1, this);
+        m_Initialized = (m_Server != nullptr) && m_MultiplayerReady;
+#ifdef XFFS_DEBUG
+        m_Log->Log(_("End of Call SimController Constructor"), LEVEL_DEBUG);
+#endif
     }
 
     SimController::~SimController()
     {
         SendDisc();
-        XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback,this);
-        XPLMUnregisterFlightLoopCallback(&SimController::LoopUpdateCallback,this);
-        XPLMUnregisterDrawCallback(&SimController::DrawCallback, xplm_Phase_LastScene, 0, this);
-        ClearPeers();
-        if (m_Use_CSL)
+        // Pending sends (DISC) complete before the network thread stops
+        m_Server.reset();
+        XPLMUnregisterFlightLoopCallback(&SimController::LoopNetworkCallback, this);
+        XPLMUnregisterFlightLoopCallback(&SimController::LoopReceiveCallback, this);
+        if (m_TChatWindow != nullptr)
         {
-            XPMPMultiplayerDisable();
-            XPMPMultiplayerCleanup();
+            XPLMDestroyWindow(m_TChatWindow);
+            m_TChatWindow = nullptr;
         }
+        // Aircraft must be gone before XPMP2 is cleaned up
+        ClearPeers();
+        ReleaseTCAS();
+        if (m_MultiplayerReady) XPMPMultiplayerCleanup();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
 #endif
     }
 
-    ///
-    /// Static method return Singleton pointer
-    /// Instanciate the Singleton if it not yet exist
-    ///
     SimController* SimController::Instance()
     {
-        if (m_ptSimController==nullptr)
+        if (m_ptSimController == nullptr)
         {
-            m_ptSimController=new SimController;
+            m_ptSimController = new SimController;
         }
         return m_ptSimController;
     }
 
-    ///
-    /// Singleton Kill
-    ///
     void SimController::Kill()
     {
-        if (m_ptSimController!=nullptr)
-        {
-            delete m_ptSimController;
-            m_ptSimController=nullptr;
-        }
+        delete m_ptSimController;
+        m_ptSimController = nullptr;
     }
 
     ///
-    /// Initialize AI Working Mode for plugin
+    /// Initialise XPMP2 only: no CSL is bundled (FFS2Play gives the packages with CSL_PATH)
+    /// and the TCAS targets are left to other plugins until a client connects
     ///
-    void SimController::InitAI()
+    bool SimController::InitMultiplayer()
     {
-        if (m_Use_AI  || m_Use_CSL) return;
-        m_PlaneCount=1;
-        m_Use_AI=true;
-    }
-    
-    ///
-    /// Initialize CSL Working mode for plugin
-    ///
-    void SimController::InitCSL()
-    {
-        // init Multiplayer API
-        // apparently the legacy init is still necessary.
-        // Otherwise the XPMP datarefs wouldn't be registered and hence the
-        // planes' config would never change (states like flaps/gears are
-        // communicated to the model via custom datarefs,
-        // see XPMPMultiplayerObj8.cpp/obj_get_float)
-        cslPath = CalcFullPluginPath(PATH_RESOURCES_CSL);
-        m_CSLPackagePathArr.insert(cslPath);
-        pathRelated = CalcFullPluginPath(PATH_RELATED_TXT);
-        pathLights = CalcFullPluginPath(PATH_LIGHTS_PNG);
-        pathDoc8643 = CalcFullPluginPath(PATH_DOC8643_TXT);
-        pathRes = CalcFullPluginPath(PATH_RESOURCES) + m_DirSeparator;
-        const char* cszResult = XPMPMultiplayerInitLegacyData
-        (
-            cslPath.c_str(),                // we pass in the first found CSL dir
-            pathRelated.c_str(),
-            pathLights.c_str(),
-            pathDoc8643.c_str(),
-            "C172",
-            &SimController::MPIntPrefsFunc,
-            &SimController::MPFloatPrefsFunc
-        );
-        // Init of multiplayer library failed. Cleanup as much as possible and bail out
-        if ( cszResult[0] )
+        const std::string resourcePath = m_PluginPath + "Resources";
+        const char* cszResult = XPMPMultiplayerInit(VER_PRODNAME_STR, resourcePath.c_str(),
+                                                    &SimController::MPIntPrefsFunc, "C172", "XFFS2");
+        if (cszResult[0])
         {
-            m_Log->Log(_("CSL Old Init Failed = ") + cszResult, LEVEL_ERROR);
+            m_Log->Log(_("XPMP2 initialisation failed: ") + cszResult, LEVEL_ERROR);
             XPMPMultiplayerCleanup();
+            return false;
+        }
+        XPMPEnableAircraftLabels(GetOption(DisplayCallSign));
+        m_Log->Log(_("XPMP2 ready, waiting for FFS2Play"), LEVEL_INFO);
+        return true;
+    }
+
+    ///
+    /// Take the TCAS targets while a client is connected
+    ///
+    void SimController::TakeTCAS()
+    {
+        if (!m_MultiplayerReady || m_TCASRequested) return;
+        const char* cszResult = XPMPMultiplayerEnable();
+        if (cszResult[0])
+        {
+            // Another plugin (e.g. LiveTraffic) owns the TCAS targets: aircraft are still drawn
+            m_Log->Log(_("TCAS targets not available: ") + cszResult, LEVEL_WARNING);
             return;
         }
-
-        // yet another init function...also necessary
-        cszResult = XPMPMultiplayerInit
-        (
-            &SimController::MPIntPrefsFunc,
-            &SimController::MPFloatPrefsFunc,
-            pathRes.c_str()
-        );
-        if ( cszResult[0] )
-        {
-            m_Log->Log(_("CSL New Init Failed = ") + cszResult, LEVEL_ERROR);
-            XPMPMultiplayerCleanup();
-            return;
-
-        }
-
-        XPMPDisableAircraftLabels();
-		XPMPMultiplayerEnable();
-        if (XPMPHasControlOfAIAircraft())
-        {
-#ifdef XFFS_DEBUG
-            m_Log->Log(_("XPMP have control of multiplayer aircraft"), LEVEL_DEBUG);
-#endif
-        }
-        XPMPLoadPlanesIfNecessary();
-        m_Use_CSL=true;
-    }
-    
-    
-    ///
-    /// Static Callback for loopNetworking
-    ///
-    float SimController::LoopNetworkCallback(
-        float pElapsedSinceLastCall,
-        float pElapsedTimeSinceLastFlightLoop,
-        int pCounter,
-        void* pRef)
-    {
-        if ((pRef==m_ptSimController) && m_ptSimController)
-        {
-            return m_ptSimController->LoopNetwork(pElapsedSinceLastCall,pElapsedTimeSinceLastFlightLoop, pCounter);
-        }
-        return 0;
+        m_TCASRequested = true;
     }
 
     ///
-    /// Loop Network management
+    /// Give the TCAS targets back to X-Plane and the other plugins
     ///
-    float SimController::LoopNetwork (
-        float /*pElapsedSinceLastCall*/,
-        float /*pElapsedTimeSinceLastFlightLoop*/,
-        int /*pCounter*/)
+    void SimController::ReleaseTCAS()
     {
+        if (!m_TCASRequested) return;
+        XPMPMultiplayerDisable();
+        m_TCASRequested = false;
+    }
+
+    ///
+    /// The client is gone (DISC or timeout): its aircraft are removed and the plugin goes back to idle
+    ///
+    void SimController::ForgetClient()
+    {
+        ClearPeers();
+        ReleaseTCAS();
+        m_ClientID = 0;
+    }
+
+    ///
+    /// Load a CSL package once; later calls with the same path are ignored
+    ///
+    void SimController::LoadCSLPackage(const std::string& pPath)
+    {
+        if (!m_CSLPackagePathArr.insert(pPath).second) return;
+        const char* cszResult = XPMPLoadCSLPackage(pPath.c_str());
+        if (cszResult[0])
+            m_Log->Log(_("CSL package ") + pPath + _(" not loaded: ") + cszResult, LEVEL_ERROR);
+        else
+            m_Log->Log(_("CSL package loaded: ") + pPath, LEVEL_INFO);
+        m_NoCSLReported = false;
+    }
+
+    ///
+    /// Load again every known CSL package (menu "Reload CSL Database")
+    ///
+    void SimController::ReloadCSL()
+    {
+        if (!m_MultiplayerReady) return;
+        for (const std::string& path : m_CSLPackagePathArr)
+        {
+            const char* cszResult = XPMPLoadCSLPackage(path.c_str());
+            if (cszResult[0]) m_Log->Log(_("CSL package ") + path + _(" not loaded: ") + cszResult, LEVEL_ERROR);
+        }
+        m_Log->Log(_("CSL packages reloaded, ") + std::to_string(XPMPGetNumberOfInstalledModels()) + _(" CSL models"), LEVEL_INFO);
+    }
+
+    std::string SimController::GetMode() const
+    {
+        if (!m_MultiplayerReady) return _("XPMP2 not initialised");
+        return _("CSL aircraft: ") + std::to_string(m_ArrPeer.size())
+             + _(", models: ") + std::to_string(XPMPGetNumberOfInstalledModels())
+             + _(" in ") + std::to_string(m_CSLPackagePathArr.size()) + _(" package(s)")
+             + (m_ClientID != 0 ? _(", client connected") : _(", no client"));
+    }
+
+    ///
+    /// Every 0.2 s: send the user aircraft to the client and check the client timeout
+    ///
+    float SimController::LoopNetworkCallback(float, float, int, void* pRef)
+    {
+        if ((pRef == m_ptSimController) && m_ptSimController) m_ptSimController->LoopNetwork();
+        return 0.2f;
+    }
+
+    void SimController::LoopNetwork()
+    {
+        if (m_InvalidFrames > 0)
+        {
+            m_Log->Log(std::to_string(m_InvalidFrames) + _(" invalid frame(s) ignored"), LEVEL_WARNING);
+            m_InvalidFrames = 0;
+        }
+        UpdateTChatWindow();
         m_UserAircraft.Update();
-        m_UserAircraft.ToAirData(m_SendData);
-        if (m_ClientID!=0)
+        if (m_ClientID == 0) return;
+        if (m_SendUserData && (m_Server != nullptr))
         {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DATA_SEND);
-                m_SendData.SerializeToOstream(&ssoutput);
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send data") + _(e.what()), LEVEL_ERROR);
-                ClearPeers();
-                m_ClientID=0;
-            }
-            //Check Ping Timeout
-            if (timespan(Now() - m_LastPing).count() > 10000)
-            {
-                ClearPeers();
-                m_Log->Log(_("Client Timeout"), LEVEL_INFO);
-                m_ClientID=0;
-            }
+            m_UserAircraft.ToAirData(m_SendData);
+            std::string Frame(1, static_cast<char>(DATA_SEND));
+            Frame += m_SendData.SerializeAsString();
+            m_Server->SendToClient(Frame, m_ClientID);
         }
-        return 0.2;
+        if (Now() - m_LastPing > milliseconds(10000))
+        {
+            m_Log->Log(_("Client Timeout"), LEVEL_INFO);
+            ForgetClient();
+        }
     }
 
     ///
-    /// Static CallBack for Animation Loop
+    /// Every flight loop: apply what the client sent.
+    /// Aircraft positions themselves are updated by XPMP2 (CAircraft::UpdatePosition).
     ///
-    float SimController::LoopUpdateCallback(
-        float pElapsedSinceLastCall,
-        float pElapsedTimeSinceLastFlightLoop,
-        int pCounter,
-        void* pRef)
+    float SimController::LoopReceiveCallback(float, float, int, void* pRef)
     {
-        if ((pRef==m_ptSimController) && m_ptSimController)
-        {
-            return m_ptSimController->LoopUpdate(pElapsedSinceLastCall, pElapsedTimeSinceLastFlightLoop,pCounter);
-        }
-        return -1;
+        if ((pRef == m_ptSimController) && m_ptSimController) m_ptSimController->OnReceiveData();
+        return -1.0f;
     }
 
     ///
-    /// Animation Loop Update
-    /// First scan is used for init AI Model on X-Plane
-    /// On each cycle, we refresh position of each AI Spawned by our plugin
+    /// Process the datagrams received since the last flight loop.
+    /// At most MAX_MESSAGES_PER_LOOP per loop, the rest waits for the next one.
     ///
-    float SimController::LoopUpdate(
-        float pElapsedSinceLastCall,
-        float /*pElapsedTimeSinceLastFlightLoop*/,
-        int /*pCounter*/)
+    void SimController::OnReceiveData()
     {
-        if (m_FirstScan)
+        if (m_Server == nullptr) return;
+        ClientMessage ReceivedMessage;
+        for (int i = 0; (i < MAX_MESSAGES_PER_LOOP) && m_Server->PopMessage(ReceivedMessage); ++i)
         {
-            m_FirstScan=false;
-            SetupCullInfo(&m_GlCamera);
-        }
-        if (m_Use_AI)
-        {
-            int PlaneCount=0;
-            XPLMCountAircraft(&PlaneCount, nullptr, nullptr);
-            if (PlaneCount>m_PlaneCount)
+            if (!ProcessMessage(ReceivedMessage))
             {
-                int Index;
-                char FileName[256], AircraftPath[256];
-    #ifdef XFFS_DEBUG
-                m_Log->Log(_("Number of plane available = ") + std::to_string(PlaneCount), LEVEL_DEBUG);
-    #endif
-                for (Index = m_PlaneCount; Index <= PlaneCount; Index++)
-                {
-                    XPLMGetNthAircraftModel(Index, FileName, AircraftPath);
-                    strcpy(m_AircraftPath[Index-1], AircraftPath);
-                    m_Aircraft[Index-1] = reinterpret_cast<char *>(m_AircraftPath[Index-1]);
-                }
-                m_Aircraft[Index-1] = nullptr;
-                if (XPLMAcquirePlanes(reinterpret_cast<char **>(&m_Aircraft), nullptr, nullptr))
-                {
-                    m_Log->Log(std::to_string(Index-1)+_(" Aircraft Acquired successfully"));
-                }
-                else
-                {
-                    m_Log->Log(_("Aircraft not Acquired"));
-                }
-                m_PlaneCount = PlaneCount;
+                ++m_InvalidFrames;
+#ifdef XFFS_DEBUG
+                m_Log->Log(_("Invalid frame: ") + string_to_hex(ReceivedMessage.first.substr(0, 64)), LEVEL_DEBUG);
+#endif
+                continue;
             }
+            if ((m_ClientID != 0) && (ReceivedMessage.second == m_ClientID)) m_LastPing = Now();
         }
-        for (auto& it : m_ArrPeer)
-        {
-            if (it.second != nullptr)
-            it.second->SetAircraftData(pElapsedSinceLastCall,m_UserAircraft.Latitude,m_UserAircraft.Longitude);
-        }
-        OnReceiveData();
-        return -1;
     }
 
     ///
-    /// Static Draw Callback from Xplane
+    /// Decode and apply one frame (docs/contracts/xplane-link.md in ffs2-suite).
+    /// Returns false, without any side effect, for a truncated or malformed frame.
     ///
-    int SimController::DrawCallback(XPLMDrawingPhase pPhase, int pIsBefore, void* pRefCon)
+    bool SimController::ProcessMessage(const ClientMessage& pMessage)
     {
-        if ((pRefCon==m_ptSimController) && m_ptSimController)
-        {
-            return m_ptSimController->Draw(pPhase, pIsBefore);
-        }
-        return -1;
-    }
-
-    ///
-    /// Draw Event from X-Plane
-    /// We take profit of this event to draw any object on
-    /// the 3D and 2D scenery
-    ///
-    int SimController::Draw(XPLMDrawingPhase pPhase, int /*pIsBefore*/)
-    {
-        if (pPhase == xplm_Phase_LastScene) SetupCullInfo(&m_GlCamera);
-		if (m_TChatWindow == nullptr)
-		{
-			int Width, Height;
-			XPLMGetScreenSize(&Width, &Height);
-			m_TChatWindow = XPLMCreateWindow(
-				50, Height - 50, Width - 50, Height - 250,
-				1,
-				&SimController::TChatDrawWindowCallback,
-				nullptr,
-				nullptr,
-				nullptr);
-		}
-        if (m_Use_AI || m_Use_CSL)
-        {
-            for (auto it : m_ArrPeer)
-            {
-                if (it.second!= nullptr)
-                    it.second->Draw(pPhase,m_CallSignColor);
-            }
-        }
-        return 1;
-    }
-
-    ///
-    /// This callback is called when we receive data on UDP Server
-    ///
-	void SimController::OnReceiveData()
-	{
-	    if (!m_Server.HasMessages()) return;
-        // Send Pong Response in UDP Thread to avoid FFS2Play timeout while X-Plane Loading or In menus
-	    ClientMessage ReceivedMessage = m_Server.PopMessage();
-		std::istringstream data(ReceivedMessage.first);
-        uint8_t Code;
-        data.read(reinterpret_cast<char*>(&Code),sizeof(Code));
-        switch ((FFS2Proto)Code)
+        FrameReader frame(pMessage.first);
+        uint8_t Code = 0;
+        if (!frame.u8(Code)) return false;
+        switch (static_cast<FFS2Proto>(Code))
         {
             case PING:
             {
-                m_LastPing = Now();
-                m_ClientID = ReceivedMessage.second;
-                uint32_t Options;
-                data.read(reinterpret_cast<char*>(&Options),sizeof(Options));
+                uint32_t Options = 0;
+                if (!frame.u32le(Options)) return false;
+                if (m_ClientID != pMessage.second)
+                {
+                    m_Log->Log(_("Client connected"), LEVEL_INFO);
+                    m_SendUserData = true;
+                    TakeTCAS();
+                }
+                m_ClientID = pMessage.second;
                 if (m_Options != Options)
                 {
                     m_Options = Options;
                     UpdateOptions();
                 }
-                break;
+                return true;
             }
             case PONG:
-            {
-                break;
-            }
+                return true;
             case DATA:
             {
-                uint8_t Flag=0;
-                data.read(reinterpret_cast<char*>(&Flag),sizeof(Flag));
-                break;
+                uint8_t Flag = 0;
+                if (!frame.u8(Flag)) return false;
+                m_SendUserData = (Flag != 0);
+                return true;
             }
             case DATA_SEND:
             {
-                uint32_t Object_ID;
-                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                m_ReceivedData.ParseFromIstream(&data);
-                PeerIterator it = m_ArrPeer.find(Object_ID);
-                if (it != m_ArrPeer.end())
-                {
-                    if (it->second != nullptr)
-                    {
-                        it->second->FromAirData(m_ReceivedData);
-                        break;
-                    }
-                }
-                break;
+                uint32_t Object_ID = 0;
+                if (!frame.u32le(Object_ID) || !frame.proto(m_ReceivedData)) return false;
+                auto it = m_ArrPeer.find(Object_ID);
+                if (it != m_ArrPeer.end()) it->second->FromAirData(m_ReceivedData);
+                return true;
             }
             case DISC:
             {
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Diconnect"), LEVEL_DEBUG);
-#endif
-                ClearPeers();
-                m_ClientID=0;
-                break;
+                m_Log->Log(_("Client disconnected"), LEVEL_INFO);
+                ForgetClient();
+                return true;
             }
             case ADD_PEER:
             {
-                if ((!m_Use_CSL) && (!m_Use_AI)) break;
                 std::string CallSign;
-                uint8_t Len;
-                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-                char* Buff = new char [Len+1];
-                data.read(Buff, Len);
-                Buff[Len]='\0';
-                CallSign = Buff;
-                delete[] Buff;
                 AIResol Aircraft;
-                Aircraft.ParseFromIstream(&data);
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("SimController : Receive ADD_PEER path = ") + Aircraft.path(), LEVEL_DEBUG);
-#endif
-                //Check if callsign already exist
-                for (auto it : m_ArrPeer)
-                {
-                    if (it.second != nullptr)
-                    {
-                        if (it.second->IsCallSign(CallSign))
-                        {
-                            RemovePeer(it.first);
-                            break;
-                        }
-                    }
-                }
-                uint32_t ObjectID=0;
-                if (m_Use_CSL)
-                {
-                    ObjectID=++m_ObjectID;
-                    m_ArrPeer[ObjectID] = new CAircraftCSL(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-#ifdef XFFS_DEBUG
-                    m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" Add CSL Peer ObjectID = ")
-                               + std::to_string(m_ArrPeer[ObjectID]->GetObjectID()), LEVEL_DEBUG);
-#endif
-                }
-                else if (m_Use_AI)
-                {
-                    ObjectID=GetFirstFreeAI();
-                    if (ObjectID > 0)
-                    {
-                        m_ArrPeer[ObjectID] = new CAircraftAI(ObjectID,CallSign , Aircraft,&m_GlCamera,GetOption(DisplayCallSign),GetOption(DisableAltCorr));
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : NbObject = ") + std::to_string(m_ArrPeer.size()) + _(" Add AI Peer ObjectID = ")
-                               + std::to_string(m_ArrPeer[ObjectID]->GetObjectID()), LEVEL_DEBUG);
-#endif
-                    }
-                    else
-                    {
-#ifdef XFFS_DEBUG
-                        m_Log->Log(_("SimController : Cannot add peer object, because all AI available are used"), LEVEL_DEBUG);
-#endif
-                        break;
-                    }
-                }
-                SendAddObjectID(ObjectID, CallSign);
-                break;
+                if (!frame.str8(CallSign) || !frame.proto(Aircraft)) return false;
+                AddPeer(CallSign, Aircraft);
+                return true;
             }
             case DEL_PEER:
             {
-                if ((!m_Use_CSL) && (!m_Use_AI)) break;
-                uint32_t Object_ID;
-                data.read(reinterpret_cast<char*>(&Object_ID),sizeof(Object_ID));
-                uint32_t Deleted_Object_ID = 0;
+                uint32_t Object_ID = 0;
+                if (!frame.u32le(Object_ID)) return false;
 #ifdef XFFS_DEBUG
                 m_Log->Log(_("Receive Delete Peer = ") + std::to_string(Object_ID), LEVEL_DEBUG);
 #endif
-                Deleted_Object_ID = RemovePeer(Object_ID);
-                SendDelObjectID(Deleted_Object_ID);
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Object Deleted = ") + std::to_string(Deleted_Object_ID), LEVEL_DEBUG);
-#endif
-                break;
+                SendDelObjectID(RemovePeer(Object_ID));
+                return true;
             }
             case CALLSIGN_COLOR:
             {
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.R),sizeof(m_CallSignColor.R));
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.G),sizeof(m_CallSignColor.G));
-                data.read(reinterpret_cast<char*>(&m_CallSignColor.B),sizeof(m_CallSignColor.B));
-                #ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Callsign Color Red = ") + std::to_string(m_CallSignColor.R), LEVEL_DEBUG);
-#endif
-                break;
+                uint8_t R = 0, G = 0, B = 0;
+                if (!frame.u8(R) || !frame.u8(G) || !frame.u8(B)) return false;
+                m_CallSignColor.R = R;
+                m_CallSignColor.G = G;
+                m_CallSignColor.B = B;
+                for (auto& it : m_ArrPeer) it.second->SetLabelColor(m_CallSignColor);
+                return true;
             }
             case TCHAT:
             {
                 std::string Message;
-                uint8_t Len=0;
-                data.read(reinterpret_cast<char*>(&Len),sizeof(Len));
-                char* Buff = new char[Len + 1];
-                data.read(Buff, Len);
-                Buff[Len] = '\0';
-                Message = Buff;
-                delete[] Buff;
+                if (!frame.str8(Message)) return false;
+                if (GetOption(DisableTChat)) return true;
                 m_TchatArr.push_back(Message);
-
-                while (m_TchatArr.size() > 5) m_TchatArr.erase(m_TchatArr.begin());
-#ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Message = ") + Message + _(" Binary : ") + string_to_hex(ReceivedMessage.first), LEVEL_DEBUG);
-#endif
+                while (m_TchatArr.size() > MAX_TCHAT_LINES) m_TchatArr.erase(m_TchatArr.begin());
                 m_LastTchatMessage = Now();
-                break;
+                UpdateTChatWindow();
+                return true;
             }
             case CSL_PATH:
             {
                 StringArray Paths;
-                Paths.ParseFromIstream(&data);
-                for (int i=0; i<Paths.string_size();i++)
+                if (!frame.proto(Paths)) return false;
+                if (m_MultiplayerReady)
                 {
-                    std::string Path = Paths.string(i);
-                    if (m_CSLPackagePathArr.find(Path) == m_CSLPackagePathArr.end())
-                    {
-                        m_CSLPackagePathArr.insert(Path);
-                        cslPath = Path + _("/CSL");
-                        pathRelated = Path + _("/related.txt");
-                        pathDoc8643 = Path + _("/Doc8643.txt");
-                        const char* cszResult = XPMPLoadCSLPackage(cslPath.c_str(), pathRelated.c_str(), pathDoc8643.c_str());
-                        if ( cszResult[0] )
-                        {
-                            m_Log->Log(_("XPMPLoadCSLPackage Failed = ") + cszResult, LEVEL_ERROR);
-                        }
-                    }
+                    const size_t Before = m_CSLPackagePathArr.size();
+                    for (const std::string& Path : Paths.string()) LoadCSLPackage(Path);
+                    if (m_CSLPackagePathArr.size() != Before)
+                        m_Log->Log(std::to_string(XPMPGetNumberOfInstalledModels()) + _(" CSL models available"), LEVEL_INFO);
                 }
+                return true;
+            }
+        }
+        // Unknown code: ignored, as required by the contract
 #ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive CSL PATH = "), LEVEL_DEBUG);
-                for (std::string path : m_CSLPackagePathArr)
-                {
-                    m_Log->Log(_("PATH = ") + path, LEVEL_DEBUG);
-                }
+        m_Log->Log(_("Receive Unknown code ") + std::to_string(Code), LEVEL_DEBUG);
 #endif
+        return true;
+    }
+
+    ///
+    /// Create the aircraft of a peer and give its object ID (0 on failure) to the client.
+    /// A callsign already present replaces the previous aircraft, whose ID is released (DEL_PEER).
+    ///
+    void SimController::AddPeer(const std::string& pCallSign, const AIResol& pAircraft)
+    {
+#ifdef XFFS_DEBUG
+        m_Log->Log(_("Receive ADD_PEER ") + pCallSign + _(" model = ") + pAircraft.model(), LEVEL_DEBUG);
+#endif
+        for (const auto& it : m_ArrPeer)
+        {
+            if (it.second->GetCallSign() == pCallSign)
+            {
+                SendDelObjectID(RemovePeer(it.first));
                 break;
             }
-            default:
+        }
+        uint32_t ObjectID = 0;
+        if (m_MultiplayerReady && (XPMPGetNumberOfInstalledModels() == 0))
+        {
+            // Reported once until a package is loaded
+            if (!m_NoCSLReported)
+                m_Log->Log(_("No CSL model loaded: set the CSL folders in the FFS2Play P2P settings"), LEVEL_WARNING);
+            m_NoCSLReported = true;
+        }
+        else if (m_MultiplayerReady)
+        {
+            try
             {
+                if (++m_ObjectID == 0) ++m_ObjectID;    // 0 means failure
+                auto aircraft = std::make_unique<CAircraft>(m_ObjectID, pCallSign, pAircraft);
+                aircraft->DisableAltCorrection = GetOption(DisableAltCorr);
+                aircraft->SetLabelColor(m_CallSignColor);
+                m_ArrPeer[m_ObjectID] = std::move(aircraft);
+                ObjectID = m_ObjectID;
+            }
+            catch (const std::exception& e)
+            {
+                m_Log->Log(_("Cannot add ") + pCallSign + _(": ") + e.what(), LEVEL_ERROR);
+            }
+        }
+        SendAddObjectID(ObjectID, pCallSign);
+    }
+
+    ///
+    /// Remove an aircraft; returns its ID, or 0 if it does not exist
+    ///
+    uint32_t SimController::RemovePeer(uint32_t pObjectID)
+    {
+        if (m_ArrPeer.erase(pObjectID) == 0)
+        {
 #ifdef XFFS_DEBUG
-                m_Log->Log(_("Receive Unknown code"), LEVEL_DEBUG);
+            m_Log->Log(_("Unable to find for deletion Object_ID  = ") + std::to_string(pObjectID), LEVEL_DEBUG);
 #endif
-                break;
-            }
+            return 0;
         }
-        m_LastPing = Now();
+        return pObjectID;
     }
 
-    ///
-    /// We send to the client, the Object ID of new AI Object created
-    ///
-    void SimController::SendAddObjectID(uint32_t pObjectID,std::string& pCallSign)
-    {
-        if (m_ClientID != 0)
-        {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(ADD_PEER);
-                uint8_t len = static_cast<uint8_t>(pCallSign.length());
-                ssoutput << len;
-                ssoutput.write(pCallSign.c_str(),len);
-                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send ADD_PEER") + _(e.what()), LEVEL_ERROR);
-                m_ClientID=0;
-            }
-        }
-    }
-
-    ///
-    /// We acknowledge to the client the good removing of object tagge by the given ID
-    ///
-    void SimController::SendDelObjectID(uint32_t pObjectID)
-    {
-        if (m_ClientID != 0)
-        {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DEL_PEER);
-                ssoutput.write(reinterpret_cast<char*>(&pObjectID), sizeof(pObjectID));
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send DEL_PEER") + _(e.what()), LEVEL_ERROR);
-                m_ClientID=0;
-            }
-        }
-    }
-
-    ///
-    /// Send Disconnection for all udp client
-    ///
-    void SimController::SendDisc()
-    {
-        if (m_ClientID != 0)
-        {
-            try
-            {
-                std::ostringstream  ssoutput;
-                ssoutput << static_cast<uint8_t>(DISC);
-                m_Server.SendToClient(ssoutput.str(), m_ClientID);
-            }
-            catch (const std::exception& e)
-            {
-                m_Log->Log(_("Error during send SendDisc") + _(e.what()), LEVEL_ERROR);
-            }
-            m_ClientID = 0;
-        }
-    }
-
-    ///
-    /// We clear All Object AI from X-Plane
-    ///
     void SimController::ClearPeers()
     {
-        for (auto it : m_ArrPeer)
-        {
-            if (it.second != nullptr)
-            {
-                delete it.second;
-            }
-        }
         m_ArrPeer.clear();
     }
 
     ///
-    /// Remove the AI from private array
-    ///
-    uint32_t SimController::RemovePeer(uint32_t pObject_ID)
-    {
-        uint32_t Object_deleted = 0;
-        PeerIterator it = m_ArrPeer.find(pObject_ID);
-        if (it != m_ArrPeer.end())
-        {
-            if (it->second != nullptr)
-            {
-                delete it->second;
-                m_ArrPeer.erase (it);
-                Object_deleted = pObject_ID;
-            }
-        }
-        else
-        {
-#ifdef XFFS_DEBUG
-            m_Log->Log(_("Unable to find for deletion Object_ID  = ") + std::to_string(pObject_ID), LEVEL_DEBUG);
-#endif
-        }
-        return Object_deleted;
-    }
-
-    ///
-    /// Update Global option for each Object AI
+    /// Apply the options received with PING
     ///
     void SimController::UpdateOptions()
     {
-        // If the plugin is not yet initialized for AI ou CSL usage, we test it from Options
-        if ((!m_Use_CSL) && (!m_Use_AI))
+        if (m_MultiplayerReady) XPMPEnableAircraftLabels(GetOption(DisplayCallSign));
+        for (auto& it : m_ArrPeer) it.second->DisableAltCorrection = GetOption(DisableAltCorr);
+        if (GetOption(UseAI)) m_Log->Log(_("AI mode is no longer supported, using CSL aircraft"), LEVEL_WARNING);
+    }
+
+    bool SimController::GetOption(SimOption pOption) const
+    {
+        return (m_Options & static_cast<uint32_t>(pOption)) != 0;
+    }
+
+    ///
+    /// Answer ADD_PEER with the object ID created for the callsign (0 on failure)
+    ///
+    void SimController::SendAddObjectID(uint32_t pObjectID, const std::string& pCallSign)
+    {
+        if ((m_ClientID == 0) || (m_Server == nullptr)) return;
+        const std::string CallSign = pCallSign.substr(0, 255);
+        std::string Frame(1, static_cast<char>(ADD_PEER));
+        Frame += static_cast<char>(CallSign.size());
+        Frame += CallSign;
+        AppendU32LE(Frame, pObjectID);
+        m_Server->SendToClient(Frame, m_ClientID);
+    }
+
+    ///
+    /// Acknowledge the removal of an object (0 if it did not exist)
+    ///
+    void SimController::SendDelObjectID(uint32_t pObjectID)
+    {
+        if ((m_ClientID == 0) || (m_Server == nullptr)) return;
+        std::string Frame(1, static_cast<char>(DEL_PEER));
+        AppendU32LE(Frame, pObjectID);
+        m_Server->SendToClient(Frame, m_ClientID);
+    }
+
+    void SimController::SendDisc()
+    {
+        if ((m_ClientID != 0) && (m_Server != nullptr))
         {
-            if (GetOption(UseCSL))
-            {
-                InitCSL();
-            }
-            if (GetOption(UseAI))
-            {
-                InitAI();
-            }
+            m_Server->SendToClient(std::string(1, static_cast<char>(DISC)), m_ClientID);
         }
-        else
+        m_ClientID = 0;
+    }
+
+    void SimController::AppendU32LE(std::string& pFrame, uint32_t pValue)
+    {
+        for (int i = 0; i < 4; ++i) pFrame += static_cast<char>((pValue >> (8 * i)) & 0xFF);
+    }
+
+    ///
+    /// Chat overlay: an undecorated window above the 3D view, hidden when idle
+    ///
+    void SimController::CreateTChatWindow()
+    {
+        XPLMCreateWindow_t params;
+        params.structSize = sizeof(params);
+        params.left = 0;
+        params.top = 100;
+        params.right = 100;
+        params.bottom = 0;
+        params.visible = 0;
+        params.drawWindowFunc = &SimController::TChatDrawCallback;
+        // Clicks go through the window to X-Plane
+        params.handleMouseClickFunc = [](XPLMWindowID, int, int, XPLMMouseStatus, void*) -> int { return 0; };
+        params.handleRightClickFunc = [](XPLMWindowID, int, int, XPLMMouseStatus, void*) -> int { return 0; };
+        params.handleMouseWheelFunc = [](XPLMWindowID, int, int, int, int, void*) -> int { return 0; };
+        params.handleKeyFunc = [](XPLMWindowID, char, XPLMKeyFlags, char, void*, int) {};
+        params.handleCursorFunc = [](XPLMWindowID, int, int, void*) -> XPLMCursorStatus { return xplm_CursorDefault; };
+        params.refcon = this;
+        params.layer = xplm_WindowLayerFlightOverlay;
+        params.decorateAsFloatingWindow = xplm_WindowDecorationNone;
+        m_TChatWindow = XPLMCreateWindowEx(&params);
+    }
+
+    ///
+    /// Show the last messages for 10 s along the top of the main screen
+    ///
+    void SimController::UpdateTChatWindow()
+    {
+        if (m_TChatWindow == nullptr) return;
+        const bool show = !m_TchatArr.empty() && (Now() - m_LastTchatMessage < milliseconds(10000));
+        if (show)
         {
-            for (auto it : m_ArrPeer)
-            {
-                if (it.second != nullptr)
-                {
-                    it.second->EnableDisplayCallsign = GetOption(DisplayCallSign);
-                    it.second->DisableAltCorrection = GetOption(DisableAltCorr);
-                }
-            }
+            int left, top, right, bottom;
+            XPLMGetScreenBoundsGlobal(&left, &top, &right, &bottom);
+            const int height = static_cast<int>(m_TchatArr.size()) * 15 + 10;
+            XPLMSetWindowGeometry(m_TChatWindow, left + 50, top - 50, right - 50, top - 50 - height);
         }
+        if (show != (XPLMGetWindowIsVisible(m_TChatWindow) != 0)) XPLMSetWindowIsVisible(m_TChatWindow, show ? 1 : 0);
     }
 
-    ///
-    /// Return true if Specified Flag is true in options
-    ///
-    bool SimController::GetOption(SimOption pOption)
+    void SimController::TChatDrawCallback(XPLMWindowID pWindowID, void* pRefcon)
     {
-        return (m_Options & static_cast<uint32_t>(pOption)) > 0;
-    }
-
-    ///
-    /// Draw a Temporary window with current Tchatting
-    ///
-	void SimController::TChatDrawWindowCallback(XPLMWindowID pWindowID, void*)
-	{
-		if (m_ptSimController != nullptr)
-		{
-			if ((Now() - m_ptSimController->m_LastTchatMessage).count() > 10000) return;
-			int Width, Height;
-			XPLMGetScreenSize(&Width, &Height);
-			XPLMSetGraphicsState(
-				0 /* no fog */,
-				0 /* 0 texture units */,
-				0 /* no lighting */,
-				0 /* no alpha testing */,
-				1 /* do alpha blend */,
-				1 /* do depth testing */,
-				0 /* no depth writing */
-			);
-
-			float color[] = { 1.0, 1.0, 1.0 };/* RGB White */
-			int Left = 50;
-			int Top = Height - 50;
-			int Right = Width - 50;
-			int Bottom = Height - 120;
-			int Row =0;
-			XPLMSetWindowGeometry(pWindowID, Left, Top, Right, Bottom);
-
-			// We now use an XPLMGraphics routine to draw a translucent dark
-			// rectangle that is our window's shape
-			XPLMDrawTranslucentDarkBox(Left, Top, Right, Bottom);
-
-			// Finally we draw the text into the window, also using XPLMGraphics
-			// routines.  The NULL indicates no word wrapping.
-			Row = 0;
-			for (std::string Message : m_ptSimController->m_TchatArr)
-			{
-				Row += 10;
-				XPLMDrawString(color, Left + 5, Top - Row, (char*)(Message.c_str()), nullptr, xplmFont_Basic);
-			}
-		}
-	}
-
-	int SimController::MPIntPrefsFunc(const char* section, const char* key, int   iDefault)
-	{
-	    // debug XPMP's CSL model matching if requested
-        if ( !strcmp(section,"debug") && !strcmp(key,"model_matching") )
-        { return 1; }
-
-        // How many full a/c to draw at max?
-        if ( !strcmp(section,"planes") && !strcmp(key,"max_full_count") )
-        { return 50; }
-        return iDefault;
-	}
-
-    float SimController::MPFloatPrefsFunc(const char* section, const char* key, float fDefault)
-    {
-        // Max distance for drawing full a/c (as opposed to 'lights only')?
-        if ( !strcmp(section,"planes") && !strcmp(key,"full_distance") )
-        { return 3.0; }
-        return fDefault;
-    }
-
-    // same as above, but relative to plugin directory
-    std::string SimController::CalcFullPluginPath ( const std::string path )
-    {
-        std::string ret;
-
-        // starts with DirSeparator or [windows] second char is a colon?
-        if (m_DirSeparator[0] == path[0] ||
-            (path.length() >= 2 && path[1] == ':' ) )
-            // just take the given path, it is a full path already
-            return path;
-
-        // otherwise it shall be a local path relative to the plugin's dir
-        // otherwise it is supposingly a local path relative to XP main
-        // prepend with XP system path to make it a full path:
-        return m_PluginPath + path;
-    }
-    
-    std::string SimController::GetMode()
-    {
-        if (m_Use_AI) return _("AI Aircrafts");
-        if (m_Use_CSL) return _("CSL Aircrafts");
-        return _("Not yet defined");
-    }
-    
-    ///
-    /// Return the id of the next first AI free to be handled by our plugin
-    ///
-    int SimController::GetFirstFreeAI()
-    {
-        int result = 0;
-        for (int i=1; (i<m_PlaneCount)&&(i<20) ; i++)
+        auto self = static_cast<SimController*>(pRefcon);
+        if ((self == nullptr) || (self != m_ptSimController)) return;
+        int left, top, right, bottom;
+        XPLMGetWindowGeometry(pWindowID, &left, &top, &right, &bottom);
+        XPLMSetGraphicsState(0, 0, 0, 0, 1, 0, 0);
+        XPLMDrawTranslucentDarkBox(left, top, right, bottom);
+        float color[] = { 1.0f, 1.0f, 1.0f };
+        int row = 0;
+        for (const std::string& message : self->m_TchatArr)
         {
-            PeerIterator it = m_ArrPeer.find(i);
-            if (it == m_ArrPeer.end()) return i;
+            row += 15;
+            XPLMDrawString(color, left + 5, top - row, const_cast<char*>(message.c_str()), nullptr, xplmFont_Proportional);
         }
-        return result;
+    }
+
+    ///
+    /// XPMP2 configuration: verbose logging only in debug builds
+    ///
+    int SimController::MPIntPrefsFunc(const char* pSection, const char* pKey, int pDefault)
+    {
+#ifdef XFFS_DEBUG
+        if (!std::strcmp(pSection, XPMP_CFG_SEC_DEBUG) && !std::strcmp(pKey, XPMP_CFG_ITM_LOGLEVEL)) return 0;
+        if (!std::strcmp(pSection, XPMP_CFG_SEC_DEBUG) && !std::strcmp(pKey, XPMP_CFG_ITM_MODELMATCHING)) return 1;
+#else
+        (void)pSection;
+        (void)pKey;
+#endif
+        return pDefault;
     }
 }

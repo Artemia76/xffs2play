@@ -1,0 +1,96 @@
+name: Build
+
+on:
+  push:
+    branches: [devel, master, "feature/**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # vcpkg registry baseline also pinned in vcpkg-configuration.json
+  VCPKG_COMMIT: 2026.07.29
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows,       os: windows-2022, preset: windows-msvc, triplet: x64-windows-static-md }
+          - { name: Linux,         os: ubuntu-22.04, preset: linux,        triplet: x64-linux }
+          - { name: macOS arm64,   os: macos-14,     preset: macos-arm64,  triplet: arm64-osx }
+          - { name: macOS x86_64,  os: macos-14,     preset: macos-x64,    triplet: x64-osx }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up vcpkg
+        shell: bash
+        run: |
+          git clone --quiet https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
+          git -C "$RUNNER_TEMP/vcpkg" checkout --quiet "$VCPKG_COMMIT"
+          if [ "$RUNNER_OS" = "Windows" ]; then "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat" -disableMetrics; else "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics; fi
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: build/vcpkg_installed
+          key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
+
+      - name: Install
+        run: cmake --install build/${{ matrix.preset }} --config Release --prefix dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xffs2play-${{ matrix.preset }}
+          path: dist/
+
+  package:
+    name: Package
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assemble the plugin folder
+        run: |
+          mkdir -p package
+          cp -r artifacts/xffs2play-windows-msvc/xffs2play package/
+          cp artifacts/xffs2play-linux/xffs2play/64/lin.xpl package/xffs2play/64/
+          # Universal macOS binary from the two architectures
+          sudo apt-get install -y -qq llvm >/dev/null
+          LIPO=$(ls /usr/bin/llvm-lipo* | head -1)
+          "$LIPO" -create \
+            artifacts/xffs2play-macos-arm64/xffs2play/64/mac.xpl \
+            artifacts/xffs2play-macos-x64/xffs2play/64/mac.xpl \
+            -output package/xffs2play/64/mac.xpl
+          ls -l package/xffs2play/64
+          (cd package && zip -qr ../xffs2play.zip xffs2play)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xffs2play
+          path: package/
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: xffs2play.zip
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
