@@ -21,120 +21,130 @@
 ****************************************************************************/
 
 #include "xpmain.h"
+
+#include <cstring>
+
+#include <XPLMMenus.h>
 #include <XPLMPlugin.h>
-///
-/// XPluginDisable
-///
-/// X-Plane Disable Signal
-///
-PLUGIN_API void XPluginDisable(void)
+#include <XPLMUtilities.h>
+
+#include "gui/mainframe.h"
+#include "sim/simcontroller.h"
+#include "tools/log.h"
+#include "tools/version.h"
+
+using namespace xffs2play;
+
+namespace
 {
-    XPLMDestroyMenu(g_menu_id);
-    XPLMRemoveMenuItem(XPLMFindPluginsMenu(),g_menu_container_idx);
-    MainFrame::Kill();
-	SimController::Kill();
-    CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
+    enum MenuItem { MENU_DEBUG_WINDOW = 0, MENU_RELOAD_CSL = 1 };
+
+    int         g_MenuContainerIdx = -1;    // Index of our entry in the Plugins menu
+    XPLMMenuID  g_MenuId = nullptr;
+
+    void MenuHandler(void* /*pMenuRef*/, void* pItemRef)
+    {
+        switch (static_cast<MenuItem>(reinterpret_cast<intptr_t>(pItemRef)))
+        {
+            case MENU_DEBUG_WINDOW:
+                if (MainFrame::Exists())
+                {
+                    MainFrame::Kill();
+                    XPLMSetMenuItemName(g_MenuId, MENU_DEBUG_WINDOW, "Display Debug Window", 0);
+                }
+                else
+                {
+                    MainFrame::Instance();
+                    XPLMSetMenuItemName(g_MenuId, MENU_DEBUG_WINDOW, "Hide Debug Window", 0);
+                }
+                break;
+            case MENU_RELOAD_CSL:
+                SimController::Instance()->ReloadCSL();
+                break;
+        }
+    }
+
+    void CreatePluginMenu()
+    {
+        g_MenuContainerIdx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, nullptr, 0);
+        g_MenuId = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_MenuContainerIdx, MenuHandler, nullptr);
+        XPLMAppendMenuItem(g_MenuId, "Display Debug Window", reinterpret_cast<void*>(MENU_DEBUG_WINDOW), 0);
+        XPLMAppendMenuItem(g_MenuId, "Reload CSL Database", reinterpret_cast<void*>(MENU_RELOAD_CSL), 0);
+    }
+
+    void DestroyPluginMenu()
+    {
+        if (g_MenuId != nullptr)
+        {
+            XPLMDestroyMenu(g_MenuId);
+            g_MenuId = nullptr;
+        }
+        if (g_MenuContainerIdx >= 0)
+        {
+            XPLMRemoveMenuItem(XPLMFindPluginsMenu(), g_MenuContainerIdx);
+            g_MenuContainerIdx = -1;
+        }
+    }
+
+    void ErrorHandler(const char* pMessage)
+    {
+        CLogger::Instance()->Log(_(pMessage), LEVEL_ERROR);
+    }
 }
 
 ///
-/// XPluginStop
+/// XPluginStart: identify the plugin; native paths are required by XPMP2
 ///
-/// Our cleanup routine deallocates our window.
+PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc)
+{
+    std::strcpy(outName, VER_PRODNAME_STR);
+    std::strcpy(outSig, VER_COMPANYDOMAIN_STR);
+    std::strcpy(outDesc, VER_FILEDESCRIPTION_STR);
+    XPLMEnableFeature("XPLM_USE_NATIVE_PATHS", 1);
+    XPLMSetErrorCallback(ErrorHandler);
+    CLogger::Instance()->Log(_("Plugin loaded, version ") + VER_FILEVERSION_STR, LEVEL_INFO);
+    return 1;
+}
+
 ///
+/// XPluginStop: last call, release the logger
 ///
-PLUGIN_API void	XPluginStop(void)
+PLUGIN_API void XPluginStop(void)
 {
     CLogger::Instance()->Log(_("Plugin Stopped"), LEVEL_INFO);
     CLogger::Kill();
 }
 
 ///
-/// XPluginEnable.
-///
-/// We don't do any enable-specific initialization, but we must return 1 to indicate
-/// that we may be enabled at this time.
+/// XPluginEnable: start the UDP link and the multiplayer engine
 ///
 PLUGIN_API int XPluginEnable(void)
 {
-#ifdef __APPLE__
-    XPLMEnableFeature("XPLM_USE_NATIVE_PATHS",1);
-#endif
-    g_menu_container_idx = XPLMAppendMenuItem(XPLMFindPluginsMenu(), VER_PRODNAME_STR, 0, 0);
-    g_menu_id = XPLMCreateMenu(VER_PRODNAME_STR, XPLMFindPluginsMenu(), g_menu_container_idx, MenuHandler, NULL);
-    XPLMAppendMenuItem(g_menu_id, "Display Debug Window", (void *)"Menu Item 1", 1);
-    XPLMAppendMenuItem(g_menu_id, "Reload CSL Database", (void*)"Menu Item 2",1);
-    XPLMSetErrorCallback(ErrorHandler);
     if (!SimController::Instance()->IsInit())
     {
         SimController::Kill();
+        CLogger::Instance()->Log(_("Plugin not enabled: initialisation failed"), LEVEL_ERROR);
         return 0;
     }
-
+    CreatePluginMenu();
     CLogger::Instance()->Log(_("Plugin Enable"), LEVEL_INFO);
     return 1;
 }
 
 ///
-/// XPluginStart
+/// XPluginDisable: reverse of XPluginEnable
 ///
-/// Our start routine registers our window and does any other initialization we
-/// must do.
-///
-PLUGIN_API int XPluginStart(
-    char* pName,
-    char* pSig,
-    char* pDesc)
+PLUGIN_API void XPluginDisable(void)
 {
-    strcpy(pName, VER_PRODNAME_STR);
-    strcpy(pSig, VER_COMPANYDOMAIN_STR);
-    strcpy(pDesc, VER_FILEDESCRIPTION_STR);
-    CLogger::Instance()->Log(_("Plugin loaded"), LEVEL_INFO);
-	mainWindow = nullptr;
-    return 1;
+    DestroyPluginMenu();
+    MainFrame::Kill();
+    SimController::Kill();
+    CLogger::Instance()->Log(_("Plugin Disable"), LEVEL_INFO);
 }
 
 ///
-/// XPluginReceiveMessage
+/// XPluginReceiveMessage: no inter-plugin message is handled
 ///
-/// We don't have to do anything in our receive message handler, but we must provide one.
-///
-PLUGIN_API void XPluginReceiveMessage(
-    XPLMPluginID /*inFromWho*/,
-    long /*inMessage*/,
-    void* /*inParam*/)
+PLUGIN_API void XPluginReceiveMessage(XPLMPluginID /*inFrom*/, int /*inMessage*/, void* /*inParam*/)
 {
-}
-
-///
-///
-///
-void MenuHandler(void* /*pMenuRef*/, void* pItemRef)
-{
-    if(!strcmp(reinterpret_cast<const char*>(pItemRef), "Menu Item 1"))
-    {
-        if (mainWindow==nullptr)
-        {
-            mainWindow=MainFrame::Instance();
-            XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Hide Debug Window",1);
-        }
-        else
-        {
-            MainFrame::Kill();
-            mainWindow=nullptr;
-            XPLMSetMenuItemName(g_menu_id,g_menu_container_idx,"Display Debug Window",1);
-        }
-    }
-    if (!strcmp(reinterpret_cast<const char*>(pItemRef), "Menu Item 2"))
-    {
-        SimController::Kill();
-        SimController::Instance();
-    }
-}
-
-///
-/// Handle X-Plane Error
-///
-void ErrorHandler(const char* pMessage)
-{
-	CLogger::Instance()->Log(_(pMessage),LEVEL_ERROR);
 }

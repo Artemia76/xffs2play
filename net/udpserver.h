@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2018 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/xffs2play
+** Contact: https://github.com/Artemia76/xffs2play
 **
 ** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,71 +22,69 @@
 
 #pragma once
 
-#include "lockedqueue.h"
-
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 #include <array>
+#include <cstdint>
 #include <map>
+#include <mutex>
+#include <string>
 #include <thread>
-#include <atomic>
+#include <utility>
 
+#include "net/lockedqueue.h"
 #include "tools/log.h"
-#include "net/iudpserver.h"
-
 
 namespace xffs2play {
 
-using boost::asio::ip::udp;
+/// Datagram payload and the id of the client that sent it
+typedef std::pair<std::string, uint32_t> ClientMessage;
 
-typedef std::map<uint32_t, udp::endpoint> ClientList;
-typedef ClientList::value_type Client;
-
-class UDPServer : public IUDPServer
+///
+/// UDP server running its own network thread.
+/// Received datagrams are queued for the X-Plane thread (PopMessage);
+/// PING is answered directly on the network thread so the client
+/// does not time out while X-Plane is loading.
+/// All socket operations run on the network thread.
+///
+class UDPServer
 {
 public:
-    explicit UDPServer(unsigned short pLocalPort=47500);
-    virtual ~UDPServer();
+    explicit            UDPServer(unsigned short pLocalPort = 47500,
+                                  const std::string& pBindAddress = "127.0.0.1");
+                        ~UDPServer();
+                        UDPServer(const UDPServer&) = delete;
+    UDPServer&          operator=(const UDPServer&) = delete;
 
-    bool HasMessages() override;
-    ClientMessage PopMessage() override;
-    void SendToClient(const std::string& pMessage, uint32_t pClientID) override;
-    void SendToAllExcept(const std::string& pMessage, uint32_t pClientID);
-    void SendToAll(const std::string& pMessage);
-    size_t GetClientCount() override;
-    uint32_t GetClientIdByIndex(size_t pIndex) override;
-
-    std::vector<std::function<void(uint32_t)>> clientDisconnectedHandlers;
+    bool                PopMessage(ClientMessage& pMessage);
+    void                SendToClient(const std::string& pMessage, uint32_t pClientID);
+    void                SendToAll(const std::string& pMessage);
 
 private:
+    using udp = asio::ip::udp;
 
-    boost::asio::io_service m_IoService;
-    udp::socket m_Socket;
-    udp::endpoint m_ServerEndpoint;
-    udp::endpoint m_RemoteEndpoint;
-    std::array<char,4096> m_RecvBuffer;
-    std::thread m_ServiceThread;
-    CLogger* m_Log;
+    static constexpr size_t MAX_CLIENTS = 16;
+    static constexpr size_t MAX_QUEUED_MESSAGES = 4096;
 
-    // Low-level network functions
-    void start_receive ();
-    void handle_remote_error (const std::error_code pError, const udp::endpoint pRemoteEndpoint);
-    void handle_receive (const std::error_code& pError, std::size_t pBytesTransferred);
-    void handle_send (std::string /*pMessage*/, const std::error_code& /*pError*/, std::size_t /*pBytesTransferred*/) {}
-    void run_service ();
+    void                StartReceive();
+    void                HandleReceive(const std::error_code& pError, std::size_t pBytesTransferred);
+    uint32_t            GetOrCreateClientId(const udp::endpoint& pEndpoint);
+    void                RemoveClient(const udp::endpoint& pEndpoint);
+    void                Send(const std::string& pMessage, const udp::endpoint& pTarget);
+    void                Run();
 
-    // Client management
-    int32_t get_or_create_client_id(udp::endpoint pEndpoint);
-    void on_client_disconnected(int32_t pId);
-
-    void send(const std::string& pMessage, udp::endpoint pTarget);
-
-    // Incoming messages queue
-    LockedQueue<ClientMessage> incomingMessages;
-
-    // Clients of the server
-    ClientList m_Clients;
-    std::atomic_int32_t m_NextClientID;
+    CLogger*                    m_Log;
+    asio::io_context            m_IoContext;
+    asio::executor_work_guard<asio::io_context::executor_type> m_WorkGuard;
+    udp::socket                 m_Socket;
+    udp::endpoint               m_RemoteEndpoint;
+    std::array<char, 65536>     m_RecvBuffer;
+    LockedQueue<ClientMessage>  m_IncomingMessages;
+    std::mutex                  m_ClientsMutex;
+    std::map<uint32_t, udp::endpoint> m_Clients;
+    uint32_t                    m_NextClientID = 0;
+    // Declared last: started in the constructor body once every other member exists
+    std::thread                 m_ServiceThread;
 };
 
 }

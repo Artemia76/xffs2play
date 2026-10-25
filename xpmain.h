@@ -23,26 +23,10 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <XPLMMenus.h>
-#include "tools/log.h"
-#include "tools/version.h"
-#include "gui/mainframe.h"
-#include "sim/simcontroller.h"
-#include <string.h>
-#include <string>
+#include <XPLMDefs.h>
 
-using namespace xffs2play;
-
-int g_menu_container_idx; // The index of our menu item in the Plugins menu
-XPLMMenuID g_menu_id;
-MainFrame* mainWindow=nullptr;
-
+PLUGIN_API int  XPluginStart(char* outName, char* outSig, char* outDesc);
+PLUGIN_API void XPluginStop(void);
+PLUGIN_API int  XPluginEnable(void);
 PLUGIN_API void XPluginDisable(void);
-PLUGIN_API void	XPluginStop(void);
-PLUGIN_API int XPluginEnable(void);
-PLUGIN_API int XPluginStart(char*,char*,char*);
-PLUGIN_API void XPluginReceiveMessage(XPLMPluginID,long,void*);
-
-void MenuHandler(void*, void*);
-void ErrorHandler(const char*);
+PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMessage, void* inParam);

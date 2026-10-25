@@ -51,6 +51,7 @@ virtual             ~CUserAircraft();
 
     private:
         void            ReadDataFromACF();
+static  std::string     ReadString(XPLMDataRef pDataRef, int pMaxLength);
         CLogger*        m_Log;
 
         //Xplane Data Reference

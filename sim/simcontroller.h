@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2018 FSFranceSimulateur team.
-** Contact: https://github.com/ffs2/xffs2play
+** Contact: https://github.com/Artemia76/xffs2play
 **
 ** XFFS2Play is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,127 +22,109 @@
 
 #pragma once
 
-#include "net/udpserver.h"
-
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
 #include <vector>
-#include <mutex>
 
-#include <XPLMDataAccess.h>
-#include <XPLMProcessing.h>
 #include <XPLMDisplay.h>
-#include <XPLMGraphics.h>
+#include <XPLMProcessing.h>
 
+#include "net/udpserver.h"
 #include "proto/aircraftstate.pb.h"
+#include "sim/aircraft.h"
 #include "sim/useraircraft.h"
-
-#include "XPMPPlaneRenderer.h"
-
-#include "tools/log.h"
-#include "tools/datetime.h"
-#include "aircraftAI.h"
-#include "aircraftCSL.h"
 #include "tools/color.h"
-#include "tools/utils3d.h"
-
-//MARK: File Paths
-// these are under the plugins directory
-#define PATH_RESOURCES          "Resources"
+#include "tools/datetime.h"
+#include "tools/log.h"
 
 namespace xffs2play
 {
-    struct FFS2ClientData
-    {
-        uint32_t    Id;
-        datetime    LastPing;
-        bool        ReceiveData;
-    };
-
+    /// Option bits of PING (docs/contracts/xplane-link.md in ffs2-suite)
     enum SimOption : unsigned int
     {
         DisplayCallSign = 0x01,
-		DisableAltCorr = 0x02,
+        DisableAltCorr = 0x02,
         DisableTChat = 0x04,
-        UseCSL = 0x08,
-        UseAI = 0x10
+        UseCSL = 0x08,      // always on since 2.1.0
+        UseAI = 0x10        // ignored since 2.1.0 (AI mode removed)
     };
 
-    typedef std::map<uint32_t, CAircraft*> PeerArray;
-    typedef std::pair<uint32_t, CAircraft*> PeerElement;
-    typedef std::map<uint32_t, CAircraft*>::iterator PeerIterator;
-
+    ///
+    /// Owns the link with the FFS2Play client and the aircraft of the peers.
+    /// Lives between XPluginEnable and XPluginDisable.
+    ///
     class SimController
     {
-
     public:
 static  SimController*  Instance();
 static  void            Kill();
 
-        CAircraftState& GetAircraftState()
-                        {
-                            return m_UserAircraft;
-                        }
-        bool            IsInit(){return m_Initialized;}
-        std::string     GetMode();
-
-    protected:
-        void            OnReceiveData();
+        bool            IsInit() const { return m_Initialized; }
+        void            ReloadCSL();
+        std::string     GetMode() const;
 
     private:
-                        SimController ();
-virtual                 ~SimController ();
+        typedef std::map<uint32_t, std::unique_ptr<CAircraft>> PeerArray;
+
+                        SimController();
+                        ~SimController();
 static  SimController*  m_ptSimController;
-static  float           LoopNetworkCallback(float,float,int,void*);
-        float           LoopNetwork (float,float,int);
-static  float           LoopUpdateCallback(float, float, int, void*);
-        float           LoopUpdate (float, float, int);
-static  int             DrawCallback (XPLMDrawingPhase, int, void*);
-static	void            TChatDrawWindowCallback(XPLMWindowID pWindowID, void* pRefcon );
-        int             Draw (XPLMDrawingPhase, int);
-        void            SendAddObjectID(uint32_t pObjectID, std::string& pCallSign);
+
+static  float           LoopNetworkCallback(float, float, int, void*);
+        void            LoopNetwork();
+static  float           LoopReceiveCallback(float, float, int, void*);
+        void            OnReceiveData();
+        bool            ProcessMessage(const ClientMessage& pMessage);
+
+        bool            InitMultiplayer();
+        void            TakeTCAS();
+        void            ReleaseTCAS();
+        void            ForgetClient();
+        void            LoadCSLPackage(const std::string& pPath);
+        void            AddPeer(const std::string& pCallSign, const AIResol& pAircraft);
+        uint32_t        RemovePeer(uint32_t pObjectID);
+        void            ClearPeers();
+        void            UpdateOptions();
+        bool            GetOption(SimOption pOption) const;
+
+        void            SendAddObjectID(uint32_t pObjectID, const std::string& pCallSign);
         void            SendDelObjectID(uint32_t pObjectID);
         void            SendDisc();
-        void            ClearPeers();
-        uint32_t        RemovePeer (uint32_t pObjectID);
-        int             GetFirstFreeAI();
-        void            UpdateOptions();
-        bool            GetOption(SimOption pOption);
-        std::string     CalcFullPluginPath ( const std::string path );
+static  void            AppendU32LE(std::string& pFrame, uint32_t pValue);
 
-static  int             MPIntPrefsFunc(const char* section, const char* key, int   iDefault);
-static  float           MPFloatPrefsFunc(const char* section, const char* key, float fDefault);
+        void            CreateTChatWindow();
+        void            UpdateTChatWindow();
+static  void            TChatDrawCallback(XPLMWindowID pWindowID, void* pRefcon);
+static  int             MPIntPrefsFunc(const char* pSection, const char* pKey, int pDefault);
 
-        void            InitAI();
-        void            InitCSL();
+static  constexpr int   MAX_MESSAGES_PER_LOOP = 500;
+static  constexpr size_t MAX_TCHAT_LINES = 5;
 
-        uint32_t        m_ObjectID;
-        uint32_t        m_Options;
-        uint32_t        m_ClientID;
-        bool            m_FirstScan;
-        bool            m_Use_CSL;
-        bool            m_Use_AI;
+        CLogger*        m_Log;
+        std::unique_ptr<UDPServer> m_Server;
+        bool            m_Initialized = false;
+        bool            m_MultiplayerReady = false;
+        bool            m_TCASRequested = false;    // TCAS targets asked while a client is connected
+        bool            m_NoCSLReported = false;    // ADD_PEER without any CSL model already logged
+        uint32_t        m_ClientID = 0;
+        bool            m_SendUserData = true;      // DATA flag from the client
+        unsigned int    m_InvalidFrames = 0;        // reported in the log every network loop
+        datetime        m_LastPing;
+        uint32_t        m_Options = DisplayCallSign;
+        uint32_t        m_ObjectID = 0;
         AirData         m_SendData;
         AirData         m_ReceivedData;
         CUserAircraft   m_UserAircraft;
-        CLogger*        m_Log;
-        UDPServer*      m_Server;
         PeerArray       m_ArrPeer;
-        CullInfo_t      m_GlCamera;
         Color           m_CallSignColor;
+        std::string     m_PluginPath;               // ends with the directory separator
+        std::set<std::string> m_CSLPackagePathArr;
+
+        XPLMWindowID    m_TChatWindow = nullptr;
         std::vector<std::string> m_TchatArr;
         datetime        m_LastTchatMessage;
-        XPLMWindowID    m_TChatWindow;
-        bool            m_Initialized;
-        XPLMPluginID    m_PluginID;
-        std::string     m_PluginPath;
-        std::string     m_DirSeparator;
-        datetime        m_LastPing;
-        
-        //Specific to CSL Usage
-        std::set<std::string> m_CSLPackagePathArr;
-        
-        //Specific to AI Usage
-        uint8_t         m_PlaneCount;
-        char*           m_Aircraft[21];
-        char            m_AircraftPath[21][512];
     };
 }

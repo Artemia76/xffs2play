@@ -162,6 +162,44 @@ namespace xffs2play
     }
 
     ///
+    /// Copy the discrete states (controls, doors, engines, lights...),
+    /// leaving the position and attitude untouched
+    ///
+    void CAircraftState::CopyConfigurationFrom(const CAircraftState& pOther)
+    {
+        TimeStamp = Now();
+        AileronPos = pOther.AileronPos;
+        ElevatorPos = pOther.ElevatorPos;
+        RudderPos = pOther.RudderPos;
+        SpoilerPos = pOther.SpoilerPos;
+        ParkingBrakePos = pOther.ParkingBrakePos;
+        Door1Pos = pOther.Door1Pos;
+        Door2Pos = pOther.Door2Pos;
+        Door3Pos = pOther.Door3Pos;
+        Door4Pos = pOther.Door4Pos;
+        StateEng1 = pOther.StateEng1;
+        StateEng2 = pOther.StateEng2;
+        StateEng3 = pOther.StateEng3;
+        StateEng4 = pOther.StateEng4;
+        ThrottleEng1 = pOther.ThrottleEng1;
+        ThrottleEng2 = pOther.ThrottleEng2;
+        ThrottleEng3 = pOther.ThrottleEng3;
+        ThrottleEng4 = pOther.ThrottleEng4;
+        Squawk = pOther.Squawk;
+        SquawkMode = pOther.SquawkMode;
+        GearPos = pOther.GearPos;
+        FlapsIndex = pOther.FlapsIndex;
+        LandingLight = pOther.LandingLight;
+        StrobeLight = pOther.StrobeLight;
+        BeaconLight = pOther.BeaconLight;
+        NavLight = pOther.NavLight;
+        RecoLight = pOther.RecoLight;
+        TaxiLight = pOther.TaxiLight;
+        Smoke = pOther.Smoke;
+        OnGround = pOther.OnGround;
+    }
+
+    ///
     /// Get Data from Protobuf
     ///
     void CAircraftState::FromAirData(const AirData& pData)

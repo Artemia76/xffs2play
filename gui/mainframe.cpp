@@ -41,6 +41,18 @@ namespace xffs2play
     }
 
     ///
+    /// True if the debug window is shown; a window closed with its
+    /// close box is destroyed here
+    ///
+    bool MainFrame::Exists()
+    {
+        if (m_ptMainFrame == nullptr) return false;
+        if (XPLMGetWindowIsVisible(m_ptMainFrame->m_Window)) return true;
+        Kill();
+        return false;
+    }
+
+    ///
     /// Kill Method to delete SingleTon
     ///
     void MainFrame::Kill()
@@ -101,7 +113,6 @@ namespace xffs2play
         XPLMSetWindowResizingLimits(m_Window, 400, 200, 600, 300);
         XPLMSetWindowTitle(m_Window, VER_PRODNAME_STR);
 #endif
-        m_SC=SimController::Instance();
         m_PlaneX = XPLMFindDataRef("sim/flightmodel/position/local_x");
         m_PlaneY = XPLMFindDataRef("sim/flightmodel/position/local_y");
         m_PlaneZ = XPLMFindDataRef("sim/flightmodel/position/local_z");
@@ -143,14 +154,14 @@ namespace xffs2play
             0 /* no lighting */,
             0 /* no alpha testing */,
             1 /* do alpha blend */,
-            1 /* do depth testing */,
+            0 /* no depth testing */,
             0 /* no depth writing */
         );
 
         float color[] = { 1.0, 1.0, 1.0 };/* RGB White */
-        float X=XPLMGetDataf(m_PlaneX);
-        float Y=XPLMGetDataf(m_PlaneY);
-        float Z=XPLMGetDataf(m_PlaneZ);
+        double X=XPLMGetDatad(m_PlaneX);
+        double Y=XPLMGetDatad(m_PlaneY);
+        double Z=XPLMGetDatad(m_PlaneZ);
         XPLMGetWindowGeometry(m_Window, &m_Left, &m_Top, &m_Right, &m_Bottom);
 
         // We now use an XPLMGraphics routine to draw a translucent dark
@@ -163,7 +174,7 @@ namespace xffs2play
         XPLMDrawString(color, m_Left + 5, m_Top - 40,(char*)(std::string("X=") + std::to_string(X)).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 60, (char*)(std::string("Y=") + std::to_string(Y)).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 80, (char*)(std::string("Z=") + std::to_string(Z)).c_str(), nullptr, xplmFont_Basic);
-        XPLMDrawString(color, m_Left + 5, m_Top - 100, (char*)(std::string("Mode=") + m_SC->GetMode()).c_str(), nullptr, xplmFont_Basic);
+        XPLMDrawString(color, m_Left + 5, m_Top - 100, (char*)(std::string("Mode=") + SimController::Instance()->GetMode()).c_str(), nullptr, xplmFont_Basic);
         XPLMDrawString(color, m_Left + 5, m_Top - 120, (char*)(std::string("Log=") + m_LastMessage).c_str(), nullptr, xplmFont_Basic);
     }
 

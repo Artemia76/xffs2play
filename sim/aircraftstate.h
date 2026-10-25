@@ -38,6 +38,7 @@ virtual             ~CAircraftState();
 
 virtual void        ToAirData (AirData& pData) const;
 virtual void        FromAirData (const AirData& pData);
+        void        CopyConfigurationFrom (const CAircraftState& pOther);
 
         datetime    TimeStamp;
         std::string Title;
