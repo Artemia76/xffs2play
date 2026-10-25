@@ -80,6 +80,9 @@ static  float           LoopReceiveCallback(float, float, int, void*);
         bool            ProcessMessage(const ClientMessage& pMessage);
 
         bool            InitMultiplayer();
+        void            TakeTCAS();
+        void            ReleaseTCAS();
+        void            ForgetClient();
         void            LoadCSLPackage(const std::string& pPath);
         void            AddPeer(const std::string& pCallSign, const AIResol& pAircraft);
         uint32_t        RemovePeer(uint32_t pObjectID);
@@ -104,6 +107,8 @@ static  constexpr size_t MAX_TCHAT_LINES = 5;
         std::unique_ptr<UDPServer> m_Server;
         bool            m_Initialized = false;
         bool            m_MultiplayerReady = false;
+        bool            m_TCASRequested = false;    // TCAS targets asked while a client is connected
+        bool            m_NoCSLReported = false;    // ADD_PEER without any CSL model already logged
         uint32_t        m_ClientID = 0;
         bool            m_SendUserData = true;      // DATA flag from the client
         unsigned int    m_InvalidFrames = 0;        // reported in the log every network loop

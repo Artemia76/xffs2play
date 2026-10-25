@@ -12,4 +12,3 @@ components, each under its own license.
 | [utf8_range](https://github.com/protocolbuffers/protobuf/tree/main/third_party/utf8_range) (dependency of protobuf) | | MIT |
 | [Asio](https://think-async.com/Asio/) (vcpkg, header-only) | UDP networking | Boost Software License 1.0, Copyright (c) Christopher M. Kohlhoff |
 | `tools/simple_file_parser.*` | reading `.acf` aircraft files | GPL-3.0-or-later, Copyright (C) 2010 Joe Linoff |
-| `Resources/CSL/BB_GA` | bundled CSL aircraft models | freeware models converted by Bluebell from FS9 freeware (authors: Henry Tomkiewicz, Ralf Maylin, Chopinet, Bertrand Augras / OpenSceneryX) — see `Resources/CSL/BB_GA/Credits.txt` |

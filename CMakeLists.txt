@@ -127,7 +127,7 @@ endif()
 install(TARGETS XFFS2Play
         LIBRARY DESTINATION xffs2play/64
         RUNTIME DESTINATION xffs2play/64)
-install(DIRECTORY Resources/ DESTINATION xffs2play/Resources)
-# Supplemental files required by XPMP2 (Doc8643, related, map icons, contrails...)
+# Only the files required by XPMP2 (Doc8643, related, map icons, contrails...): no CSL is bundled,
+# FFS2Play gives the CSL packages (CSL_PATH)
 install(DIRECTORY XPMP2/Resources/ DESTINATION xffs2play/Resources
         PATTERN "XPMP2.example.prf" EXCLUDE)

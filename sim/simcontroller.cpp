@@ -95,6 +95,7 @@ namespace xffs2play
         }
         // Aircraft must be gone before XPMP2 is cleaned up
         ClearPeers();
+        ReleaseTCAS();
         if (m_MultiplayerReady) XPMPMultiplayerCleanup();
 #ifdef XFFS_DEBUG
         m_Log->Log(_("Call SimController Destructor"), LEVEL_DEBUG);
@@ -117,7 +118,8 @@ namespace xffs2play
     }
 
     ///
-    /// Initialise XPMP2, load the bundled CSL package and take the TCAS targets
+    /// Initialise XPMP2 only: no CSL is bundled (FFS2Play gives the packages with CSL_PATH)
+    /// and the TCAS targets are left to other plugins until a client connects
     ///
     bool SimController::InitMultiplayer()
     {
@@ -130,16 +132,45 @@ namespace xffs2play
             XPMPMultiplayerCleanup();
             return false;
         }
-        LoadCSLPackage(resourcePath + XPLMGetDirectorySeparator() + "CSL");
-        cszResult = XPMPMultiplayerEnable();
+        XPMPEnableAircraftLabels(GetOption(DisplayCallSign));
+        m_Log->Log(_("XPMP2 ready, waiting for FFS2Play"), LEVEL_INFO);
+        return true;
+    }
+
+    ///
+    /// Take the TCAS targets while a client is connected
+    ///
+    void SimController::TakeTCAS()
+    {
+        if (!m_MultiplayerReady || m_TCASRequested) return;
+        const char* cszResult = XPMPMultiplayerEnable();
         if (cszResult[0])
         {
             // Another plugin (e.g. LiveTraffic) owns the TCAS targets: aircraft are still drawn
             m_Log->Log(_("TCAS targets not available: ") + cszResult, LEVEL_WARNING);
+            return;
         }
-        XPMPEnableAircraftLabels(GetOption(DisplayCallSign));
-        m_Log->Log(_("XPMP2 ready, ") + std::to_string(XPMPGetNumberOfInstalledModels()) + _(" CSL models"), LEVEL_INFO);
-        return true;
+        m_TCASRequested = true;
+    }
+
+    ///
+    /// Give the TCAS targets back to X-Plane and the other plugins
+    ///
+    void SimController::ReleaseTCAS()
+    {
+        if (!m_TCASRequested) return;
+        XPMPMultiplayerDisable();
+        m_TCASRequested = false;
+    }
+
+    ///
+    /// The client is gone (DISC or timeout): its aircraft are removed and the plugin goes back to idle
+    ///
+    void SimController::ForgetClient()
+    {
+        ClearPeers();
+        ReleaseTCAS();
+        m_ClientID = 0;
     }
 
     ///
@@ -153,6 +184,7 @@ namespace xffs2play
             m_Log->Log(_("CSL package ") + pPath + _(" not loaded: ") + cszResult, LEVEL_ERROR);
         else
             m_Log->Log(_("CSL package loaded: ") + pPath, LEVEL_INFO);
+        m_NoCSLReported = false;
     }
 
     ///
@@ -173,6 +205,8 @@ namespace xffs2play
     {
         if (!m_MultiplayerReady) return _("XPMP2 not initialised");
         return _("CSL aircraft: ") + std::to_string(m_ArrPeer.size())
+             + _(", models: ") + std::to_string(XPMPGetNumberOfInstalledModels())
+             + _(" in ") + std::to_string(m_CSLPackagePathArr.size()) + _(" package(s)")
              + (m_ClientID != 0 ? _(", client connected") : _(", no client"));
     }
 
@@ -205,8 +239,7 @@ namespace xffs2play
         if (Now() - m_LastPing > milliseconds(10000))
         {
             m_Log->Log(_("Client Timeout"), LEVEL_INFO);
-            ClearPeers();
-            m_ClientID = 0;
+            ForgetClient();
         }
     }
 
@@ -261,6 +294,7 @@ namespace xffs2play
                 {
                     m_Log->Log(_("Client connected"), LEVEL_INFO);
                     m_SendUserData = true;
+                    TakeTCAS();
                 }
                 m_ClientID = pMessage.second;
                 if (m_Options != Options)
@@ -290,8 +324,7 @@ namespace xffs2play
             case DISC:
             {
                 m_Log->Log(_("Client disconnected"), LEVEL_INFO);
-                ClearPeers();
-                m_ClientID = 0;
+                ForgetClient();
                 return true;
             }
             case ADD_PEER:
@@ -339,7 +372,10 @@ namespace xffs2play
                 if (!frame.proto(Paths)) return false;
                 if (m_MultiplayerReady)
                 {
+                    const size_t Before = m_CSLPackagePathArr.size();
                     for (const std::string& Path : Paths.string()) LoadCSLPackage(Path);
+                    if (m_CSLPackagePathArr.size() != Before)
+                        m_Log->Log(std::to_string(XPMPGetNumberOfInstalledModels()) + _(" CSL models available"), LEVEL_INFO);
                 }
                 return true;
             }
@@ -369,7 +405,14 @@ namespace xffs2play
             }
         }
         uint32_t ObjectID = 0;
-        if (m_MultiplayerReady)
+        if (m_MultiplayerReady && (XPMPGetNumberOfInstalledModels() == 0))
+        {
+            // Reported once until a package is loaded
+            if (!m_NoCSLReported)
+                m_Log->Log(_("No CSL model loaded: set the CSL folders in the FFS2Play P2P settings"), LEVEL_WARNING);
+            m_NoCSLReported = true;
+        }
+        else if (m_MultiplayerReady)
         {
             try
             {

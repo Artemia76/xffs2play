@@ -19,8 +19,13 @@ XFFS2Play is the X-Plane 11 / 12 plugin of [FFS2Play](https://github.com/Artemia
    (`lin.xpl`, `mac.xpl`) and `Resources/plugins/xffs2play/Resources/`.
 3. Start FFS2Play, select X-Plane, then start X-Plane.
 
-A small CSL package (Bluebell general aviation) is included. FFS2Play can give the plugin more CSL packages
-(e.g. the [X-CSL](https://csl.x-air.ru) or Bluebell packages) through its settings.
+No CSL model is included. Install a CSL package (e.g. [X-CSL](https://csl.x-air.ru) with X-CSL-Updater, or the
+Bluebell packages): FFS2Play finds the usual folders under X-Plane and lets you add others in its P2P settings,
+then gives them to the plugin. When updating from an older version, `Resources/plugins/xffs2play/Resources/CSL`
+can be deleted.
+
+Until FFS2Play connects, the plugin stays idle: it loads no CSL and leaves the TCAS targets to other plugins
+(LiveTraffic…).
 
 The plugin listens on UDP `127.0.0.1:47500`: FFS2Play and X-Plane must run on the same computer.
 
@@ -72,8 +77,13 @@ XFFS2Play est le plugin X-Plane 11 / 12 de [FFS2Play](https://github.com/Artemia
    (`lin.xpl`, `mac.xpl`) et `Resources/plugins/xffs2play/Resources/`.
 3. Lancer FFS2Play, choisir X-Plane, puis lancer X-Plane.
 
-Un petit paquet CSL (aviation générale Bluebell) est fourni. FFS2Play peut indiquer au plugin d'autres paquets CSL
-(par exemple [X-CSL](https://csl.x-air.ru) ou Bluebell) dans ses réglages.
+Aucun modèle CSL n'est fourni. Installer un paquet CSL (par exemple [X-CSL](https://csl.x-air.ru) avec
+X-CSL-Updater, ou les paquets Bluebell) : FFS2Play trouve les dossiers habituels sous X-Plane et permet d'en ajouter
+d'autres dans ses réglages P2P, puis les transmet au plugin. Lors d'une mise à jour depuis une ancienne version,
+`Resources/plugins/xffs2play/Resources/CSL` peut être supprimé.
+
+Tant que FFS2Play n'est pas connecté, le plugin reste en veille : il ne charge aucun CSL et laisse les cibles TCAS
+aux autres plugins (LiveTraffic…).
 
 Le plugin écoute en UDP sur `127.0.0.1:47500` : FFS2Play et X-Plane doivent tourner sur le même PC.
 

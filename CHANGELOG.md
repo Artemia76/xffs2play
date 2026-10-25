@@ -7,7 +7,12 @@ Modernisation after a full code audit, and move from Bitbucket to GitHub.
 ### Changed
 - Aircraft rendered with the XPMP2 v3 aircraft API; callsign labels (callsign and distance) drawn by XPMP2,
   which works under Vulkan and Metal (X-Plane 12).
-- The bundled CSL package (`Resources/CSL`) is loaded at start-up.
+- No CSL package bundled any more (the Bluebell package was removed, the plugin is much smaller): FFS2Play gives
+  the CSL folders, e.g. those installed by X-CSL-Updater. Requires FFS2Play 2.4.3 or later, which sends them as soon as
+  it connects.
+- Idle until FFS2Play connects: no CSL folder is read at start-up, and the TCAS targets are taken only while FFS2Play
+  is connected (other plugins such as LiveTraffic can use them otherwise).
+- `ADD_PEER` is answered with ID 0 while no CSL model is loaded; the debug window shows the number of CSL models.
 - The plugin listens on `127.0.0.1` only (FFS2Play always connects locally).
 - Chat messages appear in an overlay that no longer catches mouse clicks and disappears after 10 s.
 - Build: CMake presets, dependencies from vcpkg (protobuf, Asio), XPMP2 3.7.0, X-Plane SDK 4; Boost no longer needed.
