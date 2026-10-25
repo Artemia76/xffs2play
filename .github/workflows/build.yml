@@ -10,6 +10,8 @@ on:
 env:
   # vcpkg registry baseline also pinned in vcpkg-configuration.json
   VCPKG_COMMIT: 2026.07.29
+  # oldest FFS2Play able to drive this plugin : read by the portal from the release notes (suite contract update-api.md)
+  REQUIRES_FFS2PLAY: 2.4.3
 
 jobs:
   build:
@@ -81,6 +83,11 @@ jobs:
             -output package/xffs2play/64/mac.xpl
           ls -l package/xffs2play/64
           (cd package && zip -qr ../xffs2play.zip xffs2play)
+          # versioned name for releases (v2.1.0 -> xffs2play_2_1_0.zip), read by the FFS2Play portal
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            mv xffs2play.zip "xffs2play_$(echo "${VERSION%%-*}" | tr . _).zip"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -91,6 +98,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: xffs2play.zip
+          files: xffs2play_*.zip
           prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            Requires: ffs2play >= ${{ env.REQUIRES_FFS2PLAY }}
           generate_release_notes: true
